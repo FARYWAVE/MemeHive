@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.MemeHive" parent="android:Theme.Material.Light.NoActionBar" >
+        <item name="android:fontFamily">@font/balsamiq_sans</item>
+
+        <item name="android:windowBackground">@color/dark_gray</item>
+    </style>
+</resources>

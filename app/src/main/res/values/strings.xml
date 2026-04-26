@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name" translatable="false">MemeHive</string>
+    <string name="app_name_p1" translatable="false">Meme</string>
+    <string name="app_name_p2" translatable="false">Hive</string>
+</resources>
