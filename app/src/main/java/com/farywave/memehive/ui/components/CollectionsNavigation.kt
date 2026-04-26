@@ -19,11 +19,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.farywave.memehive.data.local.db.entity.Collection
+import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.theme.LocalAppColors
-import com.farywave.memehive.ui.theme.MemeHiveTheme
 
 @Composable
 fun CollectionsNavigation(collections: List<Collection>, selectedCollection: Collection, onCollectionSelected: (Collection) -> Unit) {
@@ -33,14 +31,14 @@ fun CollectionsNavigation(collections: List<Collection>, selectedCollection: Col
             .wrapContentHeight()
             .background(
                 LocalAppColors.current.backgroundSecondary,
-                shape = MaterialTheme.shapes.extraLarge
+                shape = MaterialTheme.shapes.large
             )
             .border(
                 width = 4.dp,
                 color = LocalAppColors.current.backgroundSecondary,
-                shape = MaterialTheme.shapes.extraLarge
+                shape = MaterialTheme.shapes.large
             )
-            .clip(MaterialTheme.shapes.extraLarge)
+            .clip(MaterialTheme.shapes.large)
             .padding(horizontal = 5.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -61,7 +59,7 @@ private fun CollectionChip(collection: Collection, isSelected: Boolean, onClick:
             .background(
                 if (isSelected) LocalAppColors.current.accentPrimary
                 else LocalAppColors.current.transparent,
-                shape = MaterialTheme.shapes.extraLarge
+                shape = MaterialTheme.shapes.large
             )
             .padding(horizontal = 10.dp, vertical = 4.dp)
             .clickable(

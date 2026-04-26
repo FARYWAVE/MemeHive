@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
                 Hive(viewModel)
             }
         }
-        viewModel.loadMemes()
+        viewModel.loadCollections()
+        viewModel.loadMediaItems()
     }
 }

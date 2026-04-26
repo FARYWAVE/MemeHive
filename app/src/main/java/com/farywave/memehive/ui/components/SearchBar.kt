@@ -1,12 +1,10 @@
 package com.farywave.memehive.ui.components
 
-import android.widget.EditText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.BasicTextField
@@ -35,14 +33,14 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 
 @Composable
-fun SearchBar(onQueryChanged: (query: String) -> Unit) {
+fun SearchBar(onQueryChange: (query: String) -> Unit) {
     val query = rememberTextFieldState()
     var isFocused by remember { mutableStateOf(false) }
 
     LaunchedEffect(query) {
         snapshotFlow { query.text }
             .collect { text ->
-                onQueryChanged(text.toString())
+                onQueryChange(text.toString())
             }
     }
 
@@ -52,9 +50,9 @@ fun SearchBar(onQueryChanged: (query: String) -> Unit) {
             .wrapContentHeight()
             .background(
                 LocalAppColors.current.backgroundSecondary,
-                shape = MaterialTheme.shapes.extraLarge
+                shape = MaterialTheme.shapes.large
             )
-            .padding(horizontal = 12.dp, vertical = 9.dp),
+            .padding(horizontal = 8.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(3.dp)
     ) {
