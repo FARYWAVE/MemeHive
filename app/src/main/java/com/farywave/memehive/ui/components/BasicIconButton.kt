@@ -21,12 +21,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.ui.theme.LocalAppColors
 
-
-private val ripple = ripple(
-    bounded = true,
-    color = Color.White
-)
-
 @Composable
 fun BasicIconButton(
     modifier: Modifier = Modifier,
@@ -42,7 +36,10 @@ fun BasicIconButton(
             .clip(CircleShape)
             .clickable(
                 interactionSource = interactionSource,
-                indication = ripple,
+                indication = ripple(
+                    bounded = true,
+                    color = LocalAppColors.current.contentPrimary
+                ),
                 onClick = onClick
             ),
         contentAlignment = Alignment.Center

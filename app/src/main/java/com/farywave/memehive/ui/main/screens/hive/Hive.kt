@@ -3,6 +3,7 @@ package com.farywave.memehive.ui.main.screens.hive
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,13 +35,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.components.BasicIconButton
+import com.farywave.memehive.ui.components.CollectionsNavigation
 import com.farywave.memehive.ui.components.SearchBar
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 import com.farywave.memehive.ui.theme.Typography
 
 @Composable
-fun Hive() {
+fun Hive(viewModel: HiveViewModel) {
     val focusManager = LocalFocusManager.current
     Scaffold(modifier = Modifier
         .fillMaxSize()
@@ -55,8 +58,15 @@ fun Hive() {
         LazyColumn(Modifier
             .fillMaxSize()
             .padding(contentPadding)
-            .background(LocalAppColors.current.backgroundPrimary)) {
-            item { Box(Modifier.padding(horizontal = 15.dp)) { SearchBar() } }
+            .background(LocalAppColors.current.backgroundPrimary),
+            verticalArrangement = Arrangement.spacedBy(7.dp),
+            ) {
+            item { Box(Modifier.padding(horizontal = 15.dp)) { SearchBar(viewModel::onSearch) } }
+            item { Box(Modifier.padding(horizontal = 15.dp)) { CollectionsNavigation(
+                collections = viewModel.collections.collectAsState().value,
+                selectedCollection = viewModel.selectedCollection.collectAsState().value,
+                onCollectionSelected = viewModel::onCollectionSelected
+            )} }
         }
     }
 }
@@ -74,7 +84,8 @@ private fun Toolbar() {
     ) {
         Row(Modifier
             .wrapContentHeight()
-            .padding(start = 8.dp)){
+            .padding(start = 8.dp),
+        ){
             Text(
                 text = stringResource(R.string.app_name_p1),
                 color = LocalAppColors.current.accentPrimary,
@@ -92,15 +103,5 @@ private fun Toolbar() {
         BasicIconButton(icon = painterResource(R.drawable.ic_search)) { }
         BasicIconButton(icon = painterResource(R.drawable.ic_add)) { }
         BasicIconButton(icon = painterResource(R.drawable.ic_menu)) { }
-    }
-}
-
-
-
-@Preview
-@Composable
-private fun Preview() {
-    MemeHiveTheme {
-        Hive()
     }
 }

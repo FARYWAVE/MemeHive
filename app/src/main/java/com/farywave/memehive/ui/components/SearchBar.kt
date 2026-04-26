@@ -2,6 +2,7 @@ package com.farywave.memehive.ui.components
 
 import android.widget.EditText
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,10 +16,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -32,9 +35,16 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 
 @Composable
-fun SearchBar() {
+fun SearchBar(onQueryChanged: (query: String) -> Unit) {
     val query = rememberTextFieldState()
     var isFocused by remember { mutableStateOf(false) }
+
+    LaunchedEffect(query) {
+        snapshotFlow { query.text }
+            .collect { text ->
+                onQueryChanged(text.toString())
+            }
+    }
 
     Row(
         modifier = Modifier
@@ -45,7 +55,8 @@ fun SearchBar() {
                 shape = MaterialTheme.shapes.extraLarge
             )
             .padding(horizontal = 12.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_search),
@@ -55,7 +66,7 @@ fun SearchBar() {
         Box(Modifier
             .weight(1f)
             .wrapContentHeight()) {
-            if (query.text.isEmpty() and !isFocused) Text(
+            if (query.text.isEmpty() && !isFocused) Text(
                 text = stringResource(R.string.search_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = LocalAppColors.current.contentSecondary,
@@ -81,6 +92,6 @@ fun SearchBar() {
 @Composable
 private fun Preview() {
     MemeHiveTheme {
-        SearchBar()
+        SearchBar({})
     }
 }
