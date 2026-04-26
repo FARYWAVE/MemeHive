@@ -1,5 +1,7 @@
 package com.farywave.memehive.ui.theme
 
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -27,6 +29,7 @@ fun MemeHiveTheme(
         LocalAppColors provides colors
     ) {
         MaterialTheme(
+            shapes = AppShapes,
             typography = Typography,
             content = content
         )
