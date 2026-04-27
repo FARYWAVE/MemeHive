@@ -10,9 +10,6 @@ data class MediaItem(
     val tags: List<String>,
     var isSelected: Boolean = false,
 ) {
-    override fun equals(other: Any?): Boolean {
-        return other is MediaItem && other.id == id
-    }
 
     fun toMediaItemEntity() = MediaItemEntity(id, url, name, description, tags, isSelected)
 }

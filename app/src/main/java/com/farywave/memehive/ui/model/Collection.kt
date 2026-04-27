@@ -9,9 +9,6 @@ data class Collection(
     val content: MutableList<Int>,
     var isSelected: Boolean = false
 ) {
-    override fun equals(other: Any?): Boolean {
-        return other is Collection && other.id == id
-    }
 
     fun toCollectionEntity() = CollectionEntity(id, name, logoId, content)
 }

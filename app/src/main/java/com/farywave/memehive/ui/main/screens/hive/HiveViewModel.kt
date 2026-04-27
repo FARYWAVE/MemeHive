@@ -7,6 +7,7 @@ import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 class HiveViewModel : ViewModel() {
     private val _collections = MutableStateFlow(listOf(Collection(-1, "All", -1, mutableListOf())))
@@ -17,6 +18,9 @@ class HiveViewModel : ViewModel() {
 
     private val _mediaItems = MutableStateFlow(emptyList<MediaItem>())
     val mediaItems = _mediaItems.asStateFlow()
+
+    private val _isMassEditingMode = MutableStateFlow(false)
+    val isMassEditingMode = _isMassEditingMode.asStateFlow()
 
 
     fun loadCollections() {
@@ -37,8 +41,7 @@ class HiveViewModel : ViewModel() {
                     null,
                     "Name $it",
                     "Description $it",
-                    (0..it).map { "tag$it" }.toMutableList(),
-                    it % 3 == 1
+                    (0..it).map { "tag$it" }.toMutableList()
                 )
             }
     }
@@ -51,4 +54,42 @@ class HiveViewModel : ViewModel() {
         _selectedCollection.value = collection
         Log.d("HiveViewModel", "onCollectionSelected: $collection")
     }
+
+    fun onMediaItemOpened(mediaItem: MediaItem) {
+        Log.d("HiveViewModel", "onMediaItemOpened: ${mediaItem.name}")
+    }
+
+    fun disableMassEditingMode() {
+        _isMassEditingMode.value = false
+        _mediaItems.update { list ->
+            list.map { it.copy(isSelected = false) }
+        }
+    }
+
+    fun enableMassEditingMode() {
+        _isMassEditingMode.value = true
+    }
+
+    fun toggleItemSelection(item: MediaItem) {
+        _mediaItems.update { list ->
+            list.map {
+                if (it.id == item.id) {
+                    it.copy(isSelected = !it.isSelected)
+                }
+                else it
+            }
+        }
+        if (!_mediaItems.value.any { it.isSelected }) disableMassEditingMode()
+    }
+
+    fun selectItem(item: MediaItem) {
+        _mediaItems.update { list ->
+            list.map {
+                if (it.id == item.id) it.copy(isSelected = true)
+                else it
+            }
+        }
+    }
+
+    fun getSelectedMediaItems() = _mediaItems.value.filter { it.isSelected }
 }

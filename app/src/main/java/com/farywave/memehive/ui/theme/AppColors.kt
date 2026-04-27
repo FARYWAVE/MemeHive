@@ -15,7 +15,7 @@ data class AppColors(
     val backgroundPrimary: Color,
     val backgroundSecondary: Color,
 
-    val error: Color,
+    val warning: Color,
     val tint: Color,
     val transparent: Color
 )

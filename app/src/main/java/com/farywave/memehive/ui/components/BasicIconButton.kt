@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.ui.theme.LocalAppColors
 
@@ -25,6 +26,7 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 fun BasicIconButton(
     modifier: Modifier = Modifier,
     icon: Painter,
+    iconSize: Dp = 24.dp,
     tint: Color = LocalAppColors.current.contentPrimary,
     onClick: () -> Unit
 ) {
@@ -32,18 +34,22 @@ fun BasicIconButton(
 
     Box(
         modifier = modifier
-            .size(40.dp)
             .clip(CircleShape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = ripple(
                     bounded = true,
-                    color = LocalAppColors.current.contentPrimary
+                    color = tint
                 ),
                 onClick = onClick
             ),
         contentAlignment = Alignment.Center
     ) {
-        Icon(painter = icon, contentDescription = null, tint = tint)
+        Icon(
+            modifier = Modifier.size(iconSize),
+            painter = icon,
+            contentDescription = null,
+            tint = tint
+        )
     }
 }

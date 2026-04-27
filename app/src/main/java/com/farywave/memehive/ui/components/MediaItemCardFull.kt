@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,9 +53,13 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 
 
-
 @Composable
-fun MediaItemCardFull(mediaItem: MediaItem) {
+fun MediaItemCardFull(
+    mediaItem: MediaItem,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
     Column(
         Modifier
             .fillMaxWidth()
@@ -63,6 +69,12 @@ fun MediaItemCardFull(mediaItem: MediaItem) {
                 MaterialTheme.shapes.medium
             )
             .clip(MaterialTheme.shapes.medium)
+            .combinedClickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+                onLongClick = onLongClick,
+            )
     ) {
         ConstraintLayout(
             modifier = Modifier
@@ -215,35 +227,6 @@ private fun TagChip(tag: String) {
             text = tag,
             style = MaterialTheme.typography.labelMedium,
             color = LocalAppColors.current.contentPrimary
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun Preview() {
-    MemeHiveTheme {
-        //TagChip("tag")
-        MediaItemCardFull(
-            MediaItem(
-                0,
-                null,
-                "Name",
-                "Description",
-                listOf(
-                    "tag1",
-                    "tag2",
-                    "tag_long",
-                    "tag_long_long",
-                    "shrt",
-                    "tag1",
-                    "tag2",
-                    "tag_long",
-                    "tag_long_long",
-                    "shrt",
-                ),
-                true
-            )
         )
     }
 }
