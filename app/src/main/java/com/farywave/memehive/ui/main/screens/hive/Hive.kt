@@ -36,7 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.components.BasicIconButton
+import com.farywave.memehive.ui.components.SimpleIconButton
 import com.farywave.memehive.ui.components.CollectionsNavigation
 import com.farywave.memehive.ui.components.MediaItemCardFull
 import com.farywave.memehive.ui.components.SearchBar
@@ -120,19 +120,19 @@ private fun Toolbar() {
 
         Spacer(Modifier.weight(1f))
 
-        BasicIconButton(
+        SimpleIconButton(
             modifier = Modifier
                 .padding(7.dp)
                 .size(30.dp),
             icon = painterResource(R.drawable.ic_search)
         ) { }
-        BasicIconButton(
+        SimpleIconButton(
             modifier = Modifier
                 .padding(7.dp)
                 .size(30.dp),
             icon = painterResource(R.drawable.ic_add)
         ) { }
-        BasicIconButton(
+        SimpleIconButton(
             modifier = Modifier
                 .padding(7.dp)
                 .size(30.dp),
@@ -186,7 +186,7 @@ private fun Content(modifier: Modifier = Modifier, viewModel: HiveViewModel) {
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
 
-            BasicIconButton(
+            SimpleIconButton(
                 modifier = Modifier
                     .size(30.dp)
                     .shadow(7.dp, RoundedCornerShape(10.dp), clip = false)
@@ -199,7 +199,7 @@ private fun Content(modifier: Modifier = Modifier, viewModel: HiveViewModel) {
                 tint = LocalAppColors.current.contentPrimary
             ) { viewModel.disableMassEditingMode() }
 
-            BasicIconButton(
+            SimpleIconButton(
                 modifier = Modifier
                     .size(50.dp)
                     .shadow(9.dp, MaterialTheme.shapes.small, clip = false)

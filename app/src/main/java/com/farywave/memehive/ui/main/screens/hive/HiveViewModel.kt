@@ -5,12 +5,13 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
+import com.farywave.memehive.ui.model.Tag
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class HiveViewModel : ViewModel() {
-    private val _collections = MutableStateFlow(listOf(Collection(-1, "All", -1, mutableListOf())))
+    private val _collections = MutableStateFlow(listOf(Collection(-1, "All", -1)))
     val collections = _collections.asStateFlow()
 
     private val _selectedCollection = MutableStateFlow(_collections.value.first())
@@ -25,23 +26,23 @@ class HiveViewModel : ViewModel() {
 
     fun loadCollections() {
         _collections.value = listOf(
-            Collection(-1, "All", -1, mutableListOf()),
-            Collection(1, "John Pork", -1, mutableListOf()),
-            Collection(2, "IShowSpeed", -1, mutableListOf()),
-            Collection(3, "Games", -1, mutableListOf()),
-            Collection(4, "Ambatukam", -1, mutableListOf()),
+            Collection(-1, "All", -1),
+            Collection(1, "John Pork", -1),
+            Collection(2, "IShowSpeed", -1),
+            Collection(3, "Games", -1),
+            Collection(4, "Ambatukam", -1),
         )
     }
 
     fun loadMediaItems() {
         _mediaItems.value =
-            (0..100).map {
+            (0..100L).map {
                 MediaItem(
                     it,
                     null,
                     "Name $it",
                     "Description $it",
-                    (0..it).map { "tag$it" }.toMutableList()
+                    (0..it).map { it2 -> Tag(it2, "Tag $it") }
                 )
             }
     }

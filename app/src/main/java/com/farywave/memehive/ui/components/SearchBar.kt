@@ -34,16 +34,6 @@ import com.farywave.memehive.ui.theme.MemeHiveTheme
 
 @Composable
 fun SearchBar(hint: String, onQueryChange: (query: String) -> Unit) {
-    val query = rememberTextFieldState()
-    var isFocused by remember { mutableStateOf(false) }
-
-    LaunchedEffect(query) {
-        snapshotFlow { query.text }
-            .collect { text ->
-                onQueryChange(text.toString())
-            }
-    }
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -61,27 +51,11 @@ fun SearchBar(hint: String, onQueryChange: (query: String) -> Unit) {
             contentDescription = null,
             tint = LocalAppColors.current.contentSecondary
         )
-        Box(Modifier
-            .weight(1f)
-            .wrapContentHeight()) {
-            if (query.text.isEmpty() && !isFocused) Text(
-                text = hint,
-                style = MaterialTheme.typography.bodyMedium,
-                color = LocalAppColors.current.contentSecondary,
-            )
-            BasicTextField(
-                state = query,
-                modifier = Modifier
-                    .padding(0.dp)
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .onFocusChanged { focusState ->
-                        isFocused = focusState.isFocused
-                    },
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalAppColors.current.contentPrimary),
-                lineLimits = TextFieldLineLimits.SingleLine,
-                cursorBrush = SolidColor(LocalAppColors.current.accentPrimary)
-            )
-        }
+        SimpleTextField(
+            Modifier.weight(1f),
+            hint,
+            null,
+            onQueryChange
+        )
     }
 }

@@ -1,13 +1,10 @@
 package com.farywave.memehive.ui.components
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -17,13 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
-fun BasicIconButton(
+fun SimpleIconButton(
     modifier: Modifier = Modifier,
     icon: Painter,
     iconSize: Dp = 24.dp,
@@ -31,6 +28,7 @@ fun BasicIconButton(
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val focusManager = LocalFocusManager.current
 
     Box(
         modifier = modifier
@@ -41,7 +39,10 @@ fun BasicIconButton(
                     bounded = true,
                     color = tint
                 ),
-                onClick = onClick
+                onClick = {
+                    focusManager.clearFocus()
+                    onClick()
+                }
             ),
         contentAlignment = Alignment.Center
     ) {

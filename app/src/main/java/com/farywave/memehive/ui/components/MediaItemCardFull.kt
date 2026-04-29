@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.model.MediaItem
+import com.farywave.memehive.ui.model.Tag
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 
@@ -42,6 +44,7 @@ fun MediaItemCardFull(
     onLongClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val focusManager = LocalFocusManager.current
     Column(
         Modifier
             .fillMaxWidth()
@@ -54,8 +57,14 @@ fun MediaItemCardFull(
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick,
-                onLongClick = onLongClick,
+                onClick = {
+                    focusManager.clearFocus()
+                    onClick()
+                },
+                onLongClick = {
+                    focusManager.clearFocus()
+                    onLongClick()
+                },
             )
     ) {
         ConstraintLayout(
@@ -194,7 +203,7 @@ private fun Name(modifier: Modifier, name: String) {
 }
 
 @Composable
-private fun TagChip(tag: String) {
+private fun TagChip(tag: Tag) {
     Box(
         modifier = Modifier
             .wrapContentSize()
@@ -206,7 +215,7 @@ private fun TagChip(tag: String) {
     ) {
         Text(
             modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp),
-            text = tag,
+            text = tag.name,
             style = MaterialTheme.typography.labelMedium,
             color = LocalAppColors.current.contentPrimary
         )
