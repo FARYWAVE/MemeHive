@@ -1,18 +1,15 @@
 package com.farywave.memehive.data.local.db.entity
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.farywave.memehive.ui.model.MediaItem
 
+@Entity(tableName = "media_items")
 data class MediaItemEntity(
-    val id: Int,
-    var url: String?,
-    var name: String?,
-    var description: String?,
-    val tags: List<String>,
-    var isSelected: Boolean = false,
+    @PrimaryKey val id: Long,
+    val url: String?,
+    val name: String?,
+    val description: String?,
 ) {
-    override fun equals(other: Any?): Boolean {
-        return other is MediaItemEntity && other.id == id
-    }
-
-    fun toMediaItem() = MediaItem(id, url, name, description, tags, isSelected)
+    fun toMediaItem() = MediaItem(id, url, name, description, mutableListOf())
 }

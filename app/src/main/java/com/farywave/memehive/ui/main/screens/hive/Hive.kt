@@ -66,7 +66,12 @@ fun Hive(viewModel: HiveViewModel) {
                 .background(LocalAppColors.current.backgroundPrimary),
             verticalArrangement = Arrangement.spacedBy(7.dp),
         ) {
-            Box(Modifier.padding(horizontal = 10.dp)) { SearchBar(viewModel::onSearch) }
+            Box(Modifier.padding(horizontal = 10.dp)) {
+                SearchBar(
+                    stringResource(R.string.search_hint),
+                    viewModel::onSearch
+                )
+            }
             Box(Modifier.padding(horizontal = 10.dp)) {
                 CollectionsNavigation(
                     collections = viewModel.collections.collectAsState().value,
@@ -76,7 +81,9 @@ fun Hive(viewModel: HiveViewModel) {
             }
 
             Content(
-                modifier = Modifier.padding(horizontal = 10.dp).fillMaxSize(),
+                modifier = Modifier
+                    .padding(horizontal = 10.dp)
+                    .fillMaxSize(),
                 viewModel = viewModel
             )
         }
@@ -151,17 +158,19 @@ private fun Content(modifier: Modifier = Modifier, viewModel: HiveViewModel) {
             verticalItemSpacing = 8.dp,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(mediaItems, key = {it.id}) { mediaItem ->
+            items(mediaItems, key = { it.id }) { mediaItem ->
                 MediaItemCardFull(
                     mediaItem = mediaItem,
                     onClick = {
                         if (isMassEditingMode) viewModel.toggleItemSelection(mediaItem)
                         else viewModel.onMediaItemOpened(mediaItem)
                     },
-                    onLongClick = { if (!isMassEditingMode) {
-                        viewModel.enableMassEditingMode()
-                        viewModel.selectItem(mediaItem)
-                    }}
+                    onLongClick = {
+                        if (!isMassEditingMode) {
+                            viewModel.enableMassEditingMode()
+                            viewModel.selectItem(mediaItem)
+                        }
+                    }
                 )
             }
         }
@@ -201,7 +210,7 @@ private fun Content(modifier: Modifier = Modifier, viewModel: HiveViewModel) {
                 icon = painterResource(R.drawable.ic_edit),
                 iconSize = 28.dp,
                 tint = LocalAppColors.current.contentPrimary
-            ) {Log.d("TEST", viewModel.getSelectedMediaItems().size.toString()) }
+            ) { Log.d("TEST", viewModel.getSelectedMediaItems().size.toString()) }
         }
     }
 }

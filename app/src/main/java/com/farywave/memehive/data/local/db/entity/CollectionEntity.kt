@@ -1,16 +1,14 @@
 package com.farywave.memehive.data.local.db.entity
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.farywave.memehive.ui.model.Collection
 
+@Entity(tableName = "collections")
 data class CollectionEntity(
-    val id: Int,
-    var name: String,
-    var logoId: Int?,
-    val content: MutableList<Int>
+    @PrimaryKey val id: Long,
+    val name: String,
+    val logoId: Int?,
 ) {
-    override fun equals(other: Any?): Boolean {
-        return other is CollectionEntity && other.id == id
-    }
-
-    fun toCollection() = Collection(id, name, logoId, content)
+    fun toCollection() = Collection(id, name, logoId)
 }

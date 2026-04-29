@@ -33,7 +33,7 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 
 @Composable
-fun SearchBar(onQueryChange: (query: String) -> Unit) {
+fun SearchBar(hint: String, onQueryChange: (query: String) -> Unit) {
     val query = rememberTextFieldState()
     var isFocused by remember { mutableStateOf(false) }
 
@@ -65,7 +65,7 @@ fun SearchBar(onQueryChange: (query: String) -> Unit) {
             .weight(1f)
             .wrapContentHeight()) {
             if (query.text.isEmpty() && !isFocused) Text(
-                text = stringResource(R.string.search_hint),
+                text = hint,
                 style = MaterialTheme.typography.bodyMedium,
                 color = LocalAppColors.current.contentSecondary,
             )
@@ -83,13 +83,5 @@ fun SearchBar(onQueryChange: (query: String) -> Unit) {
                 cursorBrush = SolidColor(LocalAppColors.current.accentPrimary)
             )
         }
-    }
-}
-
-@Preview
-@Composable
-private fun Preview() {
-    MemeHiveTheme {
-        SearchBar({})
     }
 }
