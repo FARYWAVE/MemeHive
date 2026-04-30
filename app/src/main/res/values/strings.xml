@@ -2,5 +2,7 @@
     <string name="app_name" translatable="false">MemeHive</string>
     <string name="app_name_p1" translatable="false">Meme</string>
     <string name="app_name_p2" translatable="false">Hive</string>
-    <string name="search_hint">Search Media</string>
+    <string name="media_search_hint">Search Media</string>
+    <string name="editing_name_hint">Name</string>
+    <string name="editing_description_hint">Description</string>
 </resources>

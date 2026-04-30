@@ -35,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.components.ActionMenuOptions
 import com.farywave.memehive.ui.components.CollectionsNavigation
@@ -42,12 +43,16 @@ import com.farywave.memehive.ui.components.MediaItemCardFull
 import com.farywave.memehive.ui.components.SearchBar
 import com.farywave.memehive.ui.components.SimpleActionMenu
 import com.farywave.memehive.ui.components.SimpleIconButton
+import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 import com.farywave.memehive.ui.theme.Typography
 
 @Composable
-fun Hive(viewModel: HiveViewModel) {
+fun Hive(onNavigate: (NavEvent) -> Unit) {
+    val viewModel: HiveViewModel = viewModel()
+    viewModel.loadCollections()
+    viewModel.loadMediaItems()
     val focusManager = LocalFocusManager.current
     Scaffold(
         modifier = Modifier
@@ -59,7 +64,7 @@ fun Hive(viewModel: HiveViewModel) {
             ) {
                 focusManager.clearFocus()
             },
-        topBar = { Toolbar() }
+        topBar = { Toolbar(onNavigate) }
     ) { contentPadding ->
         Column(
             Modifier
@@ -70,7 +75,7 @@ fun Hive(viewModel: HiveViewModel) {
         ) {
             Box(Modifier.padding(horizontal = 10.dp)) {
                 SearchBar(
-                    stringResource(R.string.search_hint),
+                    stringResource(R.string.media_search_hint),
                     viewModel::onSearch
                 )
             }
@@ -86,14 +91,15 @@ fun Hive(viewModel: HiveViewModel) {
                 modifier = Modifier
                     .padding(horizontal = 10.dp)
                     .fillMaxSize(),
-                viewModel = viewModel
+                viewModel = viewModel,
+                onNavigate = onNavigate
             )
         }
     }
 }
 
 @Composable
-private fun Toolbar() {
+private fun Toolbar(onNavigate: (NavEvent) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -130,7 +136,10 @@ private fun Toolbar() {
         ) {}
 
         SimpleActionMenu<CreateActions>(onSelected = { action ->
-            Log.d("TEST", action.toString())
+            when (action) {
+                CreateActions.CREATE_MEDIA_ITEM -> onNavigate(NavEvent.ToEditing(-1))
+                CreateActions.CREATE_COLLECTION -> {}
+            }
         }) { onClick ->
             SimpleIconButton(
                 modifier = Modifier
@@ -158,7 +167,7 @@ private fun Toolbar() {
 }
 
 @Composable
-private fun Content(modifier: Modifier = Modifier, viewModel: HiveViewModel) {
+private fun Content(modifier: Modifier = Modifier, viewModel: HiveViewModel, onNavigate: (NavEvent) -> Unit) {
     val mediaItems by viewModel.mediaItems.collectAsState()
     val isMassEditingMode by viewModel.isMassEditingMode.collectAsState()
     ConstraintLayout(modifier = modifier) {
@@ -179,7 +188,7 @@ private fun Content(modifier: Modifier = Modifier, viewModel: HiveViewModel) {
                     mediaItem = mediaItem,
                     onClick = {
                         if (isMassEditingMode) viewModel.toggleItemSelection(mediaItem)
-                        else viewModel.onMediaItemOpened(mediaItem)
+                        else onNavigate(NavEvent.ToEditing(mediaItem.id))
                     },
                     onLongClick = {
                         if (!isMassEditingMode) {
@@ -251,6 +260,6 @@ private enum class MoreActions(
 @Composable
 private fun Preview() {
     MemeHiveTheme {
-        Hive(HiveViewModel())
+        Hive({})
     }
 }

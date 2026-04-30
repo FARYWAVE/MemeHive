@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
@@ -27,6 +28,7 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 fun SimpleTextField(
     modifier: Modifier = Modifier,
     hint: String,
+    numberOfLines: Int = 1,
     initialValue: String?,
     onValueChange: (String) -> Unit,
     callbackDelay: Long = 300L,
@@ -45,7 +47,7 @@ fun SimpleTextField(
         lastCallback.longValue = System.currentTimeMillis()
     }
 
-    Box(modifier = modifier.wrapContentHeight()) {
+    Box(modifier = modifier.wrapContentHeight(), contentAlignment = Alignment.TopStart) {
         if (value.text.isEmpty() && !isFocused) Text(
             text = hint,
             style = MaterialTheme.typography.bodyMedium,
@@ -61,7 +63,7 @@ fun SimpleTextField(
                     isFocused = focusState.isFocused
                 },
             textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalAppColors.current.contentPrimary),
-            lineLimits = TextFieldLineLimits.SingleLine,
+            lineLimits = if (numberOfLines == 1) TextFieldLineLimits.SingleLine else TextFieldLineLimits.MultiLine(numberOfLines),
             cursorBrush = SolidColor(LocalAppColors.current.accentPrimary)
         )
     }

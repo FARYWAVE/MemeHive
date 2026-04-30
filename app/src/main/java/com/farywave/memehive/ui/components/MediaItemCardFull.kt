@@ -1,5 +1,6 @@
 package com.farywave.memehive.ui.components
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,8 +10,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -24,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -31,10 +35,12 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.model.MediaItem
 import com.farywave.memehive.ui.model.Tag
 import com.farywave.memehive.ui.theme.LocalAppColors
+import java.io.File
 
 
 @Composable
@@ -83,7 +89,7 @@ fun MediaItemCardFull(
                         end.linkTo(parent.end)
                     }
                     .wrapContentSize(),
-                url = mediaItem.url
+                src = mediaItem.src
             )
 
             if (mediaItem.isSelected) Selection(
@@ -118,18 +124,21 @@ fun MediaItemCardFull(
 }
 
 @Composable
-private fun NullableImage(modifier: Modifier, url: String?) {
+private fun NullableImage(modifier: Modifier, src: File?) {
     val roundedTopShape = MaterialTheme.shapes.medium.copy(
         bottomStart = CornerSize(0.dp),
         bottomEnd = CornerSize(0.dp)
     )
-    if (url != null) Image(
-        modifier = modifier,
-        painter = painterResource(id = R.drawable.ic_app_logo),
-        contentDescription = null
+    if (src != null) AsyncImage(
+        model = src,
+        contentDescription = null,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(roundedTopShape),
+        contentScale = ContentScale.FillWidth
     ) else Box(
         modifier = modifier
-            .defaultMinSize(minHeight = 100.dp)
+            .aspectRatio(1.5F)
             .fillMaxWidth()
             .background(
                 color = LocalAppColors.current.backgroundPrimary,

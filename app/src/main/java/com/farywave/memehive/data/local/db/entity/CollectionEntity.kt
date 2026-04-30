@@ -8,7 +8,7 @@ import com.farywave.memehive.ui.model.Collection
 data class CollectionEntity(
     @PrimaryKey val id: Long,
     val name: String,
-    val logoId: Int?,
+    val coverId: Int?,
 ) {
-    fun toCollection() = Collection(id, name, logoId)
+    fun toCollection() = Collection(id, name, coverId)
 }

@@ -52,10 +52,10 @@ fun SearchBar(hint: String, onQueryChange: (query: String) -> Unit) {
             tint = LocalAppColors.current.contentSecondary
         )
         SimpleTextField(
-            Modifier.weight(1f),
-            hint,
-            null,
-            onQueryChange
+            modifier = Modifier.weight(1f),
+            hint = hint,
+            initialValue = null,
+            onValueChange = onQueryChange
         )
     }
 }

@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import com.farywave.memehive.ui.main.screens.hive.Hive
 import com.farywave.memehive.ui.main.screens.hive.HiveViewModel
+import com.farywave.memehive.ui.navigation.NavController
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 
@@ -26,7 +27,7 @@ class MainActivity : ComponentActivity() {
                 enableEdgeToEdge(
                     navigationBarStyle = SystemBarStyle.dark(LocalAppColors.current.backgroundPrimary.toArgb())
                 )
-                Hive(viewModel)
+                NavController()
             }
         }
         viewModel.loadCollections()
