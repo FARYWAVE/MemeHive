@@ -36,10 +36,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.components.SimpleIconButton
+import com.farywave.memehive.ui.components.ActionMenuOptions
 import com.farywave.memehive.ui.components.CollectionsNavigation
 import com.farywave.memehive.ui.components.MediaItemCardFull
 import com.farywave.memehive.ui.components.SearchBar
+import com.farywave.memehive.ui.components.SimpleActionMenu
+import com.farywave.memehive.ui.components.SimpleIconButton
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 import com.farywave.memehive.ui.theme.Typography
@@ -125,19 +127,33 @@ private fun Toolbar() {
                 .padding(7.dp)
                 .size(30.dp),
             icon = painterResource(R.drawable.ic_search)
-        ) { }
-        SimpleIconButton(
-            modifier = Modifier
-                .padding(7.dp)
-                .size(30.dp),
-            icon = painterResource(R.drawable.ic_add)
-        ) { }
-        SimpleIconButton(
-            modifier = Modifier
-                .padding(7.dp)
-                .size(30.dp),
-            icon = painterResource(R.drawable.ic_menu)
-        ) { }
+        ) {}
+
+        SimpleActionMenu<CreateActions>(onSelected = { action ->
+            Log.d("TEST", action.toString())
+        }) { onClick ->
+            SimpleIconButton(
+                modifier = Modifier
+                    .padding(7.dp)
+                    .size(30.dp),
+                icon = painterResource(R.drawable.ic_add)
+            ) {
+                onClick()
+            }
+        }
+
+        SimpleActionMenu<MoreActions>(onSelected = { action ->
+            Log.d("TEST", action.toString())
+        }) { onClick ->
+            SimpleIconButton(
+                modifier = Modifier
+                    .padding(7.dp)
+                    .size(30.dp),
+                icon = painterResource(R.drawable.ic_menu)
+            ) {
+                onClick()
+            }
+        }
     }
 }
 
@@ -213,6 +229,22 @@ private fun Content(modifier: Modifier = Modifier, viewModel: HiveViewModel) {
             ) { Log.d("TEST", viewModel.getSelectedMediaItems().size.toString()) }
         }
     }
+}
+
+private enum class CreateActions(
+    override val label: String,
+    override val highlighted: Boolean = false
+) : ActionMenuOptions {
+    CREATE_COLLECTION("New Collection"),
+    CREATE_MEDIA_ITEM("New Media Item"),
+}
+
+private enum class MoreActions(
+    override val label: String,
+    override val highlighted: Boolean = false
+) : ActionMenuOptions {
+    IMPORT_COLLECTION("Import Collection"),
+    VIEW_APP_INFO ("About App"),
 }
 
 @Preview
