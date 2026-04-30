@@ -30,12 +30,10 @@ inline fun <reified T> SimpleActionMenu(
         trigger { expanded = true }
 
         DropdownMenu(
-            modifier = Modifier
-                .background(
-                    LocalAppColors.current.backgroundSecondary,
-                    MaterialTheme.shapes.medium
-                )
-                .shadow(9.dp, MaterialTheme.shapes.medium, clip = false),
+            shape = MaterialTheme.shapes.medium,
+            containerColor = LocalAppColors.current.backgroundSecondary,
+            tonalElevation = 0.dp,
+            shadowElevation = 9.dp,
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {

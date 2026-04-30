@@ -149,7 +149,7 @@ private fun Toolbar() {
                 modifier = Modifier
                     .padding(7.dp)
                     .size(30.dp),
-                icon = painterResource(R.drawable.ic_menu)
+                icon = painterResource(R.drawable.ic_more)
             ) {
                 onClick()
             }
