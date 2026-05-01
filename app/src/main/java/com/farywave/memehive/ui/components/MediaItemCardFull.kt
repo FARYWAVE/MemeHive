@@ -1,7 +1,5 @@
 package com.farywave.memehive.ui.components
 
-import android.net.Uri
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -11,9 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -38,7 +34,6 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.model.MediaItem
-import com.farywave.memehive.ui.model.Tag
 import com.farywave.memehive.ui.theme.LocalAppColors
 import java.io.File
 
@@ -99,12 +94,12 @@ fun MediaItemCardFull(
                 }
             )
 
-            if (mediaItem.name?.isNotEmpty() == true) Name(
+            if (mediaItem.caption?.isNotEmpty() == true) Name(
                 modifier = Modifier.constrainAs(name) {
                     bottom.linkTo(parent.bottom)
                     start.linkTo(parent.start)
                 },
-                name = mediaItem.name.orEmpty()
+                name = mediaItem.caption.orEmpty()
             )
         }
 
@@ -212,7 +207,7 @@ private fun Name(modifier: Modifier, name: String) {
 }
 
 @Composable
-private fun TagChip(tag: Tag) {
+private fun TagChip(tag: String) {
     Box(
         modifier = Modifier
             .wrapContentSize()
@@ -224,7 +219,7 @@ private fun TagChip(tag: Tag) {
     ) {
         Text(
             modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp),
-            text = tag.name,
+            text = tag,
             style = MaterialTheme.typography.labelMedium,
             color = LocalAppColors.current.contentPrimary
         )

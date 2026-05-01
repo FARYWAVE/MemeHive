@@ -9,7 +9,6 @@ import com.farywave.memehive.data.local.db.entity.MediaItemTagEntity
 import com.farywave.memehive.data.local.db.entity.MediaItemTrigramEntity
 import com.farywave.memehive.data.local.db.entity.TagEntity
 import com.farywave.memehive.ui.model.MediaItem
-import com.farywave.memehive.ui.model.Tag
 import kotlinx.coroutines.flow.map
 
 class MediaItemRepository(
@@ -25,7 +24,7 @@ class MediaItemRepository(
         )
 
         mediaItem.tags.forEach {
-            val tagId = resolveTagId(it.name)
+            val tagId = resolveTagId(it)
 
             mediaItemTagDao.insertMediaItemTag(
                 MediaItemTagEntity(mediaItem.id, tagId)
@@ -37,11 +36,11 @@ class MediaItemRepository(
 
     private suspend fun insertTrigrams(mediaItem: MediaItem) {
         val text = buildString {
-            append(mediaItem.name ?: "")
+            append(mediaItem.caption ?: "")
             append(" ")
             append(mediaItem.description ?: "")
             append(" ")
-            mediaItem.tags.forEach { append(it.name).append(" ") }
+            mediaItem.tags.forEach { append(it).append(" ") }
         }
 
         val trigrams = generateTrigrams(text)
@@ -61,7 +60,7 @@ class MediaItemRepository(
         mediaItemTrigramDao.deleteTrigramsForMedia(mediaItem.id)
 
         mediaItem.tags.forEach {
-            val tagId = resolveTagId(it.name)
+            val tagId = resolveTagId(it)
             mediaItemTagDao.insertMediaItemTag(
                 MediaItemTagEntity(mediaItem.id, tagId)
             )
@@ -84,11 +83,12 @@ class MediaItemRepository(
     ) {
         val trigrams = query?.let { generateTrigrams(it) }
         val tags = query?.let { searchTags(it) }
+        val tagEntities = tags?.let { tagDao.getTagsByNames(tags) }
 
         mediaItemDao.searchMedia(
             collectionId,
             trigrams,
-            tags?.map { it.id }?.toSet()
+            tagEntities?.map { it.id }?.toSet()
         )
     }
 
@@ -108,7 +108,7 @@ class MediaItemRepository(
         return result
     }
 
-    private suspend fun searchTags(query: String, maxDistance: Int = 2): List<Tag> {
+    private suspend fun searchTags(query: String, maxDistance: Int = 2): List<String> {
         fun normalize(s: String) =
             s.lowercase().trim()
 
@@ -136,9 +136,9 @@ class MediaItemRepository(
         val normalizedQuery = normalize(query)
 
         return tagDao.getAllTags()
-            .map { it.toTag() }
+            .map { it.name }
             .map { tag ->
-                tag to levenshtein(normalizedQuery, normalize(tag.name))
+                tag to levenshtein(normalizedQuery, normalize(tag))
             }
             .filter { (_, distance) -> distance <= maxDistance }
             .sortedBy { it.second }

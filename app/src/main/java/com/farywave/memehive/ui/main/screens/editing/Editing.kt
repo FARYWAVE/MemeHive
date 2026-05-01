@@ -1,11 +1,8 @@
 package com.farywave.memehive.ui.main.screens.editing
 
-import android.content.Context
-import android.graphics.drawable.shapes.Shape
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,30 +10,47 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.KeyboardActionHandler
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -44,28 +58,24 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
-import com.farywave.memehive.core.FileManager
 import com.farywave.memehive.ui.components.ActionMenuOptions
 import com.farywave.memehive.ui.components.SimpleActionMenu
 import com.farywave.memehive.ui.components.SimpleIconButton
 import com.farywave.memehive.ui.components.SimpleTextField
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.theme.LocalAppColors
-import com.farywave.memehive.ui.theme.MemeHiveTheme
-import java.io.File
 
 @Composable
-fun Editing(mediaItemId: Long, onNavigate: (NavEvent) -> Unit) {
+fun Editing(onNavigate: (NavEvent) -> Unit) {
     val viewModel: EditingViewModel = viewModel()
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -76,7 +86,7 @@ fun Editing(mediaItemId: Long, onNavigate: (NavEvent) -> Unit) {
             ) {
                 focusManager.clearFocus()
             },
-        topBar = { Toolbar(onNavigate) }
+        topBar = { Toolbar(onExit = { viewModel.onSave(context) }, onNavigate = onNavigate) }
     ) { contentPadding ->
         Column(
             Modifier
@@ -97,7 +107,7 @@ fun Editing(mediaItemId: Long, onNavigate: (NavEvent) -> Unit) {
 
 
 @Composable
-private fun Toolbar(onNavigate: (NavEvent) -> Unit) {
+private fun Toolbar(onExit: () -> Unit, onNavigate: (NavEvent) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -112,7 +122,10 @@ private fun Toolbar(onNavigate: (NavEvent) -> Unit) {
                 .padding(7.dp)
                 .size(30.dp),
             icon = painterResource(R.drawable.ic_back)
-        ) { onNavigate(NavEvent.ToHive) }
+        ) {
+            onExit()
+            onNavigate(NavEvent.ToHive)
+        }
 
         Spacer(Modifier.weight(1f))
 
@@ -134,6 +147,8 @@ private fun Toolbar(onNavigate: (NavEvent) -> Unit) {
 @Composable
 private fun Content(viewModel: EditingViewModel, modifier: Modifier = Modifier) {
     val mediaItem by viewModel.mediaItem.collectAsState()
+    val editableTags by viewModel.editableTags.collectAsState()
+    val mediaSrc by viewModel.mediaSrc.collectAsState()
 
     val textMeasurer = rememberTextMeasurer()
     val size = textMeasurer.measure(
@@ -148,15 +163,10 @@ private fun Content(viewModel: EditingViewModel, modifier: Modifier = Modifier) 
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val currentSrc = mediaItem.src
         item {
-            ImagePicker(initialSrc = mediaItem.src, shape = roundedShape) { src ->
-                if (src == null && currentSrc != null) FileManager.deleteFromInternalStorage(
-                    currentSrc
-                )
-                viewModel.updateSrc(src)
+            ImagePicker(initialSrc = mediaSrc, shape = roundedShape) { uri ->
+                viewModel.updateMediaSrc(uri)
             }
         }
         item {
@@ -169,8 +179,8 @@ private fun Content(viewModel: EditingViewModel, modifier: Modifier = Modifier) 
                         shape = roundedShape
                     )
                     .padding(horizontal = 10.dp, vertical = 7.dp),
-                hint = stringResource(R.string.editing_name_hint),
-                initialValue = mediaItem.name,
+                hint = stringResource(R.string.editing_caption_hint),
+                initialValue = mediaItem.caption,
                 onValueChange = { viewModel.updateName(it) },
                 callbackDelay = 25L
             )
@@ -188,11 +198,46 @@ private fun Content(viewModel: EditingViewModel, modifier: Modifier = Modifier) 
                     .padding(horizontal = 10.dp, vertical = 7.dp),
                 hint = stringResource(R.string.editing_description_hint),
                 numberOfLines = 3,
-                initialValue = mediaItem.name,
+                initialValue = mediaItem.caption,
                 onValueChange = { viewModel.updateDescription(it) },
                 callbackDelay = 25L
             )
         }
+        item {
+            Text(
+                modifier = Modifier.padding(bottom = 5.dp, start = 10.dp),
+                text = stringResource(R.string.editing_tags_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = LocalAppColors.current.contentSecondary
+            )
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(horizontal = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                editableTags.forEach { tag ->
+                    key(tag.id) {
+                        TagChip(
+                            tag = tag.text,
+                            onFocusLost = { newText ->
+                                if (newText.isEmpty()) viewModel.removeTag(tag.id)
+                                else viewModel.updateTag(tag.id, newText)
+                            }
+                        )
+                    }
+                }
+
+                NewTagChip { newText ->
+                    if (newText.isNotEmpty()) {
+                        viewModel.addTag(newText)
+                    }
+                }
+            }
+        }
+        item { Spacer(modifier = Modifier.height(500.dp)) }
     }
 }
 
@@ -200,16 +245,14 @@ private fun Content(viewModel: EditingViewModel, modifier: Modifier = Modifier) 
 private fun ImagePicker(
     modifier: Modifier = Modifier,
     shape: RoundedCornerShape,
-    initialSrc: File?,
-    onImageSelected: (File?) -> Unit
+    initialSrc: Uri?,
+    onImageSelected: (Uri?) -> Unit
 ) {
-    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        if (uri != null) onImageSelected(FileManager.copyToInternalStorage(context, uri))
-        else onImageSelected(null)
+        onImageSelected(uri)
     }
     NullableImage(
         modifier
@@ -224,12 +267,13 @@ private fun ImagePicker(
 }
 
 @Composable
-private fun NullableImage(modifier: Modifier, shape: RoundedCornerShape, src: File?) {
+private fun NullableImage(modifier: Modifier, shape: RoundedCornerShape, src: Uri?) {
     if (src != null) AsyncImage(
         model = src,
         contentDescription = null,
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .clip(shape),
         contentScale = ContentScale.FillWidth
     ) else Box(
         modifier = modifier
@@ -250,6 +294,96 @@ private fun NullableImage(modifier: Modifier, shape: RoundedCornerShape, src: Fi
             painter = painterResource(id = R.drawable.ic_no_image),
             tint = LocalAppColors.current.contentSecondary,
             contentDescription = null
+        )
+    }
+}
+
+@Composable
+private fun TagChip(tag: String, onFocusLost: (tag: String) -> Unit) {
+    val value = rememberTextFieldState(tag)
+    val focusManager = LocalFocusManager.current
+
+
+    Box(
+        Modifier
+            .wrapContentSize()
+            .background(LocalAppColors.current.accentPrimary, shape = MaterialTheme.shapes.large)
+    ) {
+        BasicTextField(
+            state = value,
+            modifier = Modifier
+                .width(IntrinsicSize.Min)
+                .widthIn(min = 20.dp)
+                .padding(horizontal = 7.dp, vertical = 6.dp)
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused.not()) {
+                        onFocusLost(value.text.toString().trim().lowercase())
+                    }
+                },
+            textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalAppColors.current.contentPrimary),
+            lineLimits = TextFieldLineLimits.SingleLine,
+            cursorBrush = SolidColor(LocalAppColors.current.accentSecondary),
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done
+            ),
+            onKeyboardAction = KeyboardActionHandler {
+                focusManager.clearFocus()
+            }
+        )
+    }
+}
+
+
+@Composable
+private fun NewTagChip(onFocusLost: (tag: String) -> Unit) {
+    val value = rememberTextFieldState()
+    var isFocused by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { value.text }
+            .collect { text ->
+                if (text.isNotEmpty() && (text.last() in listOf(' ', '\n', '\t', '.', ','))) {
+                    onFocusLost(text.toString().trim().lowercase())
+                    value.setTextAndPlaceCursorAtEnd("")
+                }
+            }
+    }
+    Box(
+        Modifier
+            .wrapContentSize()
+            .background(LocalAppColors.current.accentPrimary, shape = MaterialTheme.shapes.large)
+            .widthIn(min = 30.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (value.text.isEmpty() && !isFocused) Text(
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 6.dp),
+            text = "+",
+            style = MaterialTheme.typography.bodyMedium,
+            color = LocalAppColors.current.contentPrimary,
+        )
+        BasicTextField(
+            state = value,
+            modifier = Modifier
+                .width(IntrinsicSize.Min)
+                .widthIn(min = 20.dp)
+                .padding(horizontal = 7.dp, vertical = 6.dp)
+                .onFocusChanged { focusState ->
+                    isFocused = focusState.isFocused
+                    if (!isFocused) {
+                        onFocusLost(value.text.toString().trim().lowercase())
+                        value.setTextAndPlaceCursorAtEnd("")
+                    }
+                },
+            textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalAppColors.current.contentPrimary),
+            lineLimits = TextFieldLineLimits.SingleLine,
+            cursorBrush = SolidColor(LocalAppColors.current.accentSecondary),
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done
+            ),
+            onKeyboardAction = KeyboardActionHandler {
+                onFocusLost(value.text.toString().trim().lowercase())
+                value.setTextAndPlaceCursorAtEnd("")
+            }
         )
     }
 }

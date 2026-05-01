@@ -5,7 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Update
+
 import com.farywave.memehive.data.local.db.entity.TagEntity
 
 @Dao
@@ -16,9 +16,12 @@ interface TagDao {
     @Delete
     suspend fun deleteTag(tagEntity: TagEntity)
 
-    @Query("SELECT * FROM TagEntity")
+    @Query("SELECT * FROM tags")
     suspend fun getAllTags(): List<TagEntity>
 
-    @Query("SELECT * FROM TagEntity WHERE name = :name")
+    @Query("SELECT * FROM tags WHERE name in (:names)")
+    suspend fun getTagsByNames(names: List<String>): List<TagEntity>
+
+    @Query("SELECT * FROM tags WHERE name = :name")
     suspend fun getTagByName(name: String): TagEntity?
 }

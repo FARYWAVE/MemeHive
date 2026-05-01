@@ -41,7 +41,6 @@ fun NavController() {
             )
         ) { backStackEntry ->
             Editing(
-                mediaItemId = backStackEntry.arguments?.getLong("mediaItemId")!!,
                 onNavigate = onNavigate
             )
         }

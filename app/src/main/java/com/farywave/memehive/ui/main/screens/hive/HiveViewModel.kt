@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
-import com.farywave.memehive.ui.model.Tag
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -42,7 +41,7 @@ class HiveViewModel : ViewModel() {
                     null,
                     "Name $it",
                     "Description $it",
-                    (0..it).map { it2 -> Tag(it2, "Tag $it") }
+                    (0..it).map { it2 -> "Tag $it2" }
                 )
             }
     }
@@ -57,7 +56,7 @@ class HiveViewModel : ViewModel() {
     }
 
     fun onMediaItemOpened(mediaItem: MediaItem) {
-        Log.d("HiveViewModel", "onMediaItemOpened: ${mediaItem.name}")
+        Log.d("HiveViewModel", "onMediaItemOpened: ${mediaItem.caption}")
     }
 
     fun disableMassEditingMode() {

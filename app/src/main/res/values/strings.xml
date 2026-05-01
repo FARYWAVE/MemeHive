@@ -3,6 +3,7 @@
     <string name="app_name_p1" translatable="false">Meme</string>
     <string name="app_name_p2" translatable="false">Hive</string>
     <string name="media_search_hint">Search Media</string>
-    <string name="editing_name_hint">Name</string>
+    <string name="editing_caption_hint">Caption</string>
     <string name="editing_description_hint">Description</string>
+    <string name="editing_tags_hint">Tags</string>
 </resources>
