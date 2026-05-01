@@ -6,15 +6,20 @@ import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.farywave.memehive.core.FileManager
+import com.farywave.memehive.data.local.db.repository.CollectionRepository
+import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.ui.model.MediaItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.io.File
 
-class EditingViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
-    val mediaItemId: Long =
-        checkNotNull(savedStateHandle["mediaItemId"])
+class EditingViewModel(
+    mediaItemId: Long,
+    mediaItemRepository: MediaItemRepository,
+    collectionRepository: CollectionRepository
+) : ViewModel() {
+
     private val _mediaItem = MutableStateFlow(
         if (mediaItemId == -1L) MediaItem(
             -1,

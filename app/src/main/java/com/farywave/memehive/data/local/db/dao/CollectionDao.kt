@@ -21,5 +21,5 @@ interface CollectionDao {
     suspend fun deleteCollection(collection: CollectionEntity)
 
     @Query("SELECT * FROM collections")
-    suspend fun getAllCollections(): Flow<List<CollectionEntity>>
+    fun getAllCollections(): Flow<List<CollectionEntity>>
 }

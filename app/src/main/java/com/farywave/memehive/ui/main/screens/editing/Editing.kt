@@ -72,10 +72,12 @@ import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
-fun Editing(onNavigate: (NavEvent) -> Unit) {
-    val viewModel: EditingViewModel = viewModel()
-    val focusManager = LocalFocusManager.current
+fun Editing(mediaItemId: Long, onNavigate: (NavEvent) -> Unit) {
     val context = LocalContext.current
+    val viewModel: EditingViewModel = viewModel(
+        factory = EditingViewModelFactory(context, mediaItemId)
+    )
+    val focusManager = LocalFocusManager.current
     Scaffold(
         modifier = Modifier
             .fillMaxSize()

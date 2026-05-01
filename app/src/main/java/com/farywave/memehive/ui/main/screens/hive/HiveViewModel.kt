@@ -3,13 +3,15 @@ package com.farywave.memehive.ui.main.screens.hive
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.farywave.memehive.data.local.db.repository.CollectionRepository
+import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-class HiveViewModel : ViewModel() {
+class HiveViewModel(mediaItemRepository: MediaItemRepository, collectionRepository: CollectionRepository) : ViewModel() {
     private val _collections = MutableStateFlow(listOf(Collection(-1, "All", -1)))
     val collections = _collections.asStateFlow()
 

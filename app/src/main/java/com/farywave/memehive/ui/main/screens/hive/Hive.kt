@@ -29,12 +29,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.components.ActionMenuOptions
@@ -50,7 +52,10 @@ import com.farywave.memehive.ui.theme.Typography
 
 @Composable
 fun Hive(onNavigate: (NavEvent) -> Unit) {
-    val viewModel: HiveViewModel = viewModel()
+    val context = LocalContext.current
+    val viewModel: HiveViewModel = viewModel(
+        factory = HiveViewModelFactory(context)
+    )
     viewModel.loadCollections()
     viewModel.loadMediaItems()
     val focusManager = LocalFocusManager.current
@@ -167,7 +172,11 @@ private fun Toolbar(onNavigate: (NavEvent) -> Unit) {
 }
 
 @Composable
-private fun Content(modifier: Modifier = Modifier, viewModel: HiveViewModel, onNavigate: (NavEvent) -> Unit) {
+private fun Content(
+    modifier: Modifier = Modifier,
+    viewModel: HiveViewModel,
+    onNavigate: (NavEvent) -> Unit
+) {
     val mediaItems by viewModel.mediaItems.collectAsState()
     val isMassEditingMode by viewModel.isMassEditingMode.collectAsState()
     ConstraintLayout(modifier = modifier) {
@@ -253,7 +262,7 @@ private enum class MoreActions(
     override val highlighted: Boolean = false
 ) : ActionMenuOptions {
     IMPORT_COLLECTION("Import Collection"),
-    VIEW_APP_INFO ("About App"),
+    VIEW_APP_INFO("About App"),
 }
 
 @Preview

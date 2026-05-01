@@ -21,8 +21,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val viewModel: HiveViewModel by viewModels()
-
         setContent {
             MemeHiveTheme {
                 enableEdgeToEdge(
@@ -31,7 +29,5 @@ class MainActivity : ComponentActivity() {
                 NavController()
             }
         }
-        viewModel.loadCollections()
-        viewModel.loadMediaItems()
     }
 }
