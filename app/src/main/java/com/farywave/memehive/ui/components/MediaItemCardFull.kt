@@ -84,7 +84,8 @@ fun MediaItemCardFull(
                         end.linkTo(parent.end)
                     }
                     .wrapContentSize(),
-                src = mediaItem.src
+                src = mediaItem.src,
+                roundBottom = mediaItem.tags.isEmpty()
             )
 
             if (mediaItem.isSelected) Selection(
@@ -119,7 +120,7 @@ fun MediaItemCardFull(
 }
 
 @Composable
-private fun NullableImage(modifier: Modifier, src: File?) {
+private fun NullableImage(modifier: Modifier, src: File?, roundBottom: Boolean) {
     val roundedTopShape = MaterialTheme.shapes.medium.copy(
         bottomStart = CornerSize(0.dp),
         bottomEnd = CornerSize(0.dp)
@@ -139,7 +140,12 @@ private fun NullableImage(modifier: Modifier, src: File?) {
                 color = LocalAppColors.current.backgroundPrimary,
                 shape = roundedTopShape
             )
-            .border(3.dp, LocalAppColors.current.backgroundSecondary, roundedTopShape),
+            .border(
+                3.dp,
+                LocalAppColors.current.backgroundSecondary,
+                if (roundBottom) MaterialTheme.shapes.medium
+                else roundedTopShape
+            ),
         contentAlignment = Alignment.Center
     ) {
         Icon(

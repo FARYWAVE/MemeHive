@@ -1,6 +1,7 @@
 package com.farywave.memehive.ui.main.screens.editing
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -78,6 +79,12 @@ fun Editing(mediaItemId: Long, onNavigate: (NavEvent) -> Unit) {
         factory = EditingViewModelFactory(context, mediaItemId)
     )
     val focusManager = LocalFocusManager.current
+
+    BackHandler {
+        viewModel.onSave(context)
+        onNavigate(NavEvent.Back)
+    }
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -184,7 +191,7 @@ private fun Content(viewModel: EditingViewModel, modifier: Modifier = Modifier) 
                 hint = stringResource(R.string.editing_caption_hint),
                 initialValue = mediaItem.caption,
                 onValueChange = { viewModel.updateName(it) },
-                callbackDelay = 25L
+                callbackDelay = 0L
             )
         }
 
@@ -200,9 +207,9 @@ private fun Content(viewModel: EditingViewModel, modifier: Modifier = Modifier) 
                     .padding(horizontal = 10.dp, vertical = 7.dp),
                 hint = stringResource(R.string.editing_description_hint),
                 numberOfLines = 3,
-                initialValue = mediaItem.caption,
+                initialValue = mediaItem.description,
                 onValueChange = { viewModel.updateDescription(it) },
-                callbackDelay = 25L
+                callbackDelay = 0L
             )
         }
         item {
@@ -319,7 +326,7 @@ private fun TagChip(tag: String, onFocusLost: (tag: String) -> Unit) {
                 .padding(horizontal = 7.dp, vertical = 6.dp)
                 .onFocusChanged { focusState ->
                     if (focusState.isFocused.not()) {
-                        onFocusLost(value.text.toString().trim().lowercase())
+                        onFocusLost(value.text.toString().trim().lowercase().replace(' ', '_'))
                     }
                 },
             textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalAppColors.current.contentPrimary),
@@ -344,8 +351,8 @@ private fun NewTagChip(onFocusLost: (tag: String) -> Unit) {
     LaunchedEffect(Unit) {
         snapshotFlow { value.text }
             .collect { text ->
-                if (text.isNotEmpty() && (text.last() in listOf(' ', '\n', '\t', '.', ','))) {
-                    onFocusLost(text.toString().trim().lowercase())
+                if (text.isNotEmpty() && (text.trim().endsWith(","))) {
+                    onFocusLost(text.trim().dropLast(1).toString().trim().lowercase().replace(' ', '_'))
                     value.setTextAndPlaceCursorAtEnd("")
                 }
             }

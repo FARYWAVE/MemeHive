@@ -2,32 +2,35 @@ package com.farywave.memehive.ui.main.screens.editing
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.core.net.toUri
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.farywave.memehive.core.FileManager
 import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.ui.model.MediaItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.io.File
 
 class EditingViewModel(
-    mediaItemId: Long,
-    mediaItemRepository: MediaItemRepository,
-    collectionRepository: CollectionRepository
+    val mediaItemId: Long,
+    val mediaItemRepository: MediaItemRepository,
+    val collectionRepository: CollectionRepository
 ) : ViewModel() {
 
     private val _mediaItem = MutableStateFlow(
-        if (mediaItemId == -1L) MediaItem(
+        MediaItem(
             -1,
             null,
             null,
             null,
             emptyList()
-        ) else MediaItem(mediaItemId, null, null, null, emptyList())
+        )
     )
     val mediaItem = _mediaItem.asStateFlow()
 
@@ -38,11 +41,24 @@ class EditingViewModel(
     val mediaSrc = _mediaSrc.asStateFlow()
 
     init {
-        _editableTags.value = _mediaItem.value.tags.map {
-            EditableTag(
-                id = generateId(),
-                text = it
-            )
+        if (mediaItemId != -1L) {
+            viewModelScope.launch {
+                val item = mediaItemRepository.getMediaItemById(mediaItemId)
+                Log.d("EditingViewModel", "init: ${item?.caption}")
+
+                if (item != null) {
+                    _mediaItem.value = item
+
+                    _editableTags.value = item.tags.map {
+                        EditableTag(
+                            id = generateId(),
+                            text = it
+                        )
+                    }
+
+                    _mediaSrc.value = item.src?.toUri()
+                }
+            }
         }
     }
 
@@ -112,8 +128,22 @@ class EditingViewModel(
     }
 
     fun onSave(context: Context) {
-        _mediaItem.value.src?.let { FileManager.deleteFromInternalStorage(it) }
         commitTags()
-        updateMediaItemSrc(_mediaSrc.value?.let { FileManager.copyToInternalStorage(context, it) })
+
+        val oldSrc = _mediaItem.value.src
+        val newSrc = _mediaSrc.value
+
+        if (newSrc != null && newSrc != oldSrc) {
+            val newInternal = FileManager.copyToInternalStorage(context, newSrc)
+            _mediaItem.value.src = newInternal
+
+            oldSrc?.let { FileManager.deleteFromInternalStorage(it) }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            if (mediaItemId == -1L) mediaItemRepository.insertMediaItem(_mediaItem.value)
+            else mediaItemRepository.updateMediaItem(_mediaItem.value)
+        }
     }
 }
+

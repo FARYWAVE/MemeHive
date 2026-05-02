@@ -6,7 +6,7 @@ import com.farywave.memehive.ui.model.Collection
 
 @Entity(tableName = "collections")
 data class CollectionEntity(
-    @PrimaryKey val id: Long,
+    @PrimaryKey(autoGenerate = true) val id: Long,
     val name: String,
     val coverId: Int?,
 ) {

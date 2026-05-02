@@ -24,7 +24,8 @@ class EditingViewModelFactory : Factory {
             db.mediaItemDao(),
             db.mediaItemTagDao(),
             db.tagDao(),
-            db.mediaItemTrigramDao()
+            db.mediaItemTrigramDao(),
+            db.collectionEntryDao()
         )
         val collectionRepo = CollectionRepository(
             db.collectionDao(),

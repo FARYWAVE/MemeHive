@@ -7,7 +7,7 @@ import java.io.File
 
 @Entity(tableName = "media_items")
 data class MediaItemEntity(
-    @PrimaryKey val id: Long,
+    @PrimaryKey(autoGenerate = true) val id: Long,
     val src: String?,
     val caption: String?,
     val description: String?,

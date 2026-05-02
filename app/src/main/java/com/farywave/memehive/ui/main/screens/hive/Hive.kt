@@ -36,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
@@ -57,7 +58,6 @@ fun Hive(onNavigate: (NavEvent) -> Unit) {
         factory = HiveViewModelFactory(context)
     )
     viewModel.loadCollections()
-    viewModel.loadMediaItems()
     val focusManager = LocalFocusManager.current
     Scaffold(
         modifier = Modifier
@@ -81,14 +81,20 @@ fun Hive(onNavigate: (NavEvent) -> Unit) {
             Box(Modifier.padding(horizontal = 10.dp)) {
                 SearchBar(
                     stringResource(R.string.media_search_hint),
-                    viewModel::onSearch
+                    {
+                        viewModel.onSearchQueryChanged(it)
+                        viewModel.onSearch()
+                    }
                 )
             }
             Box(Modifier.padding(horizontal = 10.dp)) {
                 CollectionsNavigation(
                     collections = viewModel.collections.collectAsState().value,
                     selectedCollection = viewModel.selectedCollection.collectAsState().value,
-                    onCollectionSelected = viewModel::onCollectionSelected
+                    onCollectionSelected = {
+                        viewModel.onCollectionSelected(it)
+                        viewModel.onSearch()
+                    }
                 )
             }
 
@@ -187,10 +193,13 @@ private fun Content(
                 bottom.linkTo(parent.bottom)
                 start.linkTo(parent.start)
                 end.linkTo(parent.end)
+                width = Dimension.fillToConstraints
+                height = Dimension.fillToConstraints
             },
             columns = StaggeredGridCells.Fixed(2),
             verticalItemSpacing = 8.dp,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+
         ) {
             items(mediaItems, key = { it.id }) { mediaItem ->
                 MediaItemCardFull(

@@ -3,26 +3,39 @@ package com.farywave.memehive.ui.main.screens.hive
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-class HiveViewModel(mediaItemRepository: MediaItemRepository, collectionRepository: CollectionRepository) : ViewModel() {
+class HiveViewModel(
+    val mediaItemRepository: MediaItemRepository,
+    val collectionRepository: CollectionRepository
+) : ViewModel() {
     private val _collections = MutableStateFlow(listOf(Collection(-1, "All", -1)))
     val collections = _collections.asStateFlow()
 
     private val _selectedCollection = MutableStateFlow(_collections.value.first())
     val selectedCollection = _selectedCollection.asStateFlow()
 
-    private val _mediaItems = MutableStateFlow(emptyList<MediaItem>())
+    private val _mediaItems = MutableStateFlow<List<MediaItem>>(emptyList())
     val mediaItems = _mediaItems.asStateFlow()
 
     private val _isMassEditingMode = MutableStateFlow(false)
     val isMassEditingMode = _isMassEditingMode.asStateFlow()
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
+
+    init {
+        onSearch()
+    }
 
 
     fun loadCollections() {
@@ -48,8 +61,15 @@ class HiveViewModel(mediaItemRepository: MediaItemRepository, collectionReposito
             }
     }
 
-    fun onSearch(query: String) {
-        Log.d("HiveViewModel", "onSearch: $query")
+    fun onSearch() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _mediaItems.value =
+                mediaItemRepository.search(selectedCollection.value.id, _searchQuery.value)
+        }
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
     }
 
     fun onCollectionSelected(collection: Collection) {
@@ -77,8 +97,7 @@ class HiveViewModel(mediaItemRepository: MediaItemRepository, collectionReposito
             list.map {
                 if (it.id == item.id) {
                     it.copy(isSelected = !it.isSelected)
-                }
-                else it
+                } else it
             }
         }
         if (!_mediaItems.value.any { it.isSelected }) disableMassEditingMode()

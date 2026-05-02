@@ -32,9 +32,18 @@ fun NavController() {
             )
         }
 
-        composable(route = Screen.Editing.route) { backStackEntry ->
+        composable(
+            route = Screen.Editing.route,
+            arguments = listOf(
+                navArgument("mediaItemId") {
+                    type = NavType.LongType
+                }
+            )
+        ) { backStackEntry ->
+            val mediaItemId = backStackEntry.arguments?.getLong("mediaItemId") ?: -1L
+
             Editing(
-                mediaItemId = backStackEntry.arguments?.getLong("mediaItemId") ?: -1L,
+                mediaItemId = mediaItemId,
                 onNavigate = onNavigate
             )
         }

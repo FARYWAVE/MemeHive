@@ -1,6 +1,7 @@
 package com.farywave.memehive.data.local.db.repository
 
 import androidx.room.Transaction
+import com.farywave.memehive.data.local.db.dao.CollectionEntryDao
 import com.farywave.memehive.data.local.db.dao.MediaItemDao
 import com.farywave.memehive.data.local.db.dao.MediaItemTagDao
 import com.farywave.memehive.data.local.db.dao.MediaItemTrigramDao
@@ -8,7 +9,9 @@ import com.farywave.memehive.data.local.db.dao.TagDao
 import com.farywave.memehive.data.local.db.entity.MediaItemTagEntity
 import com.farywave.memehive.data.local.db.entity.MediaItemTrigramEntity
 import com.farywave.memehive.data.local.db.entity.TagEntity
+import com.farywave.memehive.data.local.db.relation.MediaWithTags
 import com.farywave.memehive.ui.model.MediaItem
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 class MediaItemRepository(
@@ -16,11 +19,12 @@ class MediaItemRepository(
     private val mediaItemTagDao: MediaItemTagDao,
     private val tagDao: TagDao,
     private val mediaItemTrigramDao: MediaItemTrigramDao,
+    private val collectionEntryDao: CollectionEntryDao,
 ) {
     @Transaction
     suspend fun insertMediaItem(mediaItem: MediaItem) {
         mediaItem.id  = mediaItemDao.insertMediaItem(
-            mediaItem.toMediaItemEntity()
+            mediaItem.toMediaItemEntity().copy(id = 0)
         )
 
         mediaItem.tags.forEach {
@@ -32,6 +36,10 @@ class MediaItemRepository(
         }
 
         insertTrigrams(mediaItem)
+    }
+
+    suspend fun getMediaItemById(id: Long): MediaItem? {
+        return mediaItemDao.getMediaWithTagsById(id)?.toMediaItem()
     }
 
     private suspend fun insertTrigrams(mediaItem: MediaItem) {
@@ -79,17 +87,86 @@ class MediaItemRepository(
 
     suspend fun search(
         collectionId: Long?,
-        query: String?,
-    ) {
-        val trigrams = query?.let { generateTrigrams(it) }
-        val tags = query?.let { searchTags(it) }
-        val tagEntities = tags?.let { tagDao.getTagsByNames(tags) }
+        query: String?
+    ): List<MediaItem> {
 
-        mediaItemDao.searchMedia(
-            collectionId,
-            trigrams,
-            tagEntities?.map { it.id }?.toSet()
-        )
+        val baseIds: Set<Long> = if (collectionId == null || collectionId == -1L) {
+            mediaItemDao.getAllIds().toSet()
+        } else {
+            collectionEntryDao.getMediaIds(collectionId).toSet()
+        }
+
+        val entities = mediaItemDao.getMediaWithTagsByIds(baseIds.toList())
+
+        if (query.isNullOrBlank()) {
+            return entities.map { it.toMediaItem() }
+        }
+
+        val q = query.lowercase()
+        val isShort = q.length < 3
+
+        val prefixMatches = mutableSetOf<Long>()
+        val containsMatches = mutableSetOf<Long>()
+
+        entities.forEach { entity ->
+            entity.tags.forEach { tag ->
+                val name = tag.name.lowercase()
+
+                when {
+                    name.startsWith(q) -> prefixMatches.add(entity.media.id)
+                    name.contains(q) -> containsMatches.add(entity.media.id)
+                }
+            }
+        }
+
+        val trigramIds: Set<Long> = if (!isShort) {
+            val trigrams = generateTrigrams(q)
+            if (trigrams.isNotEmpty()) {
+                mediaItemTrigramDao.searchByTrigrams(trigrams.toList()).toSet()
+            } else emptySet()
+        } else {
+            emptySet()
+        }
+
+        val tags = searchTags(q)
+        val tagIds = if (tags.isNotEmpty()) {
+            tagDao.getTagsByNames(tags).map { it.id }
+        } else emptyList()
+
+        val tagMatchedIds: Set<Long> = if (tagIds.isNotEmpty()) {
+            mediaItemDao.getMediaIdsByTags(tagIds, tagIds.size).toSet()
+        } else emptySet()
+
+        val allMatchedIds: Set<Long> =
+            (prefixMatches +
+                    containsMatches +
+                    tagMatchedIds +
+                    trigramIds)
+                .intersect(baseIds)
+                .ifEmpty {
+                    if (isShort) {
+                        (containsMatches + tagMatchedIds).intersect(baseIds)
+                    } else emptySet()
+                }
+
+        if (allMatchedIds.isEmpty()) return emptyList()
+
+        fun score(entity: MediaWithTags): Int {
+            val id = entity.media.id
+
+            return when {
+                id in prefixMatches -> 0
+                id in containsMatches -> 1
+                id in tagMatchedIds -> 2
+                id in trigramIds -> 3
+                else -> 100
+            }
+        }
+
+        return entities
+            .filter { it.media.id in allMatchedIds }
+            .sortedBy { score(it) }
+            .map { it.toMediaItem() }
     }
 
     private suspend fun resolveTagId(name: String): Long {
@@ -99,6 +176,7 @@ class MediaItemRepository(
 
     private fun generateTrigrams(text: String): Set<String> {
         val normalized = text.lowercase()
+        if (normalized.length < 3) return emptySet()
         val result = mutableSetOf<String>()
 
         for (i in 0..normalized.length - 3) {
