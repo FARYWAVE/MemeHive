@@ -14,4 +14,9 @@
     <string name="action_app_info">About App</string>
     <string name="action_create_media_item">New Media</string>
     <string name="action_create_collection">New Collection</string>
+    <string name="action_mass_import">Mass Import</string>
+    <string name="header_collections">Collections</string>
+    <string name="header_new_collection">New Collection</string>
+    <string name="collection_search_hint">Search Collections</string>
+    <string name="collection_items_count">Items</string>
 </resources>

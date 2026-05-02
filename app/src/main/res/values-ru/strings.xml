@@ -12,4 +12,9 @@
     <string name="action_app_info">О Приложении</string>
     <string name="action_create_media_item">Новое Медиа</string>
     <string name="action_create_collection">Новая Коллекция</string>
+    <string name="action_mass_import">Массовый Импорт</string>
+    <string name="header_collections">Коллекции</string>
+    <string name="header_new_collection">Новая колекция</string>
+    <string name="collection_search_hint">Поиск Коллекций</string>
+    <string name="collection_items_count">Элементов</string>
 </resources>

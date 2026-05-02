@@ -17,6 +17,7 @@ enum class MoreActions(
     override val highlighted: Boolean = false
 ) : ActionMenuOptions {
     IMPORT_COLLECTION(R.string.action_import_collection),
+    MASS_IMPORT(R.string.action_mass_import),
     VIEW_APP_INFO(R.string.action_app_info),
 }
 
@@ -26,5 +27,12 @@ enum class MassEditActions(
 ) : ActionMenuOptions {
     DUPLICATE(R.string.action_duplicate),
     ADD_TO_COLLECTION(R.string.action_add_to_collection),
+    DELETE(R.string.action_delete, true)
+}
+
+enum class CollectionActions(
+    @StringRes override val labelId: Int,
+    override val highlighted: Boolean = false
+) : ActionMenuOptions {
     DELETE(R.string.action_delete, true)
 }
