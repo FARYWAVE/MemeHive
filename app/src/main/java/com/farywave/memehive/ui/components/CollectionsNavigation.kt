@@ -24,9 +24,9 @@ import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
-fun CollectionsNavigation(collections: List<Collection>, selectedCollection: Collection, onCollectionSelected: (Collection) -> Unit) {
+fun CollectionsNavigation(modifier: Modifier = Modifier, collections: List<Collection>, selectedCollection: Collection, onCollectionSelected: (Collection) -> Unit) {
     LazyRow(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
             .background(

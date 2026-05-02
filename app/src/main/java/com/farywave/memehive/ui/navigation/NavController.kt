@@ -2,11 +2,14 @@ package com.farywave.memehive.ui.navigation
 
 import android.R.attr.type
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.farywave.memehive.ui.main.dialogs.NewCollection
 import com.farywave.memehive.ui.main.screens.editing.Editing
 import com.farywave.memehive.ui.main.screens.hive.Hive
 
@@ -19,6 +22,7 @@ fun NavController() {
             NavEvent.ToHive -> navController.navigate(Screen.Hive.route)
             is NavEvent.ToEditing -> navController.navigate(Screen.Editing.createRoute(event.mediaItemId))
             NavEvent.Back -> navController.popBackStack()
+            NavEvent.NewCollectionDialog -> navController.navigate(Screen.NewCollectionDialog.route)
         }
     }
 
@@ -26,8 +30,12 @@ fun NavController() {
         navController = navController,
         startDestination = Screen.Hive.route
     ) {
-        composable(Screen.Hive.route) {
+        composable(Screen.Hive.route) { backStackEntry ->
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry(Screen.Hive.route)
+            }
             Hive(
+                parentEntry.savedStateHandle,
                 onNavigate
             )
         }
@@ -46,6 +54,16 @@ fun NavController() {
                 mediaItemId = mediaItemId,
                 onNavigate = onNavigate
             )
+        }
+
+        dialog(Screen.NewCollectionDialog.route) {
+            NewCollection(onDismissRequest = { navController.popBackStack() }) {
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set("newCollectionName", it)
+
+                navController.popBackStack()
+            }
         }
     }
 }

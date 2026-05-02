@@ -63,7 +63,7 @@ fun SingleCollectionPicker(
             }
 
             items(filteredCollections) { collection ->
-                CollectionItem(collection) { onCollectionSelected(collection) }
+                if (collection.id != -1L) CollectionItem(collection) { onCollectionSelected(collection) }
             }
         }
     }

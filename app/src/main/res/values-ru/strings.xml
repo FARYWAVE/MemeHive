@@ -17,4 +17,7 @@
     <string name="header_new_collection">Новая колекция</string>
     <string name="collection_search_hint">Поиск Коллекций</string>
     <string name="collection_items_count">Элементов</string>
+    <string name="new_collection_name_hint">Название</string>
+    <string name="button_cancel">Отмена</string>
+    <string name="button_create">Создать</string>
 </resources>

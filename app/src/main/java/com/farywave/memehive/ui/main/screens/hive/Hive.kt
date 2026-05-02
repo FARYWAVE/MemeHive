@@ -24,9 +24,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -38,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
@@ -47,19 +52,41 @@ import com.farywave.memehive.ui.components.MediaItemCardFull
 import com.farywave.memehive.ui.components.SearchBar
 import com.farywave.memehive.ui.components.SimpleActionMenu
 import com.farywave.memehive.ui.components.SimpleIconButton
+import com.farywave.memehive.ui.components.SingleCollectionPicker
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 import com.farywave.memehive.ui.theme.Typography
+import kotlinx.coroutines.launch
 
 @Composable
-fun Hive(onNavigate: (NavEvent) -> Unit) {
+fun Hive(
+    savedStateHandle: SavedStateHandle,
+    onNavigate: (NavEvent) -> Unit
+) {
     val context = LocalContext.current
     val viewModel: HiveViewModel = viewModel(
         factory = HiveViewModelFactory(context)
     )
     viewModel.loadCollections()
     val focusManager = LocalFocusManager.current
+
+    val newCollectionEvent = savedStateHandle
+        .getStateFlow<String?>("newCollectionName", null)
+
+
+    LaunchedEffect(Unit) {
+        newCollectionEvent.collect { name ->
+
+            name?.let {
+                if (name.isNotEmpty()) {
+                    viewModel.createCollection(it)
+                    savedStateHandle["newCollectionName"] = null
+                }
+            }
+        }
+    }
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -81,16 +108,17 @@ fun Hive(onNavigate: (NavEvent) -> Unit) {
         ) {
             Box(Modifier.padding(horizontal = 10.dp)) {
                 SearchBar(
-                    stringResource(R.string.media_search_hint),
-                    {
+                    hint = stringResource(R.string.media_search_hint),
+                    onQueryChange = {
                         viewModel.onSearchQueryChanged(it)
                         viewModel.onSearch()
                     }
                 )
             }
-            Box(Modifier.padding(horizontal = 10.dp)) {
+            val collections by viewModel.collections.collectAsState()
+            if (collections.size > 1) Box(Modifier.padding(horizontal = 10.dp)) {
                 CollectionsNavigation(
-                    collections = viewModel.collections.collectAsState().value,
+                    collections = collections,
                     selectedCollection = viewModel.selectedCollection.collectAsState().value,
                     onCollectionSelected = {
                         viewModel.onCollectionSelected(it)
@@ -150,7 +178,7 @@ private fun Toolbar(onNavigate: (NavEvent) -> Unit) {
         SimpleActionMenu<CreateActions>(onSelected = { action ->
             when (action) {
                 CreateActions.CREATE_MEDIA_ITEM -> onNavigate(NavEvent.ToEditing(-1))
-                CreateActions.CREATE_COLLECTION -> {}
+                CreateActions.CREATE_COLLECTION -> onNavigate(NavEvent.NewCollectionDialog)
             }
         }) { onClick ->
             SimpleIconButton(
@@ -185,9 +213,13 @@ private fun Content(
     onNavigate: (NavEvent) -> Unit
 ) {
     val mediaItems by viewModel.mediaItems.collectAsState()
+    val collections by viewModel.collections.collectAsState()
     val isMassEditingMode by viewModel.isMassEditingMode.collectAsState()
+    var showSheet by remember { mutableStateOf(false) }
+
+
     ConstraintLayout(modifier = modifier) {
-        val (content, actions) = createRefs()
+        val (content, actions, bottomSheet) = createRefs()
         LazyVerticalStaggeredGrid(
             modifier = Modifier.constrainAs(content) {
                 top.linkTo(parent.top)
@@ -201,7 +233,7 @@ private fun Content(
             verticalItemSpacing = 8.dp,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
 
-        ) {
+            ) {
             items(mediaItems, key = { it.id }) { mediaItem ->
                 MediaItemCardFull(
                     mediaItem = mediaItem,
@@ -262,13 +294,11 @@ private fun Content(
                 ) { onClick() }
             }
         }
-    }
-}
+        SingleCollectionPicker(
+            show = showSheet,
+            collections = collections,
+            onCollectionSelected = {}
+        ) { }
 
-@Preview
-@Composable
-private fun Preview() {
-    MemeHiveTheme {
-        Hive({})
     }
 }

@@ -33,9 +33,9 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 
 @Composable
-fun SearchBar(hint: String, onQueryChange: (query: String) -> Unit) {
+fun SearchBar(modifier: Modifier = Modifier, hint: String, onQueryChange: (query: String) -> Unit) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
             .background(

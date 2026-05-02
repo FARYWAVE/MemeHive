@@ -128,6 +128,7 @@ class EditingViewModel(
     }
 
     fun onSave(context: Context) {
+        if (mediaItemId == -1L && _mediaSrc.value == null) return
         commitTags()
 
         val oldSrc = _mediaItem.value.src

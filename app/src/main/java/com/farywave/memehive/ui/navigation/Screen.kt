@@ -5,4 +5,6 @@ sealed class Screen(val route: String) {
     object Editing : Screen("editing/{mediaItemId}") {
         fun createRoute(mediaItemId: Long) = "editing/$mediaItemId"
     }
+
+    object NewCollectionDialog : Screen("new_collection_dialog")
 }
