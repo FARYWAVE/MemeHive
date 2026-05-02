@@ -396,15 +396,3 @@ private fun NewTagChip(onFocusLost: (tag: String) -> Unit) {
         )
     }
 }
-
-
-private enum class MoreActions(
-    override val label: String,
-    override val highlighted: Boolean = false
-) : ActionMenuOptions {
-    DUPLICATE("Duplicate"),
-    ADD_TO_COLLECTION("Add to Collection"),
-    SET_AS_COLLECTION_COVER("Set as Collection Cover"),
-    DELETE("Delete", true),
-
-}

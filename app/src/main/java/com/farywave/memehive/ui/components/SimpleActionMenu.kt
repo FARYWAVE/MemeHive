@@ -1,5 +1,6 @@
 package com.farywave.memehive.ui.components
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.DropdownMenu
@@ -13,7 +14,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.ui.theme.LocalAppColors
 
@@ -40,7 +43,7 @@ inline fun <reified T> SimpleActionMenu(
             items.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(
-                            text = option.label,
+                            text = stringResource(option.labelId),
                             color = if (option.highlighted)
                                 LocalAppColors.current.warning
                             else LocalAppColors.current.contentPrimary,
@@ -57,6 +60,6 @@ inline fun <reified T> SimpleActionMenu(
 }
 
 interface ActionMenuOptions {
-    val label: String
+    val labelId: Int
     val highlighted: Boolean
 }

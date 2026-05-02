@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -242,36 +243,26 @@ private fun Content(
                 tint = LocalAppColors.current.contentPrimary
             ) { viewModel.disableMassEditingMode() }
 
-            SimpleIconButton(
-                modifier = Modifier
-                    .size(50.dp)
-                    .shadow(9.dp, MaterialTheme.shapes.small, clip = false)
-                    .background(
-                        LocalAppColors.current.accentSecondary,
-                        MaterialTheme.shapes.small
-                    ),
-                icon = painterResource(R.drawable.ic_edit),
-                iconSize = 28.dp,
-                tint = LocalAppColors.current.contentPrimary
-            ) { Log.d("TEST", viewModel.getSelectedMediaItems().size.toString()) }
+            SimpleActionMenu<MassEditActions>(
+                onSelected = { action ->
+
+                }
+            ) { onClick ->
+                SimpleIconButton(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .shadow(9.dp, MaterialTheme.shapes.small, clip = false)
+                        .background(
+                            LocalAppColors.current.accentSecondary,
+                            MaterialTheme.shapes.small
+                        ),
+                    icon = painterResource(R.drawable.ic_edit),
+                    iconSize = 28.dp,
+                    tint = LocalAppColors.current.contentPrimary
+                ) { onClick() }
+            }
         }
     }
-}
-
-private enum class CreateActions(
-    override val label: String,
-    override val highlighted: Boolean = false
-) : ActionMenuOptions {
-    CREATE_COLLECTION("New Collection"),
-    CREATE_MEDIA_ITEM("New Media Item"),
-}
-
-private enum class MoreActions(
-    override val label: String,
-    override val highlighted: Boolean = false
-) : ActionMenuOptions {
-    IMPORT_COLLECTION("Import Collection"),
-    VIEW_APP_INFO("About App"),
 }
 
 @Preview
