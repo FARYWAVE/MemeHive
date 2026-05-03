@@ -4,6 +4,8 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.farywave.memehive.R
@@ -89,4 +91,19 @@ object DeviceTools {
             else -> "$bytes ${stringResource(R.string.__byte)}"
         }
     }
+
+    @Composable
+    fun requestMedia(onGranted: (uri: Uri?) -> Unit) = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        onGranted(uri)
+    }
+
+    @Composable
+    fun requestMultipleMedia(onGranted: (uris: List<Uri>) -> Unit) =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetMultipleContents()
+        ) { uris: List<Uri> ->
+            onGranted(uris)
+        }
 }

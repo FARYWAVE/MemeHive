@@ -112,7 +112,7 @@ fun MediaItemCardFull(
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            mediaItem.tags.forEach { tag ->
+            mediaItem.tags.take(7).forEach { tag ->
                 TagChip(tag)
             }
         }

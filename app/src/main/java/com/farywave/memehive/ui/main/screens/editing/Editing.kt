@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
+import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.ui.components.ActionMenuOptions
 import com.farywave.memehive.ui.components.SimpleActionMenu
 import com.farywave.memehive.ui.components.SimpleIconButton
@@ -258,11 +259,7 @@ private fun ImagePicker(
     onImageSelected: (Uri?) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        onImageSelected(uri)
-    }
+    val launcher = DeviceTools.requestMedia { onImageSelected(it) }
     NullableImage(
         modifier
             .fillMaxWidth()

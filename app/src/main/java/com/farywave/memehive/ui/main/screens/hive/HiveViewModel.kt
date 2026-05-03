@@ -127,8 +127,9 @@ class HiveViewModel(
     }
 
     fun deleteSelectedMediaItems() {
+        val selected = _mediaItems.value.filter { it.isSelected }
+
         viewModelScope.launch(Dispatchers.IO) {
-            val selected = _mediaItems.value.filter { it.isSelected }
             selected.forEach {
                 mediaItemRepository.deleteMediaItem(it)
             }
@@ -137,8 +138,9 @@ class HiveViewModel(
     }
 
     fun duplicateSelectedMediaItems() {
+        val selected = _mediaItems.value.filter { it.isSelected }
+
         viewModelScope.launch(Dispatchers.IO) {
-            val selected = _mediaItems.value.filter { it.isSelected }
             selected.forEach {
                 mediaItemRepository.insertMediaItem(it.copy(id = 0))
             }
@@ -146,13 +148,21 @@ class HiveViewModel(
         }
     }
 
-    fun addSelectedMediaItemsToCollection(collection: Collection, selectedIds: List<Long>) {
+    fun addSelectedMediaItemsToCollection(collection: Collection) {
+        val selected = _mediaItems.value.filter { it.isSelected }
+
         viewModelScope.launch(Dispatchers.IO) {
-            selectedIds.forEach { id ->
-                val item = _mediaItems.value.find { it.id == id } ?: return@forEach
-                collectionRepository.insertCollectionEntry(collection, item)
+            selected.forEach {
+                collectionRepository.insertCollectionEntry(collection, it)
             }
             onRefresh()
+        }
+    }
+
+    fun createMediaItem(mediaItem: MediaItem, refresh: Boolean = true) {
+        viewModelScope.launch(Dispatchers.IO) {
+            mediaItemRepository.insertMediaItem(mediaItem)
+            if (refresh) onRefresh()
         }
     }
 }

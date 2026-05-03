@@ -32,6 +32,6 @@
     <string name="about_app_cache">Cache</string>
     <string name="megabyte">Mb</string>
     <string name="kilobyte">Kb</string>
-    <string name="gigabyte">Gigabyte</string>
+    <string name="gigabyte">Gb</string>
     <string name="__byte">B</string>
 </resources>

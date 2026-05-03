@@ -1,5 +1,6 @@
 package com.farywave.memehive.ui.main.screens.hive
 
+import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,12 +43,14 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
+import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.ui.components.CollectionsNavigation
 import com.farywave.memehive.ui.components.MediaItemCardFull
 import com.farywave.memehive.ui.components.SearchBar
 import com.farywave.memehive.ui.components.SimpleActionMenu
 import com.farywave.memehive.ui.components.SimpleIconButton
 import com.farywave.memehive.ui.components.SingleCollectionPicker
+import com.farywave.memehive.ui.model.MediaItem
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.Typography
@@ -90,7 +93,22 @@ fun Hive(
             ) {
                 focusManager.clearFocus()
             },
-        topBar = { Toolbar(onNavigate) }
+        topBar = { Toolbar(
+            onMassImport = { uris ->
+                uris.forEach { uri ->
+                    val path = DeviceTools.copyToInternalStorage(context, uri)
+                    viewModel.createMediaItem(MediaItem(
+                        id = 0L,
+                        src = path,
+                        caption = null,
+                        description = null,
+                        tags = emptyList()
+                    ))
+                }
+                viewModel.onRefresh()
+            },
+            onNavigate = onNavigate
+        ) }
     ) { contentPadding ->
         Column(
             Modifier
@@ -132,7 +150,7 @@ fun Hive(
 }
 
 @Composable
-private fun Toolbar(onNavigate: (NavEvent) -> Unit) {
+private fun Toolbar(onMassImport: (uris: List<Uri>) -> Unit, onNavigate: (NavEvent) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -142,6 +160,8 @@ private fun Toolbar(onNavigate: (NavEvent) -> Unit) {
             .statusBarsPadding(),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val launcher = DeviceTools.requestMultipleMedia { onMassImport(it) }
+
         Row(
             Modifier
                 .wrapContentHeight()
@@ -188,7 +208,7 @@ private fun Toolbar(onNavigate: (NavEvent) -> Unit) {
             when (action) {
                 MoreActions.VIEW_APP_INFO -> onNavigate(NavEvent.AboutApp)
                 MoreActions.IMPORT_COLLECTION -> {}
-                MoreActions.MASS_IMPORT -> {}
+                MoreActions.MASS_IMPORT -> { launcher.launch("image/*") }
             }
         }) { onClick ->
             SimpleIconButton(
@@ -309,11 +329,7 @@ private fun Content(
                 showSheet = false
             },
             onCollectionSelected = { collection ->
-                val selectedIds = mediaItems
-                    .filter { it.isSelected }
-                    .map { it.id }
-
-                viewModel.addSelectedMediaItemsToCollection(collection, selectedIds)
+                viewModel.addSelectedMediaItemsToCollection(collection)
                 showSheet = false
                 viewModel.disableMassEditingMode()
             }
