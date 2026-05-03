@@ -185,7 +185,11 @@ private fun Toolbar(onNavigate: (NavEvent) -> Unit) {
         }
 
         SimpleActionMenu<MoreActions>(onSelected = { action ->
-            Log.d("TEST", action.toString())
+            when (action) {
+                MoreActions.VIEW_APP_INFO -> onNavigate(NavEvent.AboutApp)
+                MoreActions.IMPORT_COLLECTION -> {}
+                MoreActions.MASS_IMPORT -> {}
+            }
         }) { onClick ->
             SimpleIconButton(
                 modifier = Modifier

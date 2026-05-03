@@ -88,7 +88,7 @@ private fun Heading(onNewCollectionClicked: () -> Unit) {
             modifier = Modifier.clickable(
                 onClick = { onNewCollectionClicked() }
             ),
-            text = stringResource(R.string.header_new_collection),
+            text = stringResource(R.string.action_create_collection),
             style = MaterialTheme.typography.bodyMedium,
             color = LocalAppColors.current.accentPrimary
         )

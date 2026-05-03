@@ -7,4 +7,6 @@ sealed class Screen(val route: String) {
     }
 
     object NewCollectionDialog : Screen("new_collection_dialog")
+
+    object AboutApp : Screen("about_app")
 }

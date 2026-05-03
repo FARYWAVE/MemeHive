@@ -25,7 +25,7 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 inline fun <reified T> SimpleActionMenu(
     crossinline onSelected: (T) -> Unit,
     trigger: @Composable (onClick: () -> Unit) -> Unit
-) where T: Enum<T>, T: ActionMenuOptions{
+) where T: Enum<T>, T: ActionMenuOptions {
     var expanded by remember { mutableStateOf(false) }
     val items = enumValues<T>()
 

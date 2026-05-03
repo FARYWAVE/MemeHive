@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.farywave.memehive.ui.main.dialogs.AboutApp
 import com.farywave.memehive.ui.main.dialogs.NewCollection
 import com.farywave.memehive.ui.main.screens.editing.Editing
 import com.farywave.memehive.ui.main.screens.hive.Hive
@@ -23,6 +24,7 @@ fun NavController() {
             is NavEvent.ToEditing -> navController.navigate(Screen.Editing.createRoute(event.mediaItemId))
             NavEvent.Back -> navController.popBackStack()
             NavEvent.NewCollectionDialog -> navController.navigate(Screen.NewCollectionDialog.route)
+            NavEvent.AboutApp -> navController.navigate(Screen.AboutApp.route)
         }
     }
 
@@ -64,6 +66,10 @@ fun NavController() {
 
                 navController.popBackStack()
             }
+        }
+
+        dialog(Screen.AboutApp.route) {
+            AboutApp(onDismissRequest = { navController.popBackStack() })
         }
     }
 }

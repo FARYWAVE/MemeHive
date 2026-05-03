@@ -6,7 +6,7 @@ import android.util.Log
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.farywave.memehive.core.FileManager
+import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.ui.model.MediaItem
@@ -135,10 +135,10 @@ class EditingViewModel(
         val newSrc = _mediaSrc.value
 
         if (newSrc != null && newSrc != oldSrc) {
-            val newInternal = FileManager.copyToInternalStorage(context, newSrc)
+            val newInternal = DeviceTools.copyToInternalStorage(context, newSrc)
             _mediaItem.value.src = newInternal
 
-            oldSrc?.let { FileManager.deleteFromInternalStorage(it) }
+            oldSrc?.let { DeviceTools.deleteFromInternalStorage(it) }
         }
 
         viewModelScope.launch(Dispatchers.IO) {

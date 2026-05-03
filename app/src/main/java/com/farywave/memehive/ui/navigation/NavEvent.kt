@@ -6,4 +6,6 @@ sealed class NavEvent {
     object Back : NavEvent()
 
     object NewCollectionDialog : NavEvent()
+
+    object AboutApp : NavEvent()
 }

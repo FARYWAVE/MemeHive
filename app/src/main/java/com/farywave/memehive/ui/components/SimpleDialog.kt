@@ -18,19 +18,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.farywave.memehive.R
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
-fun SimpleDialog(
+fun <T> SimpleDialog(
+    actions: Array<T>,
     onDismissRequest: () -> Unit,
     title: String,
-    actionButtonText: String,
-    onAction: () -> Unit,
+    onAction: (T) -> Unit,
     content: @Composable () -> Unit
-) {
+) where T : Enum<T>, T : SimpleDialogAction {
     Dialog(onDismissRequest = onDismissRequest) {
-        Surface(color = LocalAppColors.current.backgroundPrimary, shape = MaterialTheme.shapes.medium, tonalElevation = 10.dp) {
+        Surface(
+            color = LocalAppColors.current.backgroundPrimary,
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 10.dp
+        ) {
             Column(
                 modifier = Modifier
                     .wrapContentSize()
@@ -46,19 +49,20 @@ fun SimpleDialog(
 
                 content()
 
-                Row(
+                if (actions.isNotEmpty()) Row(
                     modifier = Modifier.wrapContentSize(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    DialogButton(
-                        actionButtonText,
-                        LocalAppColors.current.accentPrimary
-                    ) { onAction() }
-
-                    DialogButton(
-                        stringResource(R.string.button_cancel),
-                        LocalAppColors.current.transparent
-                    ) { onDismissRequest() }
+                    actions.forEach { item ->
+                        DialogButton(
+                            stringResource(item.text),
+                            when(item.type) {
+                                ActionType.NORMAL -> LocalAppColors.current.accentPrimary
+                                ActionType.WARNING -> LocalAppColors.current.warning
+                                ActionType.DISMISS -> LocalAppColors.current.transparent
+                            }
+                        ) { onAction(item) }
+                    }
                 }
             }
         }
@@ -81,3 +85,14 @@ private fun DialogButton(text: String, backgroundColor: Color, onClick: () -> Un
             color = LocalAppColors.current.contentPrimary
         )
     }
+
+interface SimpleDialogAction {
+    val text: Int
+    val type: ActionType
+}
+
+enum class ActionType {
+    NORMAL,
+    WARNING,
+    DISMISS
+}
