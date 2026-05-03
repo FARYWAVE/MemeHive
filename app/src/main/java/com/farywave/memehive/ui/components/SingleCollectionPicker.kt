@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -34,6 +35,7 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 fun SingleCollectionPicker(
     show: Boolean,
     collections: List<Collection>,
+    onDismiss: () -> Unit,
     onCollectionSelected: (Collection) -> Unit,
     onNewCollectionClicked: () -> Unit
 ) {
@@ -46,11 +48,11 @@ fun SingleCollectionPicker(
         }
     }
 
-    SimpleBottomSheet(show) {
+    SimpleBottomSheet(show, onDismiss) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentHeight()
+                .fillMaxHeight()
                 .padding(vertical = 10.dp, horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {

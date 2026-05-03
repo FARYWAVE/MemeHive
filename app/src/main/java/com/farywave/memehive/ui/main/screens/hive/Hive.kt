@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -29,7 +28,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,15 +36,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.components.ActionMenuOptions
 import com.farywave.memehive.ui.components.CollectionsNavigation
 import com.farywave.memehive.ui.components.MediaItemCardFull
 import com.farywave.memehive.ui.components.SearchBar
@@ -55,9 +50,7 @@ import com.farywave.memehive.ui.components.SimpleIconButton
 import com.farywave.memehive.ui.components.SingleCollectionPicker
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.theme.LocalAppColors
-import com.farywave.memehive.ui.theme.MemeHiveTheme
 import com.farywave.memehive.ui.theme.Typography
-import kotlinx.coroutines.launch
 
 @Composable
 fun Hive(
@@ -277,6 +270,17 @@ private fun Content(
 
             SimpleActionMenu<MassEditActions>(
                 onSelected = { action ->
+                    when (action) {
+                        MassEditActions.ADD_TO_COLLECTION -> showSheet = true
+                        MassEditActions.DELETE -> {
+                            viewModel.deleteSelectedMediaItems()
+                            viewModel.disableMassEditingMode()
+                        }
+                        MassEditActions.DUPLICATE -> {
+                            viewModel.duplicateSelectedMediaItems()
+                            viewModel.disableMassEditingMode()
+                        }
+                    }
 
                 }
             ) { onClick ->
@@ -297,8 +301,19 @@ private fun Content(
         SingleCollectionPicker(
             show = showSheet,
             collections = collections,
-            onCollectionSelected = {}
-        ) { }
+            onDismiss = {
+                showSheet = false
+            },
+            onCollectionSelected = { collection ->
+                val selectedIds = mediaItems
+                    .filter { it.isSelected }
+                    .map { it.id }
+
+                viewModel.addSelectedMediaItemsToCollection(collection, selectedIds)
+                showSheet = false
+                viewModel.disableMassEditingMode()
+            }
+        ) { onNavigate(NavEvent.NewCollectionDialog) }
 
     }
 }

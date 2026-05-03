@@ -11,5 +11,6 @@ data class CollectionEntity(
     val name: String,
     val coverSrc: String?,
 ) {
-    fun toCollection() = Collection(id, name, coverSrc?.let { File(coverSrc) }, false, 0)
+    fun toCollection(entryCount: Int) =
+        Collection(id, name, coverSrc?.let { File(coverSrc) }, false, entryCount)
 }

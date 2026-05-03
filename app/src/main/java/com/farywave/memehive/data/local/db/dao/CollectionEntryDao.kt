@@ -34,4 +34,7 @@ interface CollectionEntryDao {
         WHERE collectionId = :collectionId
     """)
     suspend fun deleteByCollection(collectionId: Long)
+
+    @Query("SELECT COUNT(*) FROM collection_entries WHERE collectionId = :collectionId")
+    fun getEntryCount(collectionId: Long): Flow<Int>
 }

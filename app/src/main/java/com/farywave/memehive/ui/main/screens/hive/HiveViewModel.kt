@@ -11,9 +11,7 @@ import com.farywave.memehive.ui.model.MediaItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.last
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -56,6 +54,10 @@ class HiveViewModel(
             _mediaItems.value =
                 mediaItemRepository.search(selectedCollection.value.id, _searchQuery.value)
         }
+    }
+
+    fun onRefresh() {
+        onSearch()
     }
 
     fun onSearchQueryChanged(query: String) {
@@ -121,6 +123,36 @@ class HiveViewModel(
             _mediaItems.last().filter { it.isSelected }.forEach {
                 collectionRepository.insertCollectionEntry(collection, it)
             }
+        }
+    }
+
+    fun deleteSelectedMediaItems() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val selected = _mediaItems.value.filter { it.isSelected }
+            selected.forEach {
+                mediaItemRepository.deleteMediaItem(it)
+            }
+            onRefresh()
+        }
+    }
+
+    fun duplicateSelectedMediaItems() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val selected = _mediaItems.value.filter { it.isSelected }
+            selected.forEach {
+                mediaItemRepository.insertMediaItem(it.copy(id = 0))
+            }
+            onRefresh()
+        }
+    }
+
+    fun addSelectedMediaItemsToCollection(collection: Collection, selectedIds: List<Long>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            selectedIds.forEach { id ->
+                val item = _mediaItems.value.find { it.id == id } ?: return@forEach
+                collectionRepository.insertCollectionEntry(collection, item)
+            }
+            onRefresh()
         }
     }
 }

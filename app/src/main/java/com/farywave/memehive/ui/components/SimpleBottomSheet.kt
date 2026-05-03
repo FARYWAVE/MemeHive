@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -36,32 +39,36 @@ import com.farywave.memehive.ui.theme.MemeHiveTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SimpleBottomSheet(show: Boolean, content: @Composable () -> Unit) {
+fun SimpleBottomSheet(
+    show: Boolean,
+    onDismiss: () -> Unit,
+    content: @Composable () -> Unit
+) {
     val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false
+        skipPartiallyExpanded = true
     )
-    val scope = rememberCoroutineScope()
-    var showSheet by remember { mutableStateOf(show) }
 
-    LaunchedEffect(showSheet) {
-        if (showSheet) {
-            sheetState.partialExpand()
-        }
+    LaunchedEffect(show) {
+        if (show) sheetState.show()
+        else sheetState.hide()
     }
 
-    LaunchedEffect(sheetState.currentValue) {
-        if (sheetState.currentValue == SheetValue.Hidden) {
-            showSheet = false
-        }
+    LaunchedEffect(sheetState) {
+        snapshotFlow { sheetState.currentValue }
+            .collect { value ->
+                if (value == SheetValue.Hidden) {
+                    onDismiss()
+                }
+            }
     }
 
-    if (showSheet) {
+    if (show) {
         ModalBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(400.dp)
-                .shadow(9.dp),
-            onDismissRequest = { showSheet = false },
+                .statusBarsPadding(),
+            containerColor = LocalAppColors.current.backgroundPrimary,
+            onDismissRequest = { onDismiss() },
             sheetState = sheetState,
             dragHandle = { DragHandle() }
         ) {
@@ -89,24 +96,5 @@ private fun DragHandle() {
                     MaterialTheme.shapes.large
                 )
         )
-    }
-}
-
-
-@Preview
-@Composable
-private fun Preview() {
-    MemeHiveTheme {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-            SimpleBottomSheet(true) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Blue),
-                ) {
-                    Text("Hello from sheet", color = Color.White)
-                }
-            }
-        }
     }
 }
