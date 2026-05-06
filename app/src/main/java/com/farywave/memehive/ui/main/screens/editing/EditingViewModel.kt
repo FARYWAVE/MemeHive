@@ -146,5 +146,24 @@ class EditingViewModel(
             else mediaItemRepository.updateMediaItem(_mediaItem.value)
         }
     }
+
+    fun onDuplicate(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val src = _mediaSrc.value?.let { DeviceTools.copyToInternalStorage(context, it) }
+            val newItem = _mediaItem.value.copy(
+                id = 0,
+                src = src,
+                tags = (_editableTags.value.map { it.text.trim() }.filter { it.isNotEmpty() })
+            )
+            mediaItemRepository.insertMediaItem(newItem)
+        }
+    }
+
+    fun onDelete() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _mediaItem.value.src?.let { DeviceTools.deleteFromInternalStorage(it) }
+            mediaItemRepository.deleteMediaItem(_mediaItem.value)
+        }
+    }
 }
 

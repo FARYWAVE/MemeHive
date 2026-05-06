@@ -64,10 +64,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
+import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.simple_components.SimpleActionMenu
 import com.farywave.memehive.ui.simple_components.SimpleIconButton
 import com.farywave.memehive.ui.simple_components.SimpleTextField
-import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
@@ -93,7 +93,24 @@ fun Editing(mediaItemId: Long, onNavigate: (NavEvent) -> Unit) {
             ) {
                 focusManager.clearFocus()
             },
-        topBar = { Toolbar(onExit = { viewModel.onSave(context) }, onNavigate = onNavigate) }
+        topBar = {
+            Toolbar(
+                onExit = { viewModel.onSave(context) },
+                onNavigate = onNavigate,
+                onAction = { action ->
+                    when (action) {
+                        MoreActions.ADD_TO_COLLECTION -> {}
+                        MoreActions.DUPLICATE -> {
+                            viewModel.onDuplicate(context)
+                        }
+
+                        MoreActions.DELETE -> {
+                            viewModel.onDelete()
+                            onNavigate(NavEvent.ToHive)
+                        }
+                    }
+                })
+        }
     ) { contentPadding ->
         Column(
             Modifier
@@ -114,7 +131,11 @@ fun Editing(mediaItemId: Long, onNavigate: (NavEvent) -> Unit) {
 
 
 @Composable
-private fun Toolbar(onExit: () -> Unit, onNavigate: (NavEvent) -> Unit) {
+private fun Toolbar(
+    onExit: () -> Unit,
+    onNavigate: (NavEvent) -> Unit,
+    onAction: (MoreActions) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -136,9 +157,7 @@ private fun Toolbar(onExit: () -> Unit, onNavigate: (NavEvent) -> Unit) {
 
         Spacer(Modifier.weight(1f))
 
-        SimpleActionMenu<MoreActions>(onSelected = { action ->
-            {}
-        }) { onClick ->
+        SimpleActionMenu<MoreActions>(onSelected = { onAction(it) }) { onClick ->
             SimpleIconButton(
                 modifier = Modifier
                     .padding(7.dp)
@@ -346,7 +365,9 @@ private fun NewTagChip(onFocusLost: (tag: String) -> Unit) {
         snapshotFlow { value.text }
             .collect { text ->
                 if (text.isNotEmpty() && (text.trim().endsWith(","))) {
-                    onFocusLost(text.trim().dropLast(1).toString().trim().lowercase().replace(' ', '_'))
+                    onFocusLost(
+                        text.trim().dropLast(1).toString().trim().lowercase().replace(' ', '_')
+                    )
                     value.setTextAndPlaceCursorAtEnd("")
                 }
             }
