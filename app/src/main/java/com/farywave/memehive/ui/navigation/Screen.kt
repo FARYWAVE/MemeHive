@@ -8,5 +8,11 @@ sealed class Screen(val route: String) {
 
     object NewCollectionDialog : Screen("new_collection_dialog")
 
-    object AboutApp : Screen("about_app")
+    object AboutAppDialog : Screen("about_app")
+
+    object RenameCollectionDialog :
+        Screen("rename_collection_dialog/{collectionName}/{collectionId}") {
+        fun createRoute(collectionName: String, collectionId: Long) =
+            "rename_collection_dialog/$collectionName/$collectionId"
+    }
 }

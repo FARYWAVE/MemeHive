@@ -3,6 +3,7 @@ package com.farywave.memehive.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,11 +21,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import com.farywave.memehive.ui.main.screens.hive.CollectionActions
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
-fun CollectionsNavigation(modifier: Modifier = Modifier, collections: List<Collection>, selectedCollection: Collection, onCollectionSelected: (Collection) -> Unit) {
+fun CollectionsNavigation(
+    modifier: Modifier = Modifier,
+    collections: List<Collection>,
+    selectedCollection: Collection,
+    onCollectionSelected: (Collection) -> Unit,
+    onAction: (collection: Collection, action: CollectionActions) -> Unit
+) {
     LazyRow(
         modifier = modifier
             .fillMaxWidth()
@@ -43,15 +51,21 @@ fun CollectionsNavigation(modifier: Modifier = Modifier, collections: List<Colle
         verticalAlignment = Alignment.CenterVertically
     ) {
         items(collections) { collection ->
-            CollectionChip(collection, collection == selectedCollection) {
-                onCollectionSelected(collection)
+            SimpleActionMenu<CollectionActions>(
+                onSelected = { action -> onAction(collection, action) },
+            ) { onClick ->
+                CollectionChip(
+                    collection,
+                    collection == selectedCollection,
+                    onClick = { onCollectionSelected(collection)},
+                    onLongClick = { onClick() })
             }
         }
     }
 }
 
 @Composable
-private fun CollectionChip(collection: Collection, isSelected: Boolean, onClick: () -> Unit) {
+private fun CollectionChip(collection: Collection, isSelected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = Modifier
@@ -62,13 +76,14 @@ private fun CollectionChip(collection: Collection, isSelected: Boolean, onClick:
                 shape = MaterialTheme.shapes.large
             )
             .padding(horizontal = 10.dp, vertical = 4.dp)
-            .clickable(
+            .combinedClickable(
                 interactionSource = interactionSource,
                 indication = ripple(
                     bounded = true,
                     color = LocalAppColors.current.accentPrimary
                 ),
-                onClick = onClick
+                onClick = onClick,
+                onLongClick = onLongClick,
             ),
         contentAlignment = Alignment.Center,
     ) {

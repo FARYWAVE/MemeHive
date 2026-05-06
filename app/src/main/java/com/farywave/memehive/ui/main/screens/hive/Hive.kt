@@ -1,7 +1,6 @@
 package com.farywave.memehive.ui.main.screens.hive
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -54,6 +53,7 @@ import com.farywave.memehive.ui.model.MediaItem
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.Typography
+import kotlinx.coroutines.flow.combine
 
 @Composable
 fun Hive(
@@ -70,6 +70,14 @@ fun Hive(
     val newCollectionEvent = savedStateHandle
         .getStateFlow<String?>("newCollectionName", null)
 
+    val renamedCollectionName = savedStateHandle
+        .getStateFlow<String?>("renamedCollectionName", null)
+    val renamedCollectionId = savedStateHandle
+        .getStateFlow<Long?>("renamedCollectionId", null)
+    val renamedCollectionEvent = combine(renamedCollectionName, renamedCollectionId) { name, id ->
+        if (name != null && id != null) name to id else null
+    }
+
 
     LaunchedEffect(Unit) {
         newCollectionEvent.collect { name ->
@@ -79,6 +87,14 @@ fun Hive(
                     viewModel.createCollection(it)
                     savedStateHandle["newCollectionName"] = null
                 }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        renamedCollectionEvent.collect { event ->
+            event?.let { (name, id) ->
+                viewModel.renameCollection(id, name)
             }
         }
     }
@@ -93,22 +109,26 @@ fun Hive(
             ) {
                 focusManager.clearFocus()
             },
-        topBar = { Toolbar(
-            onMassImport = { uris ->
-                uris.forEach { uri ->
-                    val path = DeviceTools.copyToInternalStorage(context, uri)
-                    viewModel.createMediaItem(MediaItem(
-                        id = 0L,
-                        src = path,
-                        caption = null,
-                        description = null,
-                        tags = emptyList()
-                    ))
-                }
-                viewModel.onRefresh()
-            },
-            onNavigate = onNavigate
-        ) }
+        topBar = {
+            Toolbar(
+                onMassImport = { uris ->
+                    uris.forEach { uri ->
+                        val path = DeviceTools.copyToInternalStorage(context, uri)
+                        viewModel.createMediaItem(
+                            MediaItem(
+                                id = 0L,
+                                src = path,
+                                caption = null,
+                                description = null,
+                                tags = emptyList()
+                            )
+                        )
+                    }
+                    viewModel.onRefresh()
+                },
+                onNavigate = onNavigate
+            )
+        }
     ) { contentPadding ->
         Column(
             Modifier
@@ -134,6 +154,22 @@ fun Hive(
                     onCollectionSelected = {
                         viewModel.onCollectionSelected(it)
                         viewModel.onSearch()
+                    },
+                    onAction = { collection, action ->
+                        when (action) {
+                            CollectionActions.RENAME -> {
+                                onNavigate(
+                                    NavEvent.ToRenameCollectionDialog(
+                                        collection.name,
+                                        collection.id
+                                    )
+                                )
+                            }
+
+                            CollectionActions.DELETE -> {
+                                viewModel.deleteCollection(collection)
+                            }
+                        }
                     }
                 )
             }
@@ -206,9 +242,11 @@ private fun Toolbar(onMassImport: (uris: List<Uri>) -> Unit, onNavigate: (NavEve
 
         SimpleActionMenu<MoreActions>(onSelected = { action ->
             when (action) {
-                MoreActions.VIEW_APP_INFO -> onNavigate(NavEvent.AboutApp)
+                MoreActions.VIEW_APP_INFO -> onNavigate(NavEvent.AboutAppDialog)
                 MoreActions.IMPORT_COLLECTION -> {}
-                MoreActions.MASS_IMPORT -> { launcher.launch("image/*") }
+                MoreActions.MASS_IMPORT -> {
+                    launcher.launch("image/*")
+                }
             }
         }) { onClick ->
             SimpleIconButton(
@@ -300,6 +338,7 @@ private fun Content(
                             viewModel.deleteSelectedMediaItems()
                             viewModel.disableMassEditingMode()
                         }
+
                         MassEditActions.DUPLICATE -> {
                             viewModel.duplicateSelectedMediaItems()
                             viewModel.disableMassEditingMode()

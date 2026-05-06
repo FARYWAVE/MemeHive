@@ -1,6 +1,5 @@
 package com.farywave.memehive.ui.navigation
 
-import android.R.attr.type
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation.NavType
@@ -11,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.farywave.memehive.ui.main.dialogs.AboutApp
 import com.farywave.memehive.ui.main.dialogs.NewCollection
+import com.farywave.memehive.ui.main.dialogs.RenameCollection
 import com.farywave.memehive.ui.main.screens.editing.Editing
 import com.farywave.memehive.ui.main.screens.hive.Hive
 
@@ -24,7 +24,13 @@ fun NavController() {
             is NavEvent.ToEditing -> navController.navigate(Screen.Editing.createRoute(event.mediaItemId))
             NavEvent.Back -> navController.popBackStack()
             NavEvent.NewCollectionDialog -> navController.navigate(Screen.NewCollectionDialog.route)
-            NavEvent.AboutApp -> navController.navigate(Screen.AboutApp.route)
+            NavEvent.AboutAppDialog -> navController.navigate(Screen.AboutAppDialog.route)
+            is NavEvent.ToRenameCollectionDialog -> navController.navigate(
+                Screen.RenameCollectionDialog.createRoute(
+                    event.collectionName,
+                    event.collectionId
+                )
+            )
         }
     }
 
@@ -68,8 +74,38 @@ fun NavController() {
             }
         }
 
-        dialog(Screen.AboutApp.route) {
+        dialog(Screen.AboutAppDialog.route) {
             AboutApp(onDismissRequest = { navController.popBackStack() })
+        }
+
+        dialog(
+            route = Screen.RenameCollectionDialog.route,
+            arguments = listOf(
+                navArgument("collectionName") {
+                    type = NavType.StringType
+                },
+                navArgument("collectionId") {
+                    type = NavType.LongType
+                }
+            )
+        ) { backStackEntry ->
+            val collectionName = backStackEntry.arguments?.getString("collectionName") ?: ""
+            val collectionId = backStackEntry.arguments?.getLong("collectionId") ?: -1L
+            RenameCollection(
+                collectionName = collectionName,
+                onDismissRequest = { navController.popBackStack() },
+                onConfirm = { newName ->
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("renamedCollectionName", newName)
+
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("renamedCollectionId", collectionId)
+
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }

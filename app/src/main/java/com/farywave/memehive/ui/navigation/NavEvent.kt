@@ -7,5 +7,7 @@ sealed class NavEvent {
 
     object NewCollectionDialog : NavEvent()
 
-    object AboutApp : NavEvent()
+    object AboutAppDialog : NavEvent()
+
+    data class ToRenameCollectionDialog(val collectionName: String, val collectionId: Long) : NavEvent()
 }

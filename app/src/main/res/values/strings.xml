@@ -34,4 +34,6 @@
     <string name="kilobyte">Kb</string>
     <string name="gigabyte">Gb</string>
     <string name="__byte">B</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_rename_collection">Rename Collection</string>
 </resources>

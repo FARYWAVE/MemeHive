@@ -28,4 +28,6 @@
     <string name="kilobyte">Кб</string>
     <string name="gigabyte">Гб</string>
     <string name="__byte">Б</string>
+    <string name="action_rename">Переименовать</string>
+    <string name="action_rename_collection">Переименовать Коллекцию</string>
 </resources>
