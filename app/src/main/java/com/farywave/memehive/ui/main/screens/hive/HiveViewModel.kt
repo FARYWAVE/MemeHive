@@ -1,9 +1,12 @@
 package com.farywave.memehive.ui.main.screens.hive
 
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.ui.model.Collection
@@ -171,6 +174,13 @@ class HiveViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val collection = collections.value.find { it.id == collectionId } ?: return@launch
             collectionRepository.updateCollection(collection.copy(name = newName))
+        }
+    }
+
+    fun setCollectionCover(context: Context, collection: Collection, cover: Uri) {
+        val path = DeviceTools.copyToInternalStorage(context, cover)
+        viewModelScope.launch(Dispatchers.IO) {
+            collectionRepository.updateCollection(collection.copy(cover = path))
         }
     }
 

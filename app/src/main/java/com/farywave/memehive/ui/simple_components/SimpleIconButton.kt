@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.components
+package com.farywave.memehive.ui.simple_components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource

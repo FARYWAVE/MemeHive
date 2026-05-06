@@ -46,9 +46,10 @@ import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.ui.components.CollectionsNavigation
 import com.farywave.memehive.ui.components.MediaItemCardFull
 import com.farywave.memehive.ui.components.SearchBar
-import com.farywave.memehive.ui.components.SimpleActionMenu
-import com.farywave.memehive.ui.components.SimpleIconButton
+import com.farywave.memehive.ui.simple_components.SimpleActionMenu
+import com.farywave.memehive.ui.simple_components.SimpleIconButton
 import com.farywave.memehive.ui.components.SingleCollectionPicker
+import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.theme.LocalAppColors
@@ -146,6 +147,14 @@ fun Hive(
                     }
                 )
             }
+            var selectedCollectionForCover by remember { mutableStateOf<Collection?>(null) }
+            val launcher = DeviceTools.requestMedia { uri ->
+                val collection = selectedCollectionForCover
+                if (uri != null && collection != null) {
+                    viewModel.setCollectionCover(context, collection, uri)
+                }
+            }
+
             val collections by viewModel.collections.collectAsState()
             if (collections.size > 1) Box(Modifier.padding(horizontal = 10.dp)) {
                 CollectionsNavigation(
@@ -164,6 +173,11 @@ fun Hive(
                                         collection.id
                                     )
                                 )
+                            }
+
+                            CollectionActions.SET_COVER -> {
+                                selectedCollectionForCover = collection
+                                launcher.launch("image/*")
                             }
 
                             CollectionActions.DELETE -> {

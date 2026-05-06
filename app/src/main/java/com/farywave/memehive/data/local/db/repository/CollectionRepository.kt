@@ -1,6 +1,7 @@
 package com.farywave.memehive.data.local.db.repository
 
 import androidx.room.Transaction
+import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.data.local.db.dao.CollectionDao
 import com.farywave.memehive.data.local.db.dao.CollectionEntryDao
 import com.farywave.memehive.data.local.db.entity.CollectionEntryEntity
@@ -26,6 +27,7 @@ class CollectionRepository(
     suspend fun deleteCollection(collection: Collection) {
         collectionEntryDao.deleteByCollection(collection.id)
         collectionDao.deleteCollection(collection.toCollectionEntity())
+        collection.cover?.let { DeviceTools.deleteFromInternalStorage(it) }
     }
 
     fun observeCollections() =

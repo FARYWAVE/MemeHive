@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.components
+package com.farywave.memehive.ui.simple_components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.ui.theme.LocalAppColors
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.drop
 
 @Composable
 fun     SimpleTextField(

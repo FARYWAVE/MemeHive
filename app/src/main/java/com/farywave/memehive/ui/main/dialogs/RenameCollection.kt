@@ -13,10 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.components.ActionType
-import com.farywave.memehive.ui.components.SimpleDialog
-import com.farywave.memehive.ui.components.SimpleDialogAction
-import com.farywave.memehive.ui.components.SimpleTextField
+import com.farywave.memehive.ui.simple_components.ActionType
+import com.farywave.memehive.ui.simple_components.SimpleDialog
+import com.farywave.memehive.ui.simple_components.SimpleDialogAction
+import com.farywave.memehive.ui.simple_components.SimpleTextField
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable

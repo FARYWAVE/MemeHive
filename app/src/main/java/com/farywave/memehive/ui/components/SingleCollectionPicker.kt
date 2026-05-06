@@ -22,12 +22,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.model.Collection
+import com.farywave.memehive.ui.simple_components.SimpleBottomSheet
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 
@@ -65,7 +67,11 @@ fun SingleCollectionPicker(
             }
 
             items(filteredCollections) { collection ->
-                if (collection.id != -1L) CollectionItem(collection) { onCollectionSelected(collection) }
+                if (collection.id != -1L) CollectionItem(collection) {
+                    onCollectionSelected(
+                        collection
+                    )
+                }
             }
         }
     }
@@ -109,6 +115,7 @@ private fun CollectionItem(collection: Collection, onClicked: () -> Unit) {
             modifier = Modifier
                 .size(40.dp)
                 .clip(MaterialTheme.shapes.small),
+            contentScale = ContentScale.Crop,
             model = collection.cover,
             contentDescription = null
         ) else Icon(

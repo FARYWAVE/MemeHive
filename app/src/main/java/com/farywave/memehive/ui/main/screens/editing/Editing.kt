@@ -2,8 +2,6 @@ package com.farywave.memehive.ui.main.screens.editing
 
 import android.net.Uri
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -66,10 +64,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
-import com.farywave.memehive.ui.components.ActionMenuOptions
-import com.farywave.memehive.ui.components.SimpleActionMenu
-import com.farywave.memehive.ui.components.SimpleIconButton
-import com.farywave.memehive.ui.components.SimpleTextField
+import com.farywave.memehive.ui.simple_components.SimpleActionMenu
+import com.farywave.memehive.ui.simple_components.SimpleIconButton
+import com.farywave.memehive.ui.simple_components.SimpleTextField
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.theme.LocalAppColors
 

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,9 +20,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
-import com.farywave.memehive.ui.components.ActionType
-import com.farywave.memehive.ui.components.SimpleDialog
-import com.farywave.memehive.ui.components.SimpleDialogAction
+import com.farywave.memehive.ui.simple_components.ActionType
+import com.farywave.memehive.ui.simple_components.SimpleDialog
+import com.farywave.memehive.ui.simple_components.SimpleDialogAction
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable

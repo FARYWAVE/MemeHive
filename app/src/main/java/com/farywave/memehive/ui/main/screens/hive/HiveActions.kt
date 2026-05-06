@@ -2,7 +2,7 @@ package com.farywave.memehive.ui.main.screens.hive
 
 import androidx.annotation.StringRes
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.components.ActionMenuOptions
+import com.farywave.memehive.ui.simple_components.ActionMenuOptions
 
 enum class CreateActions(
     @StringRes override val labelId: Int,
@@ -35,5 +35,6 @@ enum class CollectionActions(
     override val highlighted: Boolean = false
 ) : ActionMenuOptions {
     RENAME(R.string.action_rename),
+    SET_COVER(R.string.action_set_cover),
     DELETE(R.string.action_delete, true)
 }

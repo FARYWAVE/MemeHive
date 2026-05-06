@@ -2,7 +2,6 @@ package com.farywave.memehive.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -23,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.ui.main.screens.hive.CollectionActions
 import com.farywave.memehive.ui.model.Collection
+import com.farywave.memehive.ui.simple_components.SimpleActionMenu
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
@@ -57,7 +57,7 @@ fun CollectionsNavigation(
                 CollectionChip(
                     collection,
                     collection == selectedCollection,
-                    onClick = { onCollectionSelected(collection)},
+                    onClick = { onCollectionSelected(collection) },
                     onLongClick = { onClick() })
             }
         }
