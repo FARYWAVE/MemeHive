@@ -1,6 +1,7 @@
 package com.farywave.memehive.data.local.db.repository
 
 import androidx.room.Transaction
+import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.data.local.db.dao.CollectionEntryDao
 import com.farywave.memehive.data.local.db.dao.MediaItemDao
 import com.farywave.memehive.data.local.db.dao.MediaItemTagDao
@@ -11,7 +12,6 @@ import com.farywave.memehive.data.local.db.entity.MediaItemTrigramEntity
 import com.farywave.memehive.data.local.db.entity.TagEntity
 import com.farywave.memehive.data.local.db.relation.MediaWithTags
 import com.farywave.memehive.ui.model.MediaItem
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 class MediaItemRepository(
@@ -23,7 +23,7 @@ class MediaItemRepository(
 ) {
     @Transaction
     suspend fun insertMediaItem(mediaItem: MediaItem) {
-        mediaItem.id  = mediaItemDao.insertMediaItem(
+        mediaItem.id = mediaItemDao.insertMediaItem(
             mediaItem.toMediaItemEntity().copy(id = 0)
         )
 
@@ -78,8 +78,10 @@ class MediaItemRepository(
     }
 
     @Transaction
-    suspend fun deleteMediaItem(mediaItem: MediaItem) =
+    suspend fun deleteMediaItem(mediaItem: MediaItem) {
         mediaItemDao.deleteMediaItem(mediaItem.toMediaItemEntity())
+        mediaItem.src?.let { DeviceTools.deleteFromInternalStorage(it) }
+    }
 
     fun observeMediaItems() = mediaItemDao.getAllMediaItems().map { list ->
         list.map { it.toMediaItem() }
