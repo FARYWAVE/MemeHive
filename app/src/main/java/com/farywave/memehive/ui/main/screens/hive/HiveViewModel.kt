@@ -180,6 +180,7 @@ class HiveViewModel(
     fun setCollectionCover(context: Context, collection: Collection, cover: Uri) {
         val path = DeviceTools.copyToInternalStorage(context, cover)
         viewModelScope.launch(Dispatchers.IO) {
+            collection.cover?.let { DeviceTools.deleteFromInternalStorage(it) }
             collectionRepository.updateCollection(collection.copy(cover = path))
         }
     }
