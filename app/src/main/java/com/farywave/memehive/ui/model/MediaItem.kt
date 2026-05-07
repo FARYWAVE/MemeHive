@@ -6,8 +6,8 @@ import java.io.File
 data class MediaItem(
     var id: Long,
     var src: File?,
-    var caption: String?,
-    var description: String?,
+    var caption: String,
+    var description: String,
     val tags: List<String>,
     var isSelected: Boolean = false,
 ) {

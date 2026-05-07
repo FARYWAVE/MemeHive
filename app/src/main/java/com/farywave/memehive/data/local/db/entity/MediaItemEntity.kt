@@ -9,8 +9,8 @@ import java.io.File
 data class MediaItemEntity(
     @PrimaryKey(autoGenerate = true) val id: Long,
     val src: String?,
-    val caption: String?,
-    val description: String?,
+    val caption: String,
+    val description: String,
 ) {
     fun toMediaItem() = MediaItem(id, src?.let { File(src) }, caption, description, mutableListOf())
 }

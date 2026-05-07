@@ -156,8 +156,8 @@ class HiveViewModel(
                 val mediaItem = MediaItem(
                     id = 0L,
                     src = path,
-                    caption = null,
-                    description = null,
+                    caption = "",
+                    description = "",
                     tags = emptyList()
                 )
                 mediaItemRepository.insertMediaItem(mediaItem)

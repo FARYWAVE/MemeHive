@@ -28,8 +28,8 @@ class EditingViewModel(
         MediaItem(
             -1,
             null,
-            null,
-            null,
+            "",
+            "",
             emptyList()
         )
     )
@@ -48,6 +48,11 @@ class EditingViewModel(
     private val _selectedIds = MutableStateFlow<Set<Long>>(emptySet())
     val selectedIds = _selectedIds.asStateFlow()
 
+
+    private var originalMediaItem: MediaItem? = null
+    private var originalTags: List<EditableTag> = emptyList()
+    private var originalMediaSrc: Uri? = null
+
     init {
         loadMediaItem(mediaItemId)
         loadCollections()
@@ -63,6 +68,29 @@ class EditingViewModel(
         val id: Long,
         val text: String
     )
+
+    fun saveOriginalValues() {
+        originalMediaItem = mediaItem.value
+        originalTags = editableTags.value
+        originalMediaSrc = mediaSrc.value
+    }
+
+    fun isEdited(): Boolean {
+
+        val current = mediaItem.value
+        val original = originalMediaItem
+
+        return original?.caption != current.caption ||
+                original?.description != current.description ||
+                originalTags.map { it.text } != editableTags.value.map { it.text } ||
+                originalMediaSrc != mediaSrc.value
+    }
+
+    fun discardChanges() {
+        originalMediaItem?.let { _mediaItem.value = it }
+        _editableTags.value = originalTags
+        _mediaSrc.value = originalMediaSrc
+    }
 
     fun loadMediaItem(id: Long) {
         if (id != -1L) {
@@ -82,9 +110,13 @@ class EditingViewModel(
                     _mediaSrc.value = item.src?.toUri()
 
                     loadSelectedCollections()
+                    saveOriginalValues()
                 }
             }
-        } else _selectedIds.value = emptySet()
+        } else {
+            _selectedIds.value = emptySet()
+            saveOriginalValues()
+        }
     }
 
     fun loadCollections() {
@@ -137,13 +169,13 @@ class EditingViewModel(
         }
     }
 
-    fun updateName(name: String?) {
+    fun updateName(name: String) {
         _mediaItem.update { current ->
             current.copy(caption = name)
         }
     }
 
-    fun updateDescription(description: String?) {
+    fun updateDescription(description: String) {
         _mediaItem.update { current ->
             current.copy(description = description)
         }

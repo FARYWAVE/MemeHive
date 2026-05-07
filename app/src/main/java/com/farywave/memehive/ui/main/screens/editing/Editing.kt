@@ -83,11 +83,23 @@ fun Editing(
     )
     val focusManager = LocalFocusManager.current
 
+    var isEdited by remember { mutableStateOf(false) }
+    val collections by viewModel.collections.collectAsState()
+    val mediaItem by viewModel.mediaItem.collectAsState()
+    val editableTags by viewModel.editableTags.collectAsState()
+    val mediaSrc by viewModel.mediaSrc.collectAsState()
+    val selectedIds by viewModel.selectedIds.collectAsState()
+
+
     BackHandler {
         viewModel.onSave(context)
         onNavigate(NavEvent.Back)
     }
     var showSheet by remember { mutableStateOf(false) }
+
+    LaunchedEffect(mediaItem, editableTags, mediaSrc) {
+        isEdited = viewModel.isEdited()
+    }
 
     val newCollectionEvent = remember {
         savedStateHandle.getStateFlow<String?>(
@@ -117,8 +129,12 @@ fun Editing(
             },
         topBar = {
             Toolbar(
+                isEdited = isEdited,
                 onExit = { viewModel.onSave(context) },
                 onNavigate = onNavigate,
+                onDiscard = {
+                    viewModel.discardChanges()
+                },
                 onAction = { action ->
                     when (action) {
                         MoreActions.ADD_TO_COLLECTION -> {
@@ -137,9 +153,6 @@ fun Editing(
                 })
         }
     ) { contentPadding ->
-        val collections by viewModel.collections.collectAsState()
-        val selectedIds by viewModel.selectedIds.collectAsState()
-
         Box(
             Modifier
                 .fillMaxSize()
@@ -169,7 +182,9 @@ fun Editing(
 @Composable
 private fun Toolbar(
     onExit: () -> Unit,
+    isEdited: Boolean,
     onNavigate: (NavEvent) -> Unit,
+    onDiscard: () -> Unit,
     onAction: (MoreActions) -> Unit
 ) {
     Row(
@@ -192,6 +207,15 @@ private fun Toolbar(
         }
 
         Spacer(Modifier.weight(1f))
+
+        if (isEdited) SimpleIconButton(
+            modifier = Modifier
+                .padding(7.dp)
+                .size(30.dp),
+            icon = painterResource(R.drawable.ic_cross)
+        ) {
+            onDiscard()
+        }
 
         SimpleActionMenu<MoreActions>(onSelected = { onAction(it) }) { onClick ->
             SimpleIconButton(
