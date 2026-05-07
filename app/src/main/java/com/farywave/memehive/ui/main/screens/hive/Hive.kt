@@ -43,15 +43,15 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
+import com.farywave.memehive.ui.components.CollectionPickerSheet
 import com.farywave.memehive.ui.components.CollectionsNavigation
 import com.farywave.memehive.ui.components.MediaItemCardFull
 import com.farywave.memehive.ui.components.SearchBar
-import com.farywave.memehive.ui.simple_components.SimpleActionMenu
-import com.farywave.memehive.ui.simple_components.SimpleIconButton
-import com.farywave.memehive.ui.components.SingleCollectionPicker
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
 import com.farywave.memehive.ui.navigation.NavEvent
+import com.farywave.memehive.ui.simple_components.SimpleActionMenu
+import com.farywave.memehive.ui.simple_components.SimpleIconButton
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.Typography
 import kotlinx.coroutines.flow.combine
@@ -288,7 +288,7 @@ private fun Content(
 
 
     ConstraintLayout(modifier = modifier) {
-        val (content, actions, bottomSheet) = createRefs()
+        val (content, actions) = createRefs()
         LazyVerticalStaggeredGrid(
             modifier = Modifier.constrainAs(content) {
                 top.linkTo(parent.top)
@@ -375,18 +375,18 @@ private fun Content(
                 ) { onClick() }
             }
         }
-        SingleCollectionPicker(
-            show = showSheet,
-            collections = collections,
-            onDismiss = {
-                showSheet = false
-            },
-            onCollectionSelected = { collection ->
-                viewModel.addSelectedMediaItemsToCollection(collection)
-                showSheet = false
-                viewModel.disableMassEditingMode()
-            }
-        ) { onNavigate(NavEvent.NewCollectionDialog) }
-
     }
+    CollectionPickerSheet(
+        show = showSheet,
+        collections = collections,
+        onDismiss = {
+            showSheet = false
+        },
+        onCollectionSelected = { collection ->
+            viewModel.addSelectedMediaItemsToCollection(collection)
+            showSheet = false
+            viewModel.disableMassEditingMode()
+        },
+        onNewCollectionClicked = { onNavigate(NavEvent.NewCollectionDialog) }
+    )
 }

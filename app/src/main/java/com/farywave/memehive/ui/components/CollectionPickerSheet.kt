@@ -34,7 +34,7 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 
 
 @Composable
-fun SingleCollectionPicker(
+fun CollectionPickerSheet(
     show: Boolean,
     collections: List<Collection>,
     onDismiss: () -> Unit,
@@ -133,7 +133,7 @@ private fun CollectionItem(collection: Collection, onClicked: () -> Unit) {
         val itemCountText = stringResource(R.string.collection_items_count)
         Text(
             text = "${collection.mediaItemCount} $itemCountText",
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.bodyMedium,
             color = LocalAppColors.current.contentSecondary
         )
     }

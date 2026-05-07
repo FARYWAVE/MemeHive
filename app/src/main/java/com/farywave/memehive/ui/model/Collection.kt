@@ -7,7 +7,6 @@ data class Collection(
     val id: Long,
     var name: String,
     var cover: File? = null,
-    var isSelected: Boolean = false,
     val mediaItemCount: Int,
 ) {
 

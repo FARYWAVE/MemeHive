@@ -69,13 +69,13 @@ private fun DragHandle() {
             .fillMaxWidth()
             .wrapContentHeight()
             .background(LocalAppColors.current.backgroundPrimary)
-            .padding(vertical = 7.dp),
+            .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Box(
             Modifier
                 .width(50.dp)
-                .height(7.dp)
+                .height(5.dp)
                 .background(
                     LocalAppColors.current.contentSecondary,
                     MaterialTheme.shapes.large

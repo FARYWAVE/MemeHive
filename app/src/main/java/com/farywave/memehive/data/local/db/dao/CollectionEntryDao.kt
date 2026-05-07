@@ -37,4 +37,7 @@ interface CollectionEntryDao {
 
     @Query("SELECT COUNT(*) FROM collection_entries WHERE collectionId = :collectionId")
     fun getEntryCount(collectionId: Long): Flow<Int>
+
+    @Query("SELECT * FROM collection_entries WHERE mediaItemId = :id")
+    fun getByMediaItemId(id: Long): Flow<List<CollectionEntryEntity>>
 }

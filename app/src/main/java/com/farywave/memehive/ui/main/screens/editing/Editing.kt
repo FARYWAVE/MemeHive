@@ -64,6 +64,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
+import com.farywave.memehive.ui.components.CollectionSelectorSheet
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.simple_components.SimpleActionMenu
 import com.farywave.memehive.ui.simple_components.SimpleIconButton
@@ -82,6 +83,7 @@ fun Editing(mediaItemId: Long, onNavigate: (NavEvent) -> Unit) {
         viewModel.onSave(context)
         onNavigate(NavEvent.Back)
     }
+    var showSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier
@@ -99,7 +101,9 @@ fun Editing(mediaItemId: Long, onNavigate: (NavEvent) -> Unit) {
                 onNavigate = onNavigate,
                 onAction = { action ->
                     when (action) {
-                        MoreActions.ADD_TO_COLLECTION -> {}
+                        MoreActions.ADD_TO_COLLECTION -> {
+                            showSheet = true
+                        }
                         MoreActions.DUPLICATE -> {
                             viewModel.onDuplicate(context)
                         }
@@ -112,18 +116,29 @@ fun Editing(mediaItemId: Long, onNavigate: (NavEvent) -> Unit) {
                 })
         }
     ) { contentPadding ->
-        Column(
+        val collections by viewModel.collections.collectAsState()
+        val selectedIds by viewModel.selectedIds.collectAsState()
+
+        Box(
             Modifier
                 .fillMaxSize()
                 .padding(contentPadding)
                 .background(LocalAppColors.current.backgroundPrimary),
-            verticalArrangement = Arrangement.spacedBy(7.dp),
         ) {
             Content(
                 viewModel = viewModel,
                 modifier = Modifier
                     .padding(horizontal = 10.dp)
                     .fillMaxSize(),
+                onNavigate = onNavigate
+            )
+            CollectionSelectorSheet(
+                show = showSheet,
+                collections = collections,
+                selectedIds = selectedIds,
+                onDismiss = { showSheet = false },
+                onCollectionClicked = { viewModel.toggleCollection(it) },
+                onNewCollectionClicked = { onNavigate(NavEvent.NewCollectionDialog) }
             )
         }
     }
@@ -171,7 +186,11 @@ private fun Toolbar(
 }
 
 @Composable
-private fun Content(viewModel: EditingViewModel, modifier: Modifier = Modifier) {
+private fun Content(
+    viewModel: EditingViewModel,
+    modifier: Modifier = Modifier,
+    onNavigate: (NavEvent) -> Unit
+) {
     val mediaItem by viewModel.mediaItem.collectAsState()
     val editableTags by viewModel.editableTags.collectAsState()
     val mediaSrc by viewModel.mediaSrc.collectAsState()

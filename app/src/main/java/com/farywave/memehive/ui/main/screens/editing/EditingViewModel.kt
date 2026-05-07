@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
+import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,7 +41,17 @@ class EditingViewModel(
     private val _mediaSrc = MutableStateFlow(_mediaItem.value.src?.toUri())
     val mediaSrc = _mediaSrc.asStateFlow()
 
+    private val allCollection = Collection(-1, "All", mediaItemCount = 0)
+    private val _collections = MutableStateFlow(listOf(allCollection))
+    val collections = _collections.asStateFlow()
+
+    private val _selectedIds = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedIds = _selectedIds.asStateFlow()
+
     init {
+        loadCollections()
+        loadSelectedCollections()
+
         if (mediaItemId != -1L) {
             viewModelScope.launch {
                 val item = mediaItemRepository.getMediaItemById(mediaItemId)
@@ -72,6 +83,32 @@ class EditingViewModel(
         val id: Long,
         val text: String
     )
+
+    fun loadCollections() {
+        viewModelScope.launch(Dispatchers.IO) {
+            collectionRepository.observeCollections()
+                .collect { list ->
+                    _collections.value = listOf(allCollection) + list
+                }
+        }
+    }
+
+    fun loadSelectedCollections() {
+        viewModelScope.launch {
+            collectionRepository
+                .getCollectionsByMediaItem(mediaItem.value)
+                .collect { entries ->
+                    _selectedIds.value = entries
+                        .map { it.collectionId }
+                        .toSet()
+                }
+        }
+    }
+
+    fun toggleCollection(collection: Collection) {
+        if (_selectedIds.value.contains(collection.id)) _selectedIds.value -= collection.id
+        else _selectedIds.value += collection.id
+    }
 
     fun updateMediaItemSrc(src: File?) {
         _mediaItem.update { current ->
