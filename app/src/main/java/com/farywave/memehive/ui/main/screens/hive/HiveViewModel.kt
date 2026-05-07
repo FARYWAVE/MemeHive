@@ -40,7 +40,7 @@ class HiveViewModel(
     val searchQuery = _searchQuery.asStateFlow()
 
     init {
-        onSearch()
+        onRefresh()
         loadCollections()
     }
 
@@ -70,13 +70,7 @@ class HiveViewModel(
 
     fun onCollectionSelected(collection: Collection) {
         _selectedCollection.value = collection
-        Log.d("HiveViewModel", "onCollectionSelected: $collection")
     }
-
-    fun onMediaItemOpened(mediaItem: MediaItem) {
-        Log.d("HiveViewModel", "onMediaItemOpened: ${mediaItem.caption}")
-    }
-
     fun disableMassEditingMode() {
         _isMassEditingMode.value = false
         _mediaItems.update { list ->
@@ -122,14 +116,6 @@ class HiveViewModel(
         }
     }
 
-    fun moveToCollection(collection: Collection) {
-        viewModelScope.launch(Dispatchers.IO) {
-            _mediaItems.last().filter { it.isSelected }.forEach {
-                collectionRepository.insertCollectionEntry(collection, it)
-            }
-        }
-    }
-
     fun deleteSelectedMediaItems() {
         val selected = _mediaItems.value.filter { it.isSelected }
 
@@ -158,6 +144,27 @@ class HiveViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             selected.forEach {
                 collectionRepository.insertCollectionEntry(collection, it)
+            }
+            onRefresh()
+        }
+    }
+
+    fun onMassImport(context: Context, uris: List<Uri>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            uris.forEach { uri ->
+                val path = DeviceTools.copyToInternalStorage(context, uri)
+                val mediaItem = MediaItem(
+                    id = 0L,
+                    src = path,
+                    caption = null,
+                    description = null,
+                    tags = emptyList()
+                )
+                mediaItemRepository.insertMediaItem(mediaItem)
+                if (_selectedCollection.value.id != -1L) collectionRepository.insertCollectionEntry(
+                    _selectedCollection.value,
+                    mediaItem
+                )
             }
             onRefresh()
         }

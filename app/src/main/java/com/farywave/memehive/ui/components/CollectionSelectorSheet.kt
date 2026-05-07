@@ -1,6 +1,8 @@
 package com.farywave.memehive.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,14 +18,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -43,16 +48,20 @@ fun CollectionSelectorSheet(
     onCollectionClicked: (Collection) -> Unit,
     onNewCollectionClicked: () -> Unit
 ) {
-    val originallySelectedIds = remember {
-        collections.filter { selectedIds.contains(it.id) }.map { it.id }.toSet()
+    var originallySelectedIds by remember {
+        mutableStateOf<Set<Long>?>(null)
+    }
+
+    LaunchedEffect(Unit) {
+        originallySelectedIds = selectedIds
     }
 
     val searchQuery = remember { mutableStateOf("") }
     val filteredCollections by remember(collections, searchQuery.value) {
         derivedStateOf {
             collections.filter {
-                it.name.contains(searchQuery.value, ignoreCase = true) ||
-                        !originallySelectedIds.contains(it.id)
+                it.name.contains(searchQuery.value, ignoreCase = true) &&
+                        originallySelectedIds?.contains(it.id)?.not() ?: false
             }
         }
     }
@@ -67,14 +76,15 @@ fun CollectionSelectorSheet(
         ) {
             item { Heading { onNewCollectionClicked() } }
 
-            collections.filter { originallySelectedIds.contains(it.id) }.forEach { collection ->
-                item {
-                    CollectionItem(
-                        collection = collection,
-                        isSelected = selectedIds.contains(collection.id)
-                    ) { onCollectionClicked(collection) }
+            collections.filter { originallySelectedIds?.contains(it.id) ?: true }
+                .forEach { collection ->
+                    item {
+                        CollectionItem(
+                            collection = collection,
+                            isSelected = selectedIds.contains(collection.id)
+                        ) { onCollectionClicked(collection) }
+                    }
                 }
-            }
 
             item {
                 SearchBar(hint = stringResource(R.string.collection_search_hint)) {
@@ -120,11 +130,20 @@ private fun Heading(onNewCollectionClicked: () -> Unit) {
 
 @Composable
 private fun CollectionItem(collection: Collection, isSelected: Boolean, onClicked: () -> Unit) {
+    val focusManager = LocalFocusManager.current
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .clickable(onClick = onClicked),
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {
+                    onClicked()
+                    focusManager.clearFocus()
+                }
+            ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -163,17 +182,16 @@ private fun CollectionItem(collection: Collection, isSelected: Boolean, onClicke
 
         Spacer(modifier = Modifier.weight(1f))
 
-        CheckBox(checked = isSelected) { onClicked() }
+        CheckBox(checked = isSelected)
     }
 }
 
 @Composable
-private fun CheckBox(checked: Boolean, onClick: () -> Unit) {
-    SimpleIconButton(
-        icon = painterResource(if (checked) R.drawable.ic_checkbox_selected else R.drawable.ic_checkbox_blank),
-        iconSize = 20.dp,
+private fun CheckBox(checked: Boolean) {
+    Icon(
+        modifier = Modifier.size(25.dp),
+        painter = painterResource(if (checked) R.drawable.ic_checkbox_selected else R.drawable.ic_checkbox_blank),
         tint = if (checked) LocalAppColors.current.accentSecondary else LocalAppColors.current.contentSecondary,
-    ) {
-        onClick()
-    }
+        contentDescription = null
+    )
 }

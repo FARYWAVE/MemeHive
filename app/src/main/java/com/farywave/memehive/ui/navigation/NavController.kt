@@ -39,11 +39,8 @@ fun NavController() {
         startDestination = Screen.Hive.route
     ) {
         composable(Screen.Hive.route) { backStackEntry ->
-            val parentEntry = remember(backStackEntry) {
-                navController.getBackStackEntry(Screen.Hive.route)
-            }
             Hive(
-                parentEntry.savedStateHandle,
+                backStackEntry.savedStateHandle,
                 onNavigate
             )
         }
@@ -57,8 +54,8 @@ fun NavController() {
             )
         ) { backStackEntry ->
             val mediaItemId = backStackEntry.arguments?.getLong("mediaItemId") ?: -1L
-
             Editing(
+                savedStateHandle = backStackEntry.savedStateHandle,
                 mediaItemId = mediaItemId,
                 onNavigate = onNavigate
             )

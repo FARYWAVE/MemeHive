@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 class EditingViewModel(
-    val mediaItemId: Long,
+    mediaItemId: Long,
     val mediaItemRepository: MediaItemRepository,
     val collectionRepository: CollectionRepository
 ) : ViewModel() {
@@ -49,28 +49,8 @@ class EditingViewModel(
     val selectedIds = _selectedIds.asStateFlow()
 
     init {
+        loadMediaItem(mediaItemId)
         loadCollections()
-        loadSelectedCollections()
-
-        if (mediaItemId != -1L) {
-            viewModelScope.launch {
-                val item = mediaItemRepository.getMediaItemById(mediaItemId)
-                Log.d("EditingViewModel", "init: ${item?.caption}")
-
-                if (item != null) {
-                    _mediaItem.value = item
-
-                    _editableTags.value = item.tags.map {
-                        EditableTag(
-                            id = generateId(),
-                            text = it
-                        )
-                    }
-
-                    _mediaSrc.value = item.src?.toUri()
-                }
-            }
-        }
     }
 
     private var nextId = 0L
@@ -83,6 +63,29 @@ class EditingViewModel(
         val id: Long,
         val text: String
     )
+
+    fun loadMediaItem(id: Long) {
+        if (id != -1L) {
+            viewModelScope.launch {
+                val item = mediaItemRepository.getMediaItemById(id)
+
+                if (item != null) {
+                    _mediaItem.value = item
+
+                    _editableTags.value = item.tags.map {
+                        EditableTag(
+                            id = generateId(),
+                            text = it
+                        )
+                    }
+
+                    _mediaSrc.value = item.src?.toUri()
+
+                    loadSelectedCollections()
+                }
+            }
+        } else _selectedIds.value = emptySet()
+    }
 
     fun loadCollections() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -108,6 +111,24 @@ class EditingViewModel(
     fun toggleCollection(collection: Collection) {
         if (_selectedIds.value.contains(collection.id)) _selectedIds.value -= collection.id
         else _selectedIds.value += collection.id
+    }
+
+    fun createCollection(name: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            collectionRepository.insertCollection(
+                Collection(
+                    id = 0,
+                    name = name,
+                    mediaItemCount = 0
+                )
+            )
+        }
+    }
+
+    fun updateCollectionEntries() {
+        viewModelScope.launch(Dispatchers.IO) {
+            collectionRepository.updateCollectionEntries(mediaItem.value, _selectedIds.value)
+        }
     }
 
     fun updateMediaItemSrc(src: File?) {
@@ -165,7 +186,7 @@ class EditingViewModel(
     }
 
     fun onSave(context: Context) {
-        if (mediaItemId == -1L && _mediaSrc.value == null) return
+        if (_mediaItem.value.id == -1L && _mediaSrc.value == null) return
         commitTags()
 
         val oldSrc = _mediaItem.value.src
@@ -179,8 +200,10 @@ class EditingViewModel(
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            if (mediaItemId == -1L) mediaItemRepository.insertMediaItem(_mediaItem.value)
+            if (_mediaItem.value.id == -1L) mediaItemRepository.insertMediaItem(_mediaItem.value)
             else mediaItemRepository.updateMediaItem(_mediaItem.value)
+
+            updateCollectionEntries()
         }
     }
 

@@ -40,4 +40,7 @@ interface CollectionEntryDao {
 
     @Query("SELECT * FROM collection_entries WHERE mediaItemId = :id")
     fun getByMediaItemId(id: Long): Flow<List<CollectionEntryEntity>>
+
+    @Query("DELETE FROM collection_entries WHERE mediaItemId = :id")
+    fun deleteByMediaItemId(id: Long)
 }

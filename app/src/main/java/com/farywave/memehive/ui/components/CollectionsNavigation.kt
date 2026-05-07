@@ -56,7 +56,7 @@ fun CollectionsNavigation(
             ) { onClick ->
                 CollectionChip(
                     collection,
-                    collection == selectedCollection,
+                    collection.id == selectedCollection.id,
                     onClick = { onCollectionSelected(collection) },
                     onLongClick = { onClick() })
             }

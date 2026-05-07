@@ -53,4 +53,15 @@ class CollectionRepository(
 
     fun getCollectionsByMediaItem(mediaItem: MediaItem) =
         collectionEntryDao.getByMediaItemId(mediaItem.id)
+
+    @Transaction
+    suspend fun updateCollectionEntries(mediaItem: MediaItem, collectionIds: Set<Long>) {
+        collectionEntryDao.deleteByMediaItemId(mediaItem.id)
+
+        collectionIds.forEach { collectionId ->
+            collectionEntryDao.insertCollectionEntry(
+                CollectionEntryEntity(collectionId, mediaItem.id)
+            )
+        }
+    }
 }

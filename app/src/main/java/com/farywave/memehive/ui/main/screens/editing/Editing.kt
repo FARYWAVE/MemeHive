@@ -60,6 +60,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
@@ -72,7 +73,10 @@ import com.farywave.memehive.ui.simple_components.SimpleTextField
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
-fun Editing(mediaItemId: Long, onNavigate: (NavEvent) -> Unit) {
+fun Editing(
+    savedStateHandle: SavedStateHandle,
+    mediaItemId: Long, onNavigate: (NavEvent) -> Unit
+) {
     val context = LocalContext.current
     val viewModel: EditingViewModel = viewModel(
         factory = EditingViewModelFactory(context, mediaItemId)
@@ -84,6 +88,22 @@ fun Editing(mediaItemId: Long, onNavigate: (NavEvent) -> Unit) {
         onNavigate(NavEvent.Back)
     }
     var showSheet by remember { mutableStateOf(false) }
+
+    val newCollectionEvent = remember {
+        savedStateHandle.getStateFlow<String?>(
+            "newCollectionName",
+            null
+        )
+    }
+
+    LaunchedEffect(newCollectionEvent) {
+        newCollectionEvent.collect { name ->
+            if (!name.isNullOrBlank()) {
+                viewModel.createCollection(name)
+                savedStateHandle["newCollectionName"] = null
+            }
+        }
+    }
 
     Scaffold(
         modifier = Modifier
@@ -104,6 +124,7 @@ fun Editing(mediaItemId: Long, onNavigate: (NavEvent) -> Unit) {
                         MoreActions.ADD_TO_COLLECTION -> {
                             showSheet = true
                         }
+
                         MoreActions.DUPLICATE -> {
                             viewModel.onDuplicate(context)
                         }

@@ -68,34 +68,54 @@ fun Hive(
     viewModel.loadCollections()
     val focusManager = LocalFocusManager.current
 
-    val newCollectionEvent = savedStateHandle
-        .getStateFlow<String?>("newCollectionName", null)
-
-    val renamedCollectionName = savedStateHandle
-        .getStateFlow<String?>("renamedCollectionName", null)
-    val renamedCollectionId = savedStateHandle
-        .getStateFlow<Long?>("renamedCollectionId", null)
-    val renamedCollectionEvent = combine(renamedCollectionName, renamedCollectionId) { name, id ->
-        if (name != null && id != null) name to id else null
+    val newCollectionEvent = remember {
+        savedStateHandle.getStateFlow<String?>(
+            "newCollectionName",
+            null
+        )
     }
 
+    val renamedCollectionEvent = remember {
+        combine(
+            savedStateHandle.getStateFlow<String?>(
+                "renamedCollectionName",
+                null
+            ),
+            savedStateHandle.getStateFlow<Long?>(
+                "renamedCollectionId",
+                null
+            )
+        ) { name, id ->
 
-    LaunchedEffect(Unit) {
-        newCollectionEvent.collect { name ->
-
-            name?.let {
-                if (name.isNotEmpty()) {
-                    viewModel.createCollection(it)
-                    savedStateHandle["newCollectionName"] = null
-                }
+            if (!name.isNullOrBlank() && id != null) {
+                id to name
+            } else {
+                null
             }
         }
     }
 
-    LaunchedEffect(Unit) {
+
+    LaunchedEffect(newCollectionEvent) {
+        newCollectionEvent.collect { name ->
+
+            if (!name.isNullOrBlank()) {
+                viewModel.createCollection(name)
+
+                savedStateHandle["newCollectionName"] = null
+            }
+        }
+    }
+
+    LaunchedEffect(renamedCollectionEvent) {
         renamedCollectionEvent.collect { event ->
-            event?.let { (name, id) ->
+
+            event?.let { (id, name) ->
+
                 viewModel.renameCollection(id, name)
+
+                savedStateHandle["renamedCollectionName"] = null
+                savedStateHandle["renamedCollectionId"] = null
             }
         }
     }
@@ -112,21 +132,7 @@ fun Hive(
             },
         topBar = {
             Toolbar(
-                onMassImport = { uris ->
-                    uris.forEach { uri ->
-                        val path = DeviceTools.copyToInternalStorage(context, uri)
-                        viewModel.createMediaItem(
-                            MediaItem(
-                                id = 0L,
-                                src = path,
-                                caption = null,
-                                description = null,
-                                tags = emptyList()
-                            )
-                        )
-                    }
-                    viewModel.onRefresh()
-                },
+                onMassImport = { uris -> viewModel.onMassImport(context, uris) },
                 onNavigate = onNavigate
             )
         }
