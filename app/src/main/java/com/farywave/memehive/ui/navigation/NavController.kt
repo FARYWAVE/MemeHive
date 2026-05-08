@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.ui.main.dialogs.AboutApp
 import com.farywave.memehive.ui.main.dialogs.NewCollection
 import com.farywave.memehive.ui.main.dialogs.RenameCollection
@@ -62,10 +63,13 @@ fun NavController() {
         }
 
         dialog(Screen.NewCollectionDialog.route) {
-            NewCollection(onDismissRequest = { navController.popBackStack() }) {
+            NewCollection(onDismissRequest = { navController.popBackStack() }) { name, coverSrc ->
                 navController.previousBackStackEntry
                     ?.savedStateHandle
-                    ?.set("newCollectionName", it)
+                    ?.set("newCollectionName", name)
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set("newCollectionSrc", coverSrc?.toString())
 
                 navController.popBackStack()
             }

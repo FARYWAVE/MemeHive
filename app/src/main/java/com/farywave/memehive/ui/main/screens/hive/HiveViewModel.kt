@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 
 class HiveViewModel(
     val mediaItemRepository: MediaItemRepository,
@@ -101,12 +102,13 @@ class HiveViewModel(
     }
 
 
-    fun createCollection(name: String) {
+    fun createCollection(name: String, cover: File?) {
         viewModelScope.launch(Dispatchers.IO) {
             collectionRepository.insertCollection(
                 Collection(
                     id = 0,
                     name = name,
+                    cover = cover,
                     mediaItemCount = 0
                 )
             )

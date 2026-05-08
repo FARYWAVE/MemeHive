@@ -48,7 +48,6 @@ import com.farywave.memehive.ui.components.CollectionsNavigation
 import com.farywave.memehive.ui.components.MediaItemCardFull
 import com.farywave.memehive.ui.components.SearchBar
 import com.farywave.memehive.ui.model.Collection
-import com.farywave.memehive.ui.model.MediaItem
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.simple_components.SimpleActionMenu
 import com.farywave.memehive.ui.simple_components.SimpleIconButton
@@ -69,10 +68,21 @@ fun Hive(
     val focusManager = LocalFocusManager.current
 
     val newCollectionEvent = remember {
-        savedStateHandle.getStateFlow<String?>(
-            "newCollectionName",
-            null
-        )
+        combine(
+            savedStateHandle.getStateFlow<String?>(
+                "newCollectionName",
+                null
+            ),
+            savedStateHandle.getStateFlow<String?>(
+                "newCollectionSrc",
+                null
+            )
+        ) { name, src ->
+            if (!name.isNullOrBlank()) {
+                name to src
+            } else null
+        }
+
     }
 
     val renamedCollectionEvent = remember {
@@ -96,17 +106,6 @@ fun Hive(
     }
 
 
-    LaunchedEffect(newCollectionEvent) {
-        newCollectionEvent.collect { name ->
-
-            if (!name.isNullOrBlank()) {
-                viewModel.createCollection(name)
-
-                savedStateHandle["newCollectionName"] = null
-            }
-        }
-    }
-
     LaunchedEffect(renamedCollectionEvent) {
         renamedCollectionEvent.collect { event ->
 
@@ -116,6 +115,16 @@ fun Hive(
 
                 savedStateHandle["renamedCollectionName"] = null
                 savedStateHandle["renamedCollectionId"] = null
+            }
+        }
+    }
+
+    LaunchedEffect(newCollectionEvent) {
+        newCollectionEvent.collect { event ->
+            event?.let {
+                val file =
+                    event.second?.let { DeviceTools.copyToInternalStorage(context, Uri.parse(it)) }
+                viewModel.createCollection(event.first, file)
             }
         }
     }
@@ -236,13 +245,6 @@ private fun Toolbar(onMassImport: (uris: List<Uri>) -> Unit, onNavigate: (NavEve
         }
 
         Spacer(Modifier.weight(1f))
-
-        SimpleIconButton(
-            modifier = Modifier
-                .padding(7.dp)
-                .size(30.dp),
-            icon = painterResource(R.drawable.ic_search)
-        ) {}
 
         SimpleActionMenu<CreateActions>(onSelected = { action ->
             when (action) {

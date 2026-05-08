@@ -65,6 +65,7 @@ import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.ui.components.CollectionSelectorSheet
+import com.farywave.memehive.ui.components.ImagePicker
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.simple_components.SimpleActionMenu
 import com.farywave.memehive.ui.simple_components.SimpleIconButton
@@ -319,59 +320,6 @@ private fun Content(
             }
         }
         item { Spacer(modifier = Modifier.height(500.dp)) }
-    }
-}
-
-@Composable
-private fun ImagePicker(
-    modifier: Modifier = Modifier,
-    shape: RoundedCornerShape,
-    initialSrc: Uri?,
-    onImageSelected: (Uri?) -> Unit
-) {
-    val focusManager = LocalFocusManager.current
-    val launcher = DeviceTools.requestMedia { onImageSelected(it) }
-    NullableImage(
-        modifier
-            .fillMaxWidth()
-            .clickable(onClick = {
-                focusManager.clearFocus()
-                launcher.launch("image/*")
-            }),
-        shape,
-        initialSrc
-    )
-}
-
-@Composable
-private fun NullableImage(modifier: Modifier, shape: RoundedCornerShape, src: Uri?) {
-    if (src != null) AsyncImage(
-        model = src,
-        contentDescription = null,
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape),
-        contentScale = ContentScale.FillWidth
-    ) else Box(
-        modifier = modifier
-            .aspectRatio(1.5F)
-            .fillMaxWidth()
-            .background(
-                color = LocalAppColors.current.backgroundPrimary,
-            )
-            .border(
-                3.dp,
-                LocalAppColors.current.backgroundSecondary,
-                shape
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(
-            modifier = Modifier.size(40.dp),
-            painter = painterResource(id = R.drawable.ic_no_image),
-            tint = LocalAppColors.current.contentSecondary,
-            contentDescription = null
-        )
     }
 }
 
