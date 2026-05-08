@@ -8,7 +8,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -84,7 +83,7 @@ fun Editing(
     val focusManager = LocalFocusManager.current
 
     val collections by viewModel.collections.collectAsState()
-    val selectedIds by viewModel.selectedIds.collectAsState()
+    val selectedIds by viewModel.selectedCollections.collectAsState()
 
 
     BackHandler {
@@ -160,7 +159,7 @@ fun Editing(
             )
             CollectionSelectorSheet(
                 show = showSheet,
-                collections = collections,
+                collections = collections.filter { it.id != -1L },
                 selectedIds = selectedIds,
                 onDismiss = { showSheet = false },
                 onCollectionClicked = { viewModel.toggleCollection(it) },

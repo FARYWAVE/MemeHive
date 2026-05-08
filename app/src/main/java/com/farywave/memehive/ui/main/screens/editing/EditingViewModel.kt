@@ -2,7 +2,6 @@ package com.farywave.memehive.ui.main.screens.editing
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -48,25 +48,30 @@ class EditingViewModel(
     private val _collections = MutableStateFlow(listOf(allCollection))
     val collections = _collections.asStateFlow()
 
-    private val _selectedIds = MutableStateFlow<Set<Long>>(emptySet())
-    val selectedIds = _selectedIds.asStateFlow()
+    private val _selectedCollections = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedCollections = _selectedCollections.asStateFlow()
 
 
     private var originalMediaItem: MediaItem? = null
     private var originalTags: List<EditableTag> = emptyList()
     private var originalMediaSrc: Uri? = null
+    private var originalCollections: Set<Long> = emptySet()
+    private val _refresh = MutableStateFlow(0)
 
     val isEdited =
         combine(
             mediaItem,
             editableTags,
-            mediaSrc
-        ) { mediaItem, tags, src ->
+            mediaSrc,
+            selectedCollections,
+            _refresh
+
+        ) { mediaItem, tags, src, selectedCollections, _ ->
 
             originalMediaItem?.caption != mediaItem.caption ||
                     originalMediaItem?.description != mediaItem.description ||
                     originalTags.map { it.text } != tags.map { it.text } ||
-                    originalMediaSrc != src
+                    originalMediaSrc != src || originalCollections != selectedCollections
         }.stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5000),
@@ -93,12 +98,18 @@ class EditingViewModel(
         originalMediaItem = mediaItem.value
         originalTags = editableTags.value
         originalMediaSrc = mediaSrc.value
+        originalCollections = selectedCollections.value
+
+        _refresh.update { it + 1 }
     }
 
     fun discardChanges() {
         originalMediaItem?.let { _mediaItem.value = it }
         _editableTags.value = originalTags
         _mediaSrc.value = originalMediaSrc
+        _selectedCollections.value = originalCollections
+
+        _refresh.update { it + 1 }
     }
 
     fun loadMediaItem(id: Long) {
@@ -123,7 +134,7 @@ class EditingViewModel(
                 }
             }
         } else {
-            _selectedIds.value = emptySet()
+            _selectedCollections.value = emptySet()
             saveOriginalValues()
         }
     }
@@ -137,21 +148,20 @@ class EditingViewModel(
         }
     }
 
-    fun loadSelectedCollections() {
-        viewModelScope.launch {
-            collectionRepository
-                .getCollectionsByMediaItem(mediaItem.value)
-                .collect { entries ->
-                    _selectedIds.value = entries
-                        .map { it.collectionId }
-                        .toSet()
-                }
-        }
+    suspend fun loadSelectedCollections() {
+
+        val entries = collectionRepository
+            .getCollectionsByMediaItem(mediaItem.value)
+            .first()
+
+        _selectedCollections.value = entries
+            .map { it.collectionId }
+            .toSet()
     }
 
     fun toggleCollection(collection: Collection) {
-        if (_selectedIds.value.contains(collection.id)) _selectedIds.value -= collection.id
-        else _selectedIds.value += collection.id
+        if (_selectedCollections.value.contains(collection.id)) _selectedCollections.value -= collection.id
+        else _selectedCollections.value += collection.id
     }
 
     fun createCollection(name: String) {
@@ -168,7 +178,7 @@ class EditingViewModel(
 
     fun updateCollectionEntries() {
         viewModelScope.launch(Dispatchers.IO) {
-            collectionRepository.updateCollectionEntries(mediaItem.value, _selectedIds.value)
+            collectionRepository.updateCollectionEntries(mediaItem.value, _selectedCollections.value)
         }
     }
 
