@@ -116,6 +116,72 @@ fun CollectionsNavigation(
 }
 
 @Composable
+fun BasicCollectionsNavigation(
+    modifier: Modifier = Modifier,
+    collections: List<Collection>,
+    selectedCollection: Collection,
+    onCollectionSelected: (Collection) -> Unit
+) {
+    if (collections.size > 4) LazyRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .background(
+                LocalAppColors.current.backgroundSecondary,
+                shape = MaterialTheme.shapes.large
+            )
+            .border(
+                width = 4.dp,
+                color = LocalAppColors.current.backgroundSecondary,
+                shape = MaterialTheme.shapes.large
+            )
+            .clip(MaterialTheme.shapes.large)
+            .padding(horizontal = 5.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        items(collections) { collection ->
+            CollectionChip(
+                modifier = Modifier.wrapContentSize(),
+                collection = collection,
+                isSelected = collection.id == selectedCollection.id,
+                onClick = { onCollectionSelected(collection) },
+                onLongClick = { }
+            )
+        }
+    } else Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .background(
+                LocalAppColors.current.backgroundSecondary,
+                shape = MaterialTheme.shapes.large
+            )
+            .border(
+                width = 4.dp,
+                color = LocalAppColors.current.backgroundSecondary,
+                shape = MaterialTheme.shapes.large
+            )
+            .clip(MaterialTheme.shapes.large)
+            .padding(horizontal = 5.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        collections.forEach { collection ->
+            Box(
+                modifier = Modifier.weight(1f)
+            ) {
+                CollectionChip(
+                    modifier = Modifier.wrapContentSize(),
+                    collection = collection,
+                    isSelected = collection.id == selectedCollection.id,
+                    onClick = { onCollectionSelected(collection) },
+                    onLongClick = { }
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun CollectionChip(
     modifier: Modifier,
     collection: Collection,

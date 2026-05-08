@@ -37,4 +37,9 @@
     <string name="action_edit_collection">Edit Collection</string>
     <string name="action_set_cover">Set Cover</string>
     <string name="action_edit">Edit</string>
+    <string name="hive_item" translatable="false">Hive Item</string>
+    <string name="no_notifications_perm_error">Please Grant Permission to send Notifications to MemeHive</string>
+    <string name="action_enable_picker">Enable Picker</string>
+    <string name="picket_notification_text">Tap to open Hive</string>
+    <string name="copied_to_clipboard">Copied To Clipboard</string>
 </resources>

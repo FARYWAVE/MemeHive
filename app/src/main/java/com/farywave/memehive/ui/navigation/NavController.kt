@@ -16,7 +16,7 @@ import com.farywave.memehive.ui.main.screens.editing.Editing
 import com.farywave.memehive.ui.main.screens.hive.Hive
 
 @Composable
-fun NavController() {
+fun NavController(onEnableNotification: (Boolean) -> Unit) {
     val navController = rememberNavController()
 
     val onNavigate: (NavEvent) -> Unit = { event ->
@@ -43,6 +43,7 @@ fun NavController() {
         composable(Screen.Hive.route) { backStackEntry ->
             Hive(
                 backStackEntry.savedStateHandle,
+                onEnableNotification,
                 onNavigate
             )
         }

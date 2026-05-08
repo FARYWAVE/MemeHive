@@ -39,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
@@ -54,18 +55,17 @@ import com.farywave.memehive.ui.simple_components.SimpleIconButton
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.Typography
 import kotlinx.coroutines.flow.combine
-import androidx.core.net.toUri
 
 @Composable
 fun Hive(
     savedStateHandle: SavedStateHandle,
+    onEnableNotification: (Boolean) -> Unit,
     onNavigate: (NavEvent) -> Unit
 ) {
     val context = LocalContext.current
     val viewModel: HiveViewModel = viewModel(
         factory = HiveViewModelFactory(context)
     )
-    viewModel.loadCollections()
     val focusManager = LocalFocusManager.current
 
     val newCollectionEvent = remember {
@@ -115,7 +115,7 @@ fun Hive(
 
             event?.let { event ->
 
-                viewModel.updateCollection(context,event.id, event.name, event.cover)
+                viewModel.updateCollection(context, event.id, event.name, event.cover)
 
                 savedStateHandle["editedCollectionName"] = null
                 savedStateHandle["editedCollectionId"] = null
@@ -150,6 +150,7 @@ fun Hive(
         topBar = {
             Toolbar(
                 onMassImport = { uris -> viewModel.onMassImport(context, uris) },
+                onEnableNotification = onEnableNotification,
                 onNavigate = onNavigate
             )
         }
@@ -219,7 +220,12 @@ fun Hive(
 }
 
 @Composable
-private fun Toolbar(onMassImport: (uris: List<Uri>) -> Unit, onNavigate: (NavEvent) -> Unit) {
+private fun Toolbar(
+    onMassImport: (uris: List<Uri>) -> Unit,
+    onEnableNotification: (Boolean) -> Unit,
+    onNavigate: (NavEvent) -> Unit
+) {
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -268,6 +274,8 @@ private fun Toolbar(onMassImport: (uris: List<Uri>) -> Unit, onNavigate: (NavEve
 
         SimpleActionMenu<MoreActions>(onSelected = { action ->
             when (action) {
+                MoreActions.ENABLE_PICKER -> onEnableNotification(true)
+
                 MoreActions.VIEW_APP_INFO -> onNavigate(NavEvent.AboutAppDialog)
                 MoreActions.IMPORT_COLLECTION -> {}
                 MoreActions.MASS_IMPORT -> {

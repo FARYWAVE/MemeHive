@@ -31,4 +31,8 @@
     <string name="action_edit_collection">Редактировать Коллекцию</string>
     <string name="action_set_cover">Установить Обложку</string>
     <string name="action_edit">Редактировать</string>
+    <string name="no_notifications_perm_error">Пожалуйста разрешите уведомления от MemeHive</string>
+    <string name="action_enable_picker">Включить Уведомление</string>
+    <string name="picket_notification_text">Нажмите чтобы открыть Hive</string>
+    <string name="copied_to_clipboard">Скопировано в Буфер</string>
 </resources>

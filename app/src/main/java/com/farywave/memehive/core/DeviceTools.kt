@@ -1,14 +1,23 @@
 package com.farywave.memehive.core
 
+import android.Manifest
+import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.R
+import com.farywave.memehive.ui.picker.PickerActivity
 import java.io.File
 import java.io.IOException
 
@@ -92,4 +101,44 @@ object DeviceTools {
         ) { uris: List<Uri> ->
             onGranted(uris)
         }
+
+    fun showPickerNotification(
+        context: Context,
+    ) {
+        val intent = Intent(context, PickerActivity::class.java)
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or
+                    PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val notification =
+            NotificationCompat.Builder(
+                context,
+                MemeHiveApplication.PICKER_CHANNEL_ID
+            )
+                .setSmallIcon(R.drawable.ic_app_logo)
+                .setContentTitle(context.getString(R.string.app_name))
+                .setContentText(context.getString(R.string.picket_notification_text))
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(false)
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .build()
+
+        NotificationManagerCompat.from(context)
+            .notify(
+                MemeHiveApplication.PICKER_NOTIFICATION_ID,
+                notification
+            )
+    }
+
+    fun hidePickerNotification(context: Context) {
+
+        NotificationManagerCompat.from(context)
+            .cancel(MemeHiveApplication.PICKER_NOTIFICATION_ID)
+    }
 }
