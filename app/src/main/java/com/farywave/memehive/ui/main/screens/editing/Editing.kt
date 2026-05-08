@@ -83,11 +83,7 @@ fun Editing(
     )
     val focusManager = LocalFocusManager.current
 
-    var isEdited by remember { mutableStateOf(false) }
     val collections by viewModel.collections.collectAsState()
-    val mediaItem by viewModel.mediaItem.collectAsState()
-    val editableTags by viewModel.editableTags.collectAsState()
-    val mediaSrc by viewModel.mediaSrc.collectAsState()
     val selectedIds by viewModel.selectedIds.collectAsState()
 
 
@@ -96,11 +92,7 @@ fun Editing(
         onNavigate(NavEvent.Back)
     }
     var showSheet by remember { mutableStateOf(false) }
-
-    LaunchedEffect(mediaItem, editableTags, mediaSrc) {
-        isEdited = viewModel.isEdited()
-    }
-
+    val isEdited by viewModel.isEdited.collectAsState()
     val newCollectionEvent = remember {
         savedStateHandle.getStateFlow<String?>(
             "newCollectionName",

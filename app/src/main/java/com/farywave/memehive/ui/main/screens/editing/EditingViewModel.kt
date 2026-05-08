@@ -13,7 +13,10 @@ import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
@@ -53,6 +56,23 @@ class EditingViewModel(
     private var originalTags: List<EditableTag> = emptyList()
     private var originalMediaSrc: Uri? = null
 
+    val isEdited =
+        combine(
+            mediaItem,
+            editableTags,
+            mediaSrc
+        ) { mediaItem, tags, src ->
+
+            originalMediaItem?.caption != mediaItem.caption ||
+                    originalMediaItem?.description != mediaItem.description ||
+                    originalTags.map { it.text } != tags.map { it.text } ||
+                    originalMediaSrc != src
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            false
+        )
+
     init {
         loadMediaItem(mediaItemId)
         loadCollections()
@@ -73,17 +93,6 @@ class EditingViewModel(
         originalMediaItem = mediaItem.value
         originalTags = editableTags.value
         originalMediaSrc = mediaSrc.value
-    }
-
-    fun isEdited(): Boolean {
-
-        val current = mediaItem.value
-        val original = originalMediaItem
-
-        return original?.caption != current.caption ||
-                original?.description != current.description ||
-                originalTags.map { it.text } != editableTags.value.map { it.text } ||
-                originalMediaSrc != mediaSrc.value
     }
 
     fun discardChanges() {
@@ -203,7 +212,7 @@ class EditingViewModel(
         }
     }
 
-    fun commitTags() {
+    private fun commitTags() {
         val cleanTags = _editableTags.value
             .map { it.text.trim() }
             .filter { it.isNotEmpty() }
@@ -218,7 +227,7 @@ class EditingViewModel(
     }
 
     fun onSave(context: Context) {
-        if (_mediaItem.value.id == -1L && _mediaSrc.value == null) return
+        if (_mediaItem.value.id == -1L && _mediaSrc.value == null || !isEdited.value) return
         commitTags()
 
         val oldSrc = _mediaItem.value.src
