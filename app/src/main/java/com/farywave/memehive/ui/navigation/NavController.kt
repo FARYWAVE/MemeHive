@@ -1,17 +1,17 @@
 package com.farywave.memehive.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.core.net.toUri
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.farywave.memehive.core.DeviceTools
+import com.farywave.memehive.core.ModelTools
 import com.farywave.memehive.ui.main.dialogs.AboutApp
 import com.farywave.memehive.ui.main.dialogs.NewCollection
-import com.farywave.memehive.ui.main.dialogs.RenameCollection
+import com.farywave.memehive.ui.main.dialogs.EditCollection
 import com.farywave.memehive.ui.main.screens.editing.Editing
 import com.farywave.memehive.ui.main.screens.hive.Hive
 
@@ -26,9 +26,10 @@ fun NavController() {
             NavEvent.Back -> navController.popBackStack()
             NavEvent.NewCollectionDialog -> navController.navigate(Screen.NewCollectionDialog.route)
             NavEvent.AboutAppDialog -> navController.navigate(Screen.AboutAppDialog.route)
-            is NavEvent.ToRenameCollectionDialog -> navController.navigate(
-                Screen.RenameCollectionDialog.createRoute(
+            is NavEvent.ToEditCollectionDialog -> navController.navigate(
+                Screen.EditCollectionDialog.createRoute(
                     event.collectionName,
+                    event.coverSrc,
                     event.collectionId
                 )
             )
@@ -80,9 +81,12 @@ fun NavController() {
         }
 
         dialog(
-            route = Screen.RenameCollectionDialog.route,
+            route = Screen.EditCollectionDialog.route,
             arguments = listOf(
                 navArgument("collectionName") {
+                    type = NavType.StringType
+                },
+                navArgument("coverSrc") {
                     type = NavType.StringType
                 },
                 navArgument("collectionId") {
@@ -92,17 +96,24 @@ fun NavController() {
         ) { backStackEntry ->
             val collectionName = backStackEntry.arguments?.getString("collectionName") ?: ""
             val collectionId = backStackEntry.arguments?.getLong("collectionId") ?: -1L
-            RenameCollection(
+            val coverSrc = ModelTools.decode(backStackEntry.arguments?.getString("coverSrc"))
+            ModelTools.quickLog(coverSrc.toString())
+            EditCollection(
                 collectionName = collectionName,
+                collectionCover = if (coverSrc.isNullOrEmpty()) null else coverSrc,
                 onDismissRequest = { navController.popBackStack() },
-                onConfirm = { newName ->
+                onConfirm = { newName, newCover ->
                     navController.previousBackStackEntry
                         ?.savedStateHandle
-                        ?.set("renamedCollectionName", newName)
+                        ?.set("editedCollectionName", newName)
 
                     navController.previousBackStackEntry
                         ?.savedStateHandle
-                        ?.set("renamedCollectionId", collectionId)
+                        ?.set("editedCollectionCover", newCover?.toString())
+
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("editedCollectionId", collectionId)
 
                     navController.popBackStack()
                 }

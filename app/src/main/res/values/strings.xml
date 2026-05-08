@@ -34,6 +34,7 @@
     <string name="gigabyte">Gb</string>
     <string name="__byte">B</string>
     <string name="action_rename">Rename</string>
-    <string name="action_rename_collection">Rename Collection</string>
+    <string name="action_edit_collection">Edit Collection</string>
     <string name="action_set_cover">Set Cover</string>
+    <string name="action_edit">Edit</string>
 </resources>

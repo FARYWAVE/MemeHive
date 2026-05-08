@@ -178,7 +178,7 @@ class EditingViewModel(
 
     fun updateCollectionEntries() {
         viewModelScope.launch(Dispatchers.IO) {
-            collectionRepository.updateCollectionEntries(mediaItem.value, _selectedCollections.value)
+            collectionRepository.updateCollectionEntries(_mediaItem.value, _selectedCollections.value)
         }
     }
 

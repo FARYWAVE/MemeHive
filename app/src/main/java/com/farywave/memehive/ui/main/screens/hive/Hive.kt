@@ -54,6 +54,7 @@ import com.farywave.memehive.ui.simple_components.SimpleIconButton
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.Typography
 import kotlinx.coroutines.flow.combine
+import androidx.core.net.toUri
 
 @Composable
 fun Hive(
@@ -85,20 +86,23 @@ fun Hive(
 
     }
 
-    val renamedCollectionEvent = remember {
+    val editedCollectionEvent = remember {
         combine(
             savedStateHandle.getStateFlow<String?>(
-                "renamedCollectionName",
+                "editedCollectionName",
+                null
+            ),
+            savedStateHandle.getStateFlow<String?>(
+                "editedCollectionCover",
                 null
             ),
             savedStateHandle.getStateFlow<Long?>(
-                "renamedCollectionId",
+                "editedCollectionId",
                 null
             )
-        ) { name, id ->
-
+        ) { name, cover, id ->
             if (!name.isNullOrBlank() && id != null) {
-                id to name
+                EditedCollectionEvent(name, cover?.toUri(), id)
             } else {
                 null
             }
@@ -106,15 +110,16 @@ fun Hive(
     }
 
 
-    LaunchedEffect(renamedCollectionEvent) {
-        renamedCollectionEvent.collect { event ->
+    LaunchedEffect(editedCollectionEvent) {
+        editedCollectionEvent.collect { event ->
 
-            event?.let { (id, name) ->
+            event?.let { event ->
 
-                viewModel.renameCollection(id, name)
+                viewModel.updateCollection(context,event.id, event.name, event.cover)
 
-                savedStateHandle["renamedCollectionName"] = null
-                savedStateHandle["renamedCollectionId"] = null
+                savedStateHandle["editedCollectionName"] = null
+                savedStateHandle["editedCollectionId"] = null
+                savedStateHandle["editedCollectionCover"] = null
             }
         }
     }
@@ -123,8 +128,11 @@ fun Hive(
         newCollectionEvent.collect { event ->
             event?.let {
                 val file =
-                    event.second?.let { DeviceTools.copyToInternalStorage(context, Uri.parse(it)) }
+                    event.second?.let { DeviceTools.copyToInternalStorage(context, it.toUri()) }
                 viewModel.createCollection(event.first, file)
+
+                savedStateHandle["newCollectionName"] = null
+                savedStateHandle["newCollectionSrc"] = null
             }
         }
     }
@@ -181,18 +189,14 @@ fun Hive(
                     },
                     onAction = { collection, action ->
                         when (action) {
-                            CollectionActions.RENAME -> {
+                            CollectionActions.EDIT -> {
                                 onNavigate(
-                                    NavEvent.ToRenameCollectionDialog(
+                                    NavEvent.ToEditCollectionDialog(
                                         collection.name,
+                                        collection.cover?.let { Uri.fromFile(it) },
                                         collection.id
                                     )
                                 )
-                            }
-
-                            CollectionActions.SET_COVER -> {
-                                selectedCollectionForCover = collection
-                                launcher.launch("image/*")
                             }
 
                             CollectionActions.DELETE -> {
@@ -398,3 +402,9 @@ private fun Content(
         onNewCollectionClicked = { onNavigate(NavEvent.NewCollectionDialog) }
     )
 }
+
+private data class EditedCollectionEvent(
+    val name: String?,
+    val cover: Uri?,
+    val id: Long
+)

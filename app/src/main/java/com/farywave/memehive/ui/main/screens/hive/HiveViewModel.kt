@@ -169,10 +169,18 @@ class HiveViewModel(
         }
     }
 
-    fun renameCollection(collectionId: Long, newName: String) {
+    fun updateCollection(context: Context, collectionId: Long, newName: String?, newCover: Uri?) {
         viewModelScope.launch(Dispatchers.IO) {
             val collection = collections.value.find { it.id == collectionId } ?: return@launch
-            collectionRepository.updateCollection(collection.copy(name = newName))
+            val file = newCover?.let { DeviceTools.copyToInternalStorage(context, it) }
+            collection.cover?.let { DeviceTools.deleteFromInternalStorage(it) }
+
+            collectionRepository.updateCollection(
+                collection.copy(
+                    name = newName ?: collection.name,
+                    cover = file
+                )
+            )
         }
     }
 

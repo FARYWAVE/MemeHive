@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
+import com.farywave.memehive.core.ModelTools
 import com.farywave.memehive.ui.simple_components.ActionType
 import com.farywave.memehive.ui.simple_components.SimpleDialog
 import com.farywave.memehive.ui.simple_components.SimpleDialogAction
@@ -69,7 +70,7 @@ enum class AboutAppEntry(@StringRes val title: Int, val content: @Composable () 
     STORAGE(title = R.string.about_app_storage, content = {
         val context = LocalContext.current
         Text(
-            text = DeviceTools.formatBytes(DeviceTools.dirSize(context.filesDir)),
+            text = ModelTools.formatBytes(DeviceTools.dirSize(context.filesDir)),
             style = MaterialTheme.typography.bodyMedium,
             color = LocalAppColors.current.contentPrimary
         )
@@ -78,7 +79,7 @@ enum class AboutAppEntry(@StringRes val title: Int, val content: @Composable () 
     CACHE(title = R.string.about_app_cache, content = {
         val context = LocalContext.current
         Text(
-            text = DeviceTools.formatBytes(DeviceTools.dirSize(context.cacheDir)),
+            text = ModelTools.formatBytes(DeviceTools.dirSize(context.cacheDir)),
             style = MaterialTheme.typography.bodyMedium,
             color = LocalAppColors.current.contentPrimary
         )

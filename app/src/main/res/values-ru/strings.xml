@@ -28,6 +28,7 @@
     <string name="gigabyte">Гб</string>
     <string name="__byte">Б</string>
     <string name="action_rename">Переименовать</string>
-    <string name="action_rename_collection">Переименовать Коллекцию</string>
+    <string name="action_edit_collection">Редактировать Коллекцию</string>
     <string name="action_set_cover">Установить Обложку</string>
+    <string name="action_edit">Редактировать</string>
 </resources>

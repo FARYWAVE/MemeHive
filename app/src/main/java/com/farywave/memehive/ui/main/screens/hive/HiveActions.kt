@@ -34,7 +34,6 @@ enum class CollectionActions(
     @StringRes override val labelId: Int,
     override val highlighted: Boolean = false
 ) : ActionMenuOptions {
-    RENAME(R.string.action_rename),
-    SET_COVER(R.string.action_set_cover),
+    EDIT(R.string.action_edit),
     DELETE(R.string.action_delete, true)
 }

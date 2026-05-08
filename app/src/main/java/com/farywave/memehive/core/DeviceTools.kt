@@ -79,20 +79,6 @@ object DeviceTools {
 
 
     @Composable
-    fun formatBytes(bytes: Long): String {
-        val kb = 1024.0
-        val mb = kb * 1024
-        val gb = mb * 1024
-
-        return when {
-            bytes >= gb -> "${(bytes / gb).toInt()} ${stringResource(R.string.gigabyte)}"
-            bytes >= mb -> "${(bytes / mb).toInt()} ${stringResource(R.string.megabyte)}"
-            bytes >= kb -> "${(bytes / kb).toInt()} ${stringResource(R.string.kilobyte)}"
-            else -> "$bytes ${stringResource(R.string.__byte)}"
-        }
-    }
-
-    @Composable
     fun requestMedia(onGranted: (uri: Uri?) -> Unit) = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->

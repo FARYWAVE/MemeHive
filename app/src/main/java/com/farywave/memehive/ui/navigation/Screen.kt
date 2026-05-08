@@ -1,5 +1,8 @@
 package com.farywave.memehive.ui.navigation
 
+import android.net.Uri
+import com.farywave.memehive.core.ModelTools
+
 sealed class Screen(val route: String) {
     object Hive : Screen("hive")
     object Editing : Screen("editing/{mediaItemId}") {
@@ -10,9 +13,9 @@ sealed class Screen(val route: String) {
 
     object AboutAppDialog : Screen("about_app")
 
-    object RenameCollectionDialog :
-        Screen("rename_collection_dialog/{collectionName}/{collectionId}") {
-        fun createRoute(collectionName: String, collectionId: Long) =
-            "rename_collection_dialog/$collectionName/$collectionId"
+    object EditCollectionDialog :
+        Screen("edit_collection_dialog/{collectionName}/{coverSrc}/{collectionId}") {
+        fun createRoute(collectionName: String, coverSrc: Uri?, collectionId: Long) =
+            "edit_collection_dialog/$collectionName/${ModelTools.encode(coverSrc?.toString())}/$collectionId"
     }
 }
