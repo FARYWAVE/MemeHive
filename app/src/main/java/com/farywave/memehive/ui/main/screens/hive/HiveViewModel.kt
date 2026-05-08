@@ -3,7 +3,6 @@ package com.farywave.memehive.ui.main.screens.hive
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.farywave.memehive.core.DeviceTools
@@ -14,8 +13,6 @@ import com.farywave.memehive.ui.model.MediaItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -71,6 +68,7 @@ class HiveViewModel(
     fun onCollectionSelected(collection: Collection) {
         _selectedCollection.value = collection
     }
+
     fun disableMassEditingMode() {
         _isMassEditingMode.value = false
         _mediaItems.update { list ->
@@ -102,7 +100,6 @@ class HiveViewModel(
         }
     }
 
-    fun getSelectedMediaItems() = _mediaItems.value.filter { it.isSelected }
 
     fun createCollection(name: String) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -170,13 +167,6 @@ class HiveViewModel(
         }
     }
 
-    fun createMediaItem(mediaItem: MediaItem, refresh: Boolean = true) {
-        viewModelScope.launch(Dispatchers.IO) {
-            mediaItemRepository.insertMediaItem(mediaItem)
-            if (refresh) onRefresh()
-        }
-    }
-
     fun renameCollection(collectionId: Long, newName: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val collection = collections.value.find { it.id == collectionId } ?: return@launch
@@ -195,6 +185,12 @@ class HiveViewModel(
     fun deleteCollection(collection: Collection) {
         viewModelScope.launch(Dispatchers.IO) {
             collectionRepository.deleteCollection(collection)
+
+            if (collection.id == _selectedCollection.value.id) {
+                _selectedCollection.value = allCollection
+
+                onRefresh()
+            }
         }
     }
 }

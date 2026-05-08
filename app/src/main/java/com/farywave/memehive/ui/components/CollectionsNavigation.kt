@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -33,7 +34,7 @@ fun CollectionsNavigation(
     onCollectionSelected: (Collection) -> Unit,
     onAction: (collection: Collection, action: CollectionActions) -> Unit
 ) {
-    LazyRow(
+    if (collections.size > 4) LazyRow(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
@@ -51,25 +52,80 @@ fun CollectionsNavigation(
         verticalAlignment = Alignment.CenterVertically
     ) {
         items(collections) { collection ->
-            SimpleActionMenu<CollectionActions>(
+            if (collection.id == -1L) CollectionChip(
+                modifier = Modifier.wrapContentSize(),
+                collection = collection,
+                isSelected = collection.id == selectedCollection.id,
+                onClick = { onCollectionSelected(collection) },
+                onLongClick = { })
+            else SimpleActionMenu<CollectionActions>(
                 onSelected = { action -> onAction(collection, action) },
             ) { onClick ->
                 CollectionChip(
-                    collection,
-                    collection.id == selectedCollection.id,
+                    modifier = Modifier.wrapContentSize(),
+                    collection = collection,
+                    isSelected = collection.id == selectedCollection.id,
                     onClick = { onCollectionSelected(collection) },
                     onLongClick = { onClick() })
+            }
+        }
+    } else Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .background(
+                LocalAppColors.current.backgroundSecondary,
+                shape = MaterialTheme.shapes.large
+            )
+            .border(
+                width = 4.dp,
+                color = LocalAppColors.current.backgroundSecondary,
+                shape = MaterialTheme.shapes.large
+            )
+            .clip(MaterialTheme.shapes.large)
+            .padding(horizontal = 5.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        collections.forEach { collection ->
+            Box(
+                modifier = Modifier.weight(1f)
+            ) {
+                if (collection.id == -1L) CollectionChip(
+                    modifier = Modifier.fillMaxWidth(),
+                    collection = collection,
+                    isSelected = collection.id == selectedCollection.id,
+                    onClick = { onCollectionSelected(collection) },
+                    onLongClick = { }
+                ) else SimpleActionMenu<CollectionActions>(
+                    onSelected = { action ->
+                        onAction(collection, action)
+                    },
+                ) { onClick ->
+
+                    CollectionChip(
+                        modifier = Modifier.fillMaxWidth(),
+                        collection = collection,
+                        isSelected = collection.id == selectedCollection.id,
+                        onClick = { onCollectionSelected(collection) },
+                        onLongClick = { onClick() }
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun CollectionChip(collection: Collection, isSelected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
+private fun CollectionChip(
+    modifier: Modifier,
+    collection: Collection,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
+) {
     val interactionSource = remember { MutableInteractionSource() }
     Box(
-        modifier = Modifier
-            .wrapContentSize()
+        modifier = modifier
             .background(
                 if (isSelected) LocalAppColors.current.accentPrimary
                 else LocalAppColors.current.transparent,

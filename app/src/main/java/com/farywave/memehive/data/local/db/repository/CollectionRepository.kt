@@ -9,6 +9,7 @@ import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 class CollectionRepository(
@@ -33,14 +34,19 @@ class CollectionRepository(
     fun observeCollections() =
         collectionDao.getAllCollections()
             .flatMapLatest { collections ->
-                val flows = collections.map { collection ->
-                    collectionEntryDao.getEntryCount(collection.id)
-                        .map { count ->
-                            collection.toCollection(count)
-                        }
-                }
 
-                combine(flows) { it.toList() }
+                if (collections.isEmpty()) {
+                    flowOf(emptyList())
+                } else {
+                    val flows = collections.map { collection ->
+                        collectionEntryDao.getEntryCount(collection.id)
+                            .map { count ->
+                                collection.toCollection(count)
+                            }
+                    }
+
+                    combine(flows) { it.toList() }
+                }
             }
 
     suspend fun insertCollectionEntry(collection: Collection, mediaItem: MediaItem) =
