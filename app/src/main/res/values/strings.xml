@@ -42,4 +42,5 @@
     <string name="action_enable_picker">Enable Picker</string>
     <string name="picket_notification_text">Tap to open Hive</string>
     <string name="copied_to_clipboard">Copied To Clipboard</string>
+    <string name="action_export">Export</string>
 </resources>

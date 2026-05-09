@@ -55,6 +55,10 @@ class PickerViewModel(
         }
     }
 
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+    }
+
     fun onRefresh() {
         onSearch()
     }

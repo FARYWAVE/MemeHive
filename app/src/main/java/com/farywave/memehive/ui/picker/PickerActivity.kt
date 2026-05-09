@@ -11,6 +11,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.theme.LocalAppColors
@@ -30,7 +31,11 @@ class PickerActivity : ComponentActivity() {
 
                 val defaultLabel = stringResource(R.string.hive_item)
                 PickerScreen { item ->
-                    val uri = Uri.fromFile(item.src!!)
+                    val uri = FileProvider.getUriForFile(
+                        this,
+                        "${this.packageName}.provider",
+                        item.src!!
+                    )
                     val label = item.caption.ifEmpty { defaultLabel }
                     copyToClipboard(label, uri)
                 }
@@ -44,5 +49,7 @@ class PickerActivity : ComponentActivity() {
         val clip = ClipData.newUri(contentResolver, label, uri)
 
         clipboard.setPrimaryClip(clip)
+
+        finish()
     }
 }

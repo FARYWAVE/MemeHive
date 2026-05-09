@@ -8,21 +8,26 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.components.BasicCollectionsNavigation
 import com.farywave.memehive.ui.components.MediaItemCardFull
@@ -56,10 +61,11 @@ fun PickerScreen(onItemClicked: (mediaItem: MediaItem) -> Unit) {
                 .background(LocalAppColors.current.backgroundPrimary),
             verticalArrangement = Arrangement.spacedBy(7.dp),
         ) {
-            Box(Modifier.padding(horizontal = 10.dp)) {
+            Box(Modifier.padding(horizontal = 10.dp).padding(top = 7.dp)) {
                 SearchBar(
                     hint = stringResource(R.string.media_search_hint),
                     onQueryChange = {
+                        viewModel.onSearchQueryChanged(it)
                         viewModel.onSearch()
                     }
                 )
@@ -88,6 +94,7 @@ fun PickerScreen(onItemClicked: (mediaItem: MediaItem) -> Unit) {
                         context.getString(R.string.copied_to_clipboard),
                         Toast.LENGTH_SHORT
                     ).show()
+                    onItemClicked(it)
                 }
             )
         }
@@ -110,12 +117,15 @@ private fun Content(
 
         ) {
         items(mediaItems, key = { it.id }) { mediaItem ->
-            MediaItemCardFull(
-                mediaItem = mediaItem,
-                onClick = {
-                    onItemClicked(mediaItem)
-                },
-                onLongClick = { }
+            AsyncImage(
+                model = mediaItem.src,
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(0.dp)
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.medium)
+                    .clickable { onItemClicked(mediaItem) },
+                contentScale = ContentScale.FillWidth
             )
         }
     }

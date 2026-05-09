@@ -35,4 +35,5 @@
     <string name="action_enable_picker">Включить Уведомление</string>
     <string name="picket_notification_text">Нажмите чтобы открыть Hive</string>
     <string name="copied_to_clipboard">Скопировано в Буфер</string>
+    <string name="action_export">Экспорт</string>
 </resources>

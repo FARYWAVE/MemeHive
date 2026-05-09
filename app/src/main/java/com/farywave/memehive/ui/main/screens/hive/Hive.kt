@@ -171,13 +171,6 @@ fun Hive(
                     }
                 )
             }
-            var selectedCollectionForCover by remember { mutableStateOf<Collection?>(null) }
-            val launcher = DeviceTools.requestMedia { uri ->
-                val collection = selectedCollectionForCover
-                if (uri != null && collection != null) {
-                    viewModel.setCollectionCover(context, collection, uri)
-                }
-            }
 
             val collections by viewModel.collections.collectAsState()
             if (collections.size > 1) Box(Modifier.padding(horizontal = 10.dp)) {
@@ -190,6 +183,7 @@ fun Hive(
                     },
                     onAction = { collection, action ->
                         when (action) {
+                            CollectionActions.EXPORT -> {}
                             CollectionActions.EDIT -> {
                                 onNavigate(
                                     NavEvent.ToEditCollectionDialog(

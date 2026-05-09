@@ -170,7 +170,7 @@ fun BasicCollectionsNavigation(
                 modifier = Modifier.weight(1f)
             ) {
                 CollectionChip(
-                    modifier = Modifier.wrapContentSize(),
+                    modifier = Modifier.fillMaxWidth(),
                     collection = collection,
                     isSelected = collection.id == selectedCollection.id,
                     onClick = { onCollectionSelected(collection) },

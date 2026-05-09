@@ -35,6 +35,7 @@ enum class CollectionActions(
     @StringRes override val labelId: Int,
     override val highlighted: Boolean = false
 ) : ActionMenuOptions {
+    EXPORT(R.string.action_export),
     EDIT(R.string.action_edit),
     DELETE(R.string.action_delete, true)
 }
