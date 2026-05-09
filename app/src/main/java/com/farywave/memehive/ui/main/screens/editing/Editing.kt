@@ -3,6 +3,7 @@ package com.farywave.memehive.ui.main.screens.editing
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -75,7 +77,6 @@ fun Editing(
     val viewModel: EditingViewModel = viewModel(
         factory = EditingViewModelFactory(context, mediaItemId)
     )
-    val focusManager = LocalFocusManager.current
 
     val collections by viewModel.collections.collectAsState()
     val selectedIds by viewModel.selectedCollections.collectAsState()
@@ -103,15 +104,18 @@ fun Editing(
         }
     }
 
+    val focusManager = LocalFocusManager.current
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .background(LocalAppColors.current.backgroundPrimary)
-            .clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                focusManager.clearFocus()
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = {
+                        focusManager.clearFocus()
+                    }
+                )
             },
         contentWindowInsets = WindowInsets(0),
         topBar = {

@@ -28,7 +28,6 @@ fun SimpleIconButton(
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val focusManager = LocalFocusManager.current
 
     Box(
         modifier = modifier
@@ -40,7 +39,6 @@ fun SimpleIconButton(
                     color = tint
                 ),
                 onClick = {
-                    focusManager.clearFocus()
                     onClick()
                 }
             ),

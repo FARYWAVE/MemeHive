@@ -28,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -36,7 +35,6 @@ import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.simple_components.SimpleBottomSheet
-import com.farywave.memehive.ui.simple_components.SimpleIconButton
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
@@ -130,7 +128,6 @@ private fun Heading(onNewCollectionClicked: () -> Unit) {
 
 @Composable
 private fun CollectionItem(collection: Collection, isSelected: Boolean, onClicked: () -> Unit) {
-    val focusManager = LocalFocusManager.current
     val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
@@ -141,7 +138,6 @@ private fun CollectionItem(collection: Collection, isSelected: Boolean, onClicke
                 indication = null,
                 onClick = {
                     onClicked()
-                    focusManager.clearFocus()
                 }
             ),
         verticalAlignment = Alignment.CenterVertically,

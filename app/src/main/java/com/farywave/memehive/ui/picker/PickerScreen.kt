@@ -3,7 +3,7 @@ package com.farywave.memehive.ui.picker
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,9 +18,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -30,7 +30,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.components.BasicCollectionsNavigation
-import com.farywave.memehive.ui.components.MediaItemCardFull
 import com.farywave.memehive.ui.components.SearchBar
 import com.farywave.memehive.ui.model.MediaItem
 import com.farywave.memehive.ui.theme.LocalAppColors
@@ -41,17 +40,19 @@ fun PickerScreen(onItemClicked: (mediaItem: MediaItem) -> Unit) {
     val viewModel: PickerViewModel = viewModel(
         factory = PickerViewModelFactory(context)
     )
+
     val focusManager = LocalFocusManager.current
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .background(LocalAppColors.current.backgroundPrimary)
-            .clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                focusManager.clearFocus()
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = {
+                        focusManager.clearFocus()
+                    }
+                )
             }
     ) { contentPadding ->
         Column(

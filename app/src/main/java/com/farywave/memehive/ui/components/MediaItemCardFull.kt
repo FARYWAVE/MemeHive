@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -45,7 +44,6 @@ fun MediaItemCardFull(
     onLongClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val focusManager = LocalFocusManager.current
     Column(
         Modifier
             .fillMaxWidth()
@@ -59,11 +57,9 @@ fun MediaItemCardFull(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = {
-                    focusManager.clearFocus()
                     onClick()
                 },
                 onLongClick = {
-                    focusManager.clearFocus()
                     onLongClick()
                 },
             )
