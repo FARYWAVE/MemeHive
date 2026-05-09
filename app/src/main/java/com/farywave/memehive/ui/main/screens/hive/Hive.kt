@@ -219,7 +219,6 @@ private fun Toolbar(
     onEnableNotification: (Boolean) -> Unit,
     onNavigate: (NavEvent) -> Unit
 ) {
-    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()

@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -92,7 +94,7 @@ fun Editing(
         )
     }
 
-    LaunchedEffect(newCollectionEvent) {
+    LaunchedEffect(Unit) {
         newCollectionEvent.collect { name ->
             if (!name.isNullOrBlank()) {
                 viewModel.createCollection(name)
@@ -111,6 +113,7 @@ fun Editing(
             ) {
                 focusManager.clearFocus()
             },
+        contentWindowInsets = WindowInsets(0),
         topBar = {
             Toolbar(
                 isEdited = isEdited,
@@ -141,6 +144,7 @@ fun Editing(
             Modifier
                 .fillMaxSize()
                 .padding(contentPadding)
+                .imePadding()
                 .background(LocalAppColors.current.backgroundPrimary),
         ) {
             Content(
