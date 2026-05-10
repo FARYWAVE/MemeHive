@@ -2,9 +2,7 @@ package com.farywave.memehive.ui.main.screens.editing
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.FlowRow
@@ -60,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
+import com.farywave.memehive.ui.components.CollectionPickerSheet
 import com.farywave.memehive.ui.components.CollectionSelectorSheet
 import com.farywave.memehive.ui.components.ImagePicker
 import com.farywave.memehive.ui.navigation.NavEvent
@@ -86,7 +85,9 @@ fun Editing(
         viewModel.onSave(context)
         onNavigate(NavEvent.Back)
     }
-    var showSheet by remember { mutableStateOf(false) }
+    var showSelectorSheet by remember { mutableStateOf(false) }
+    var showPickerSheet by remember { mutableStateOf(false) }
+
     val isEdited by viewModel.isEdited.collectAsState()
     val newCollectionEvent = remember {
         savedStateHandle.getStateFlow<String?>(
@@ -129,7 +130,11 @@ fun Editing(
                 onAction = { action ->
                     when (action) {
                         MoreActions.ADD_TO_COLLECTION -> {
-                            showSheet = true
+                            showSelectorSheet = true
+                        }
+
+                        MoreActions.SET_AS_COVER -> {
+                            showPickerSheet = true
                         }
 
                         MoreActions.DUPLICATE -> {
@@ -159,11 +164,19 @@ fun Editing(
                 onNavigate = onNavigate
             )
             CollectionSelectorSheet(
-                show = showSheet,
+                show = showSelectorSheet,
                 collections = collections.filter { it.id != -1L },
                 selectedIds = selectedIds,
-                onDismiss = { showSheet = false },
+                onDismiss = { showSelectorSheet = false },
                 onCollectionClicked = { viewModel.toggleCollection(it) },
+                onNewCollectionClicked = { onNavigate(NavEvent.NewCollectionDialog) }
+            )
+
+            CollectionPickerSheet(
+                show = showPickerSheet,
+                collections = collections.filter { it.id != -1L },
+                onDismiss = { showPickerSheet = false },
+                onCollectionSelected = { viewModel.onSetAsCover(context,it) },
                 onNewCollectionClicked = { onNavigate(NavEvent.NewCollectionDialog) }
             )
         }

@@ -2,6 +2,7 @@ package com.farywave.memehive.ui.main.screens.editing
 
 import android.content.Context
 import android.net.Uri
+import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -274,6 +275,17 @@ class EditingViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _mediaItem.value.src?.let { DeviceTools.deleteFromInternalStorage(it) }
             mediaItemRepository.deleteMediaItem(_mediaItem.value)
+        }
+    }
+
+    fun onSetAsCover(context: Context, collection: Collection) {
+        collection.cover?.let { DeviceTools.deleteFromInternalStorage(it) }
+        viewModelScope.launch(Dispatchers.IO) {
+            if (_mediaSrc.value == null) collectionRepository.updateCollection(collection.copy(cover = null))
+            else {
+                val cover = DeviceTools.copyToInternalStorage(context, _mediaSrc.value!!)
+                collectionRepository.updateCollection(collection.copy(cover = cover))
+            }
         }
     }
 }
