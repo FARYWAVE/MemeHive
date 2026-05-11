@@ -1,6 +1,8 @@
 package com.farywave.memehive.ui.main.screens.hive
 
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -50,6 +52,7 @@ import com.farywave.memehive.ui.components.CollectionPickerSheet
 import com.farywave.memehive.ui.components.CollectionsNavigation
 import com.farywave.memehive.ui.components.MediaItemCardFull
 import com.farywave.memehive.ui.components.SearchBar
+import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.simple_components.SimpleActionMenu
 import com.farywave.memehive.ui.simple_components.SimpleIconButton
@@ -63,10 +66,19 @@ fun Hive(
     onEnableNotification: (Boolean) -> Unit,
     onNavigate: (NavEvent) -> Unit
 ) {
+    val collectionToExport = remember { mutableStateOf<Collection?>(null) }
     val context = LocalContext.current
     val viewModel: HiveViewModel = viewModel(
         factory = HiveViewModelFactory(context)
     )
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        if (uri != null && collectionToExport.value != null) {
+            viewModel.exportCollection(context, collectionToExport.value!!, uri)
+        }
+    }
 
     val newCollectionEvent = remember {
         combine(
@@ -186,7 +198,10 @@ fun Hive(
                     },
                     onAction = { collection, action ->
                         when (action) {
-                            CollectionActions.EXPORT -> {}
+                            CollectionActions.EXPORT -> {
+                                collectionToExport.value = collection
+                                exportLauncher.launch("${collection.name}.zip")
+                            }
                             CollectionActions.EDIT -> {
                                 onNavigate(
                                     NavEvent.ToEditCollectionDialog(

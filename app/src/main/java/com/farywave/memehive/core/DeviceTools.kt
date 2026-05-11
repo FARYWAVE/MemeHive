@@ -1,6 +1,7 @@
 package com.farywave.memehive.core
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -102,6 +103,7 @@ object DeviceTools {
             onGranted(uris)
         }
 
+    @SuppressLint("MissingPermission")
     fun showPickerNotification(
         context: Context,
     ) {

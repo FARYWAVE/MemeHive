@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.farywave.memehive.core.DeviceTools
+import com.farywave.memehive.core.collection_transfer.CollectionTransferTool
 import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.ui.model.Collection
@@ -201,6 +202,17 @@ class HiveViewModel(
 
                 onRefresh()
             }
+        }
+    }
+
+    fun exportCollection(context: Context, collection: Collection, uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            CollectionTransferTool.exportCollection(
+                context = context,
+                collection = collection,
+                mediaItems = mediaItemRepository.getByCollection(collection),
+                outputUri = uri
+            )
         }
     }
 }
