@@ -44,4 +44,7 @@
     <string name="copied_to_clipboard">Copied To Clipboard</string>
     <string name="action_export">Export</string>
     <string name="action_set_as_cover">Set as Cover</string>
+    <string name="toast_collection_exported">Export Successful</string>
+    <string name="import_error">Couldn\'t unzip Collection</string>
+    <string name="import_successful">Successfully imported</string>
 </resources>

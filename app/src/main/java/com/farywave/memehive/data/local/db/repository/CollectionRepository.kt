@@ -54,6 +54,11 @@ class CollectionRepository(
             CollectionEntryEntity(collection.id, mediaItem.id)
         )
 
+    suspend fun insertCollectionEntryByIds(collectionId: Long, mediaItemId: Long) =
+        collectionEntryDao.insertCollectionEntry(
+            CollectionEntryEntity(collectionId, mediaItemId)
+        )
+
     suspend fun deleteCollectionEntry(collection: Collection, mediaItem: MediaItem) =
         collectionEntryDao.deleteCollectionEntry(CollectionEntryEntity(collection.id, mediaItem.id))
 

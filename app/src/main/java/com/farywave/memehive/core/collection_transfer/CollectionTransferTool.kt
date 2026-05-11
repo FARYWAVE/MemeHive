@@ -7,10 +7,12 @@ import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.OutputStream
 import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 object CollectionTransferTool {
@@ -18,7 +20,7 @@ object CollectionTransferTool {
         prettyPrint = true
     }
 
-     fun exportCollection(
+    fun exportCollection(
         context: Context,
         collection: Collection,
         mediaItems: List<MediaItem>,
@@ -93,9 +95,63 @@ object CollectionTransferTool {
             ?.use { output ->
 
                 zipDirectory(tempDir, output)
-
-
             }
+    }
+
+    fun unzipCollection(context: Context, uri: Uri): Pair<TransferManifest, File> {
+        val tempDir = File(context.cacheDir, "import_temp")
+
+        if (tempDir.exists()) {
+            tempDir.deleteRecursively()
+        }
+
+        tempDir.mkdirs()
+
+        //Import into Temp Directory
+        ZipInputStream(
+            BufferedInputStream(
+                context.contentResolver.openInputStream(uri)
+            )
+        ).use { zipIn ->
+
+            var entry = zipIn.nextEntry
+
+            while (entry != null) {
+
+                val outFile = File(tempDir, entry.name)
+
+                val normalizedPath = outFile.canonicalPath
+                val targetPath = tempDir.canonicalPath
+
+                if (!normalizedPath.startsWith(targetPath)) {
+                    throw SecurityException("Bad zip entry")
+                }
+
+                if (entry.isDirectory) {
+
+                    outFile.mkdirs()
+
+                } else {
+
+                    outFile.parentFile?.mkdirs()
+
+                    outFile.outputStream().use { output ->
+                        zipIn.copyTo(output)
+                    }
+                }
+
+                zipIn.closeEntry()
+
+                entry = zipIn.nextEntry
+            }
+        }
+
+        //Reading Manifest
+        val manifestFile = File(tempDir, "manifest.json")
+        val manifest = Json.decodeFromString<TransferManifest>(
+            manifestFile.readText()
+        )
+        return manifest to tempDir
     }
 
     private fun createTempExportDir(context: Context): File {

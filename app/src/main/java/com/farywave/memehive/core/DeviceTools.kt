@@ -50,6 +50,33 @@ object DeviceTools {
         return file
     }
 
+    fun copyToInternalStorage(
+        context: Context,
+        sourceFile: File
+    ): File {
+
+        val extension = sourceFile.extension.ifBlank {
+            "jpg"
+        }
+
+        val destinationFile = File(
+            context.filesDir,
+            "image_${System.currentTimeMillis()}.$extension"
+        )
+
+        sourceFile.inputStream().use { input ->
+            destinationFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+
+        if (!destinationFile.exists() || destinationFile.length() == 0L) {
+            throw IOException("Failed to copy file")
+        }
+
+        return destinationFile
+    }
+
     fun deleteFromInternalStorage(file: File) {
         file.delete()
     }

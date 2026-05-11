@@ -24,7 +24,7 @@ class MediaItemRepository(
     private val collectionEntryDao: CollectionEntryDao,
 ) {
     @Transaction
-    suspend fun insertMediaItem(mediaItem: MediaItem) {
+    suspend fun insertMediaItem(mediaItem: MediaItem): Long {
         mediaItem.id = mediaItemDao.insertMediaItem(
             mediaItem.toMediaItemEntity().copy(id = 0)
         )
@@ -38,6 +38,8 @@ class MediaItemRepository(
         }
 
         insertTrigrams(mediaItem)
+
+        return mediaItem.id
     }
 
     suspend fun getMediaItemById(id: Long): MediaItem? {
@@ -88,6 +90,9 @@ class MediaItemRepository(
 
     suspend fun getByCollection(collection: Collection) =
         mediaItemDao.getByCollection(collection.id).map { it.toMediaItem() }
+
+    suspend fun getMediaWithTagsByCollection(collectionId: Long) =
+        mediaItemDao.getMediaWithTagsByCollection(collectionId).map { it.toMediaItem() }
 
     suspend fun search(
         collectionId: Long?,

@@ -3,8 +3,10 @@ package com.farywave.memehive.ui.main.screens.hive
 
 import android.content.Context
 import android.net.Uri
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.core.collection_transfer.CollectionTransferTool
 import com.farywave.memehive.data.local.db.repository.CollectionRepository
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class HiveViewModel(
@@ -206,13 +209,55 @@ class HiveViewModel(
     }
 
     fun exportCollection(context: Context, collection: Collection, uri: Uri) {
-        viewModelScope.launch(Dispatchers.IO) {
-            CollectionTransferTool.exportCollection(
-                context = context,
-                collection = collection,
-                mediaItems = mediaItemRepository.getByCollection(collection),
-                outputUri = uri
-            )
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                CollectionTransferTool.exportCollection(
+                    context = context,
+                    collection = collection,
+                    mediaItems = mediaItemRepository.getMediaWithTagsByCollection(collection.id),
+                    outputUri = uri
+                )
+            }
+            val toastText = context.getString(R.string.toast_collection_exported)
+            Toast.makeText(context, toastText, Toast.LENGTH_LONG).show()
+        }
+
+    }
+
+    fun importCollection(context: Context, uri: Uri) {
+        try {
+            var toastText = ""
+            viewModelScope.launch {
+                withContext(Dispatchers.IO) {
+                    val (manifest, tempDir) = CollectionTransferTool.unzipCollection(context, uri)
+
+                    val collectionCover = manifest.collection.coverSrc?.let {
+                        DeviceTools.copyToInternalStorage(context, File(tempDir, it))
+                    }
+                    val collection = collectionRepository.insertCollection(
+                        manifest.collection.toCollection(collectionCover)
+                    )
+
+                    manifest.mediaItems.forEach { mediaItem ->
+                        val src = mediaItem.src?.let {
+                            DeviceTools.copyToInternalStorage(
+                                context,
+                                File(tempDir, it)
+                            )
+                        }
+
+                        val item = mediaItemRepository.insertMediaItem(mediaItem.toMediaItem(src))
+                        collectionRepository.insertCollectionEntryByIds(collection, item)
+                    }
+                    toastText =
+                        "${context.getString(R.string.import_successful)}: ${manifest.collection.name}"
+                }
+                Toast.makeText(context, toastText, Toast.LENGTH_LONG).show()
+                onRefresh()
+            }
+        } catch (_: Exception) {
+            Toast.makeText(context, context.getString(R.string.import_error), Toast.LENGTH_LONG)
+                .show()
         }
     }
 }

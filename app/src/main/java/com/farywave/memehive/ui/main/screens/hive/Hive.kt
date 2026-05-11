@@ -4,9 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -77,6 +75,13 @@ fun Hive(
     ) { uri ->
         if (uri != null && collectionToExport.value != null) {
             viewModel.exportCollection(context, collectionToExport.value!!, uri)
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.importCollection(context, uri)
         }
     }
 
@@ -165,6 +170,7 @@ fun Hive(
         topBar = {
             Toolbar(
                 onMassImport = { uris -> viewModel.onMassImport(context, uris) },
+                onCollectionImport = { importLauncher.launch(arrayOf("application/zip")) },
                 onEnableNotification = onEnableNotification,
                 onNavigate = onNavigate
             )
@@ -202,6 +208,7 @@ fun Hive(
                                 collectionToExport.value = collection
                                 exportLauncher.launch("${collection.name}.zip")
                             }
+
                             CollectionActions.EDIT -> {
                                 onNavigate(
                                     NavEvent.ToEditCollectionDialog(
@@ -234,6 +241,7 @@ fun Hive(
 @Composable
 private fun Toolbar(
     onMassImport: (uris: List<Uri>) -> Unit,
+    onCollectionImport: () -> Unit,
     onEnableNotification: (Boolean) -> Unit,
     onNavigate: (NavEvent) -> Unit
 ) {
@@ -288,7 +296,10 @@ private fun Toolbar(
                 MoreActions.ENABLE_PICKER -> onEnableNotification(true)
 
                 MoreActions.VIEW_APP_INFO -> onNavigate(NavEvent.AboutAppDialog)
-                MoreActions.IMPORT_COLLECTION -> {}
+                MoreActions.IMPORT_COLLECTION -> {
+                    onCollectionImport()
+                }
+
                 MoreActions.MASS_IMPORT -> {
                     launcher.launch("image/*")
                 }

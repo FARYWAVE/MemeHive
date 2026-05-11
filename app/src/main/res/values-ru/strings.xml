@@ -37,4 +37,7 @@
     <string name="copied_to_clipboard">Скопировано в Буфер</string>
     <string name="action_export">Экспорт</string>
     <string name="action_set_as_cover">Сделать Обложкой</string>
+    <string name="toast_collection_exported">Успешно Экспортировано</string>
+    <string name="import_error">Не удалось распаковать Коллекцию</string>
+    <string name="import_successful">Импортирована Коллекция</string>
 </resources>

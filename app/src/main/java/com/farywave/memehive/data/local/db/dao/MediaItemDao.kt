@@ -53,6 +53,19 @@ interface MediaItemDao {
     suspend fun getMediaWithTagsByIds(ids: List<Long>): List<MediaWithTags>
 
     @Transaction
+    @Query("""
+    SELECT * FROM media_items
+    WHERE (:collectionId IS NULL OR id IN (
+        SELECT mediaItemId 
+        FROM collection_entries 
+        WHERE collectionId = :collectionId
+    ))
+""")
+    suspend fun getMediaWithTagsByCollection(
+        collectionId: Long?
+    ): List<MediaWithTags>
+
+    @Transaction
     @Query("SELECT * FROM media_items WHERE id = :id")
     suspend fun getMediaWithTagsById(id: Long): MediaWithTags?
 
