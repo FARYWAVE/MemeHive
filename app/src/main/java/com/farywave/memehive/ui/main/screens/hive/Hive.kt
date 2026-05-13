@@ -6,22 +6,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
@@ -39,18 +32,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.core.net.toUri
@@ -59,9 +50,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.ui.components.CollectionPickerSheet
-import com.farywave.memehive.ui.components.CollectionsNavigation
 import com.farywave.memehive.ui.components.MediaItemCardFull
-import com.farywave.memehive.ui.components.SearchBar
+import com.farywave.memehive.ui.components.SearchAndCollectionBar
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.simple_components.SimpleActionMenu
@@ -76,19 +66,11 @@ fun Hive(
     onEnableNotification: (Boolean) -> Unit,
     onNavigate: (NavEvent) -> Unit
 ) {
-    val collectionToExport = remember { mutableStateOf<Collection?>(null) }
     val context = LocalContext.current
     val viewModel: HiveViewModel = viewModel(
         factory = HiveViewModelFactory(context)
     )
 
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/zip")
-    ) { uri ->
-        if (uri != null && collectionToExport.value != null) {
-            viewModel.exportCollection(context, collectionToExport.value!!, uri)
-        }
-    }
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -188,65 +170,15 @@ fun Hive(
             )
         }
     ) { contentPadding ->
-        Column(
-            Modifier
-                .fillMaxSize()
+        Content(
+            modifier = Modifier
                 .padding(contentPadding)
-                .background(LocalAppColors.current.backgroundPrimary),
-            verticalArrangement = Arrangement.spacedBy(7.dp),
-        ) {
-            Box(Modifier.padding(horizontal = 10.dp)) {
-                SearchBar(
-                    hint = stringResource(R.string.media_search_hint),
-                    onQueryChange = {
-                        viewModel.onSearchQueryChanged(it)
-                        viewModel.onSearch()
-                    }
-                )
-            }
-
-            val collections by viewModel.collections.collectAsState()
-            if (collections.size > 1) Box(Modifier.padding(horizontal = 10.dp)) {
-                CollectionsNavigation(
-                    collections = collections,
-                    selectedCollection = viewModel.selectedCollection.collectAsState().value,
-                    onCollectionSelected = {
-                        viewModel.onCollectionSelected(it)
-                        viewModel.onSearch()
-                    },
-                    onAction = { collection, action ->
-                        when (action) {
-                            CollectionActions.EXPORT -> {
-                                collectionToExport.value = collection
-                                exportLauncher.launch("${collection.name}.zip")
-                            }
-
-                            CollectionActions.EDIT -> {
-                                onNavigate(
-                                    NavEvent.ToEditCollectionDialog(
-                                        collection.name,
-                                        collection.cover?.let { Uri.fromFile(it) },
-                                        collection.id
-                                    )
-                                )
-                            }
-
-                            CollectionActions.DELETE -> {
-                                viewModel.deleteCollection(collection)
-                            }
-                        }
-                    }
-                )
-            }
-
-            Content(
-                modifier = Modifier
-                    .padding(horizontal = 10.dp)
-                    .fillMaxSize(),
-                viewModel = viewModel,
-                onNavigate = onNavigate
-            )
-        }
+                .background(LocalAppColors.current.backgroundPrimary)
+                .padding(horizontal = 10.dp)
+                .fillMaxSize(),
+            viewModel = viewModel,
+            onNavigate = onNavigate
+        )
     }
 }
 
@@ -335,14 +267,71 @@ private fun Content(
     viewModel: HiveViewModel,
     onNavigate: (NavEvent) -> Unit
 ) {
+    val context = LocalContext.current
+
     val mediaItems by viewModel.mediaItems.collectAsState()
     val collections by viewModel.collections.collectAsState()
+    val selectedCollection by viewModel.selectedCollection.collectAsState()
     val isMassEditingMode by viewModel.isMassEditingMode.collectAsState()
     var showSheet by remember { mutableStateOf(false) }
 
+    val collectionToExport = remember { mutableStateOf<Collection?>(null) }
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        if (uri != null && collectionToExport.value != null) {
+            viewModel.exportCollection(context, collectionToExport.value!!, uri)
+        }
+    }
+
 
     ConstraintLayout(modifier = modifier) {
-        val (content, actions) = createRefs()
+        val (content, actions, topBars) = createRefs()
+        var topBarHeight by remember { mutableStateOf(0) }
+
+        SearchAndCollectionBar(
+            modifier = Modifier
+                .zIndex(1f)
+                .constrainAs(topBars) {
+                    top.linkTo(parent.top)
+                }
+                .onSizeChanged {
+                    topBarHeight = it.height
+                },
+            onSearch = { viewModel.onSearch() },
+            simpleCollectionBar = false,
+            collections = collections,
+            selectedCollection = selectedCollection,
+            onCollectionSelected = {
+                viewModel.onCollectionSelected(it)
+                viewModel.onSearch()
+            },
+            onAction = { collection, action ->
+                when (action) {
+                    CollectionActions.EXPORT -> {
+                        collectionToExport.value = collection
+                        exportLauncher.launch("${collection.name}.zip")
+                    }
+
+                    CollectionActions.EDIT -> {
+                        onNavigate(
+                            NavEvent.ToEditCollectionDialog(
+                                collection.name,
+                                collection.cover?.let { Uri.fromFile(it) },
+                                collection.id
+                            )
+                        )
+                    }
+
+                    CollectionActions.DELETE -> {
+                        viewModel.deleteCollection(collection)
+                    }
+                }
+            }
+
+
+        )
+
         LazyVerticalStaggeredGrid(
             modifier = Modifier.constrainAs(content) {
                 top.linkTo(parent.top)
@@ -355,7 +344,11 @@ private fun Content(
             columns = StaggeredGridCells.Fixed(2),
             verticalItemSpacing = 8.dp,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-
+            contentPadding = PaddingValues(
+                top = with(LocalDensity.current) {
+                    topBarHeight.toDp() + 7.dp
+                }
+            )
             ) {
             items(mediaItems, key = { it.id }) { mediaItem ->
                 MediaItemCardFull(

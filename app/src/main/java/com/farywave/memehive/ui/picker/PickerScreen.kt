@@ -5,8 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,19 +17,24 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.components.BasicCollectionsNavigation
-import com.farywave.memehive.ui.components.SearchBar
+import com.farywave.memehive.ui.components.SearchAndCollectionBar
 import com.farywave.memehive.ui.model.MediaItem
 import com.farywave.memehive.ui.theme.LocalAppColors
 
@@ -55,50 +59,21 @@ fun PickerScreen(onItemClicked: (mediaItem: MediaItem) -> Unit) {
                 )
             }
     ) { contentPadding ->
-        Column(
-            Modifier
-                .fillMaxSize()
+        Content(
+            modifier = Modifier
                 .padding(contentPadding)
-                .background(LocalAppColors.current.backgroundPrimary),
-            verticalArrangement = Arrangement.spacedBy(7.dp),
-        ) {
-            Box(Modifier.padding(horizontal = 10.dp).padding(top = 7.dp)) {
-                SearchBar(
-                    hint = stringResource(R.string.media_search_hint),
-                    onQueryChange = {
-                        viewModel.onSearchQueryChanged(it)
-                        viewModel.onSearch()
-                    }
-                )
+                .background(LocalAppColors.current.backgroundPrimary)
+                .fillMaxSize(),
+            viewModel = viewModel,
+            onItemClicked = {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.copied_to_clipboard),
+                    Toast.LENGTH_SHORT
+                ).show()
+                onItemClicked(it)
             }
-
-            val collections by viewModel.collections.collectAsState()
-            if (collections.size > 1) Box(Modifier.padding(horizontal = 10.dp)) {
-                BasicCollectionsNavigation(
-                    collections = collections,
-                    selectedCollection = viewModel.selectedCollection.collectAsState().value,
-                    onCollectionSelected = {
-                        viewModel.onCollectionSelected(it)
-                        viewModel.onSearch()
-                    }
-                )
-            }
-
-            Content(
-                modifier = Modifier
-                    .padding(horizontal = 10.dp)
-                    .fillMaxSize(),
-                viewModel = viewModel,
-                onItemClicked = {
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.copied_to_clipboard),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    onItemClicked(it)
-                }
-            )
-        }
+        )
     }
 }
 
@@ -110,24 +85,60 @@ private fun Content(
 ) {
     val mediaItems by viewModel.mediaItems.collectAsState()
 
-    LazyVerticalStaggeredGrid(
-        modifier = modifier,
-        columns = StaggeredGridCells.Fixed(2),
-        verticalItemSpacing = 8.dp,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ConstraintLayout(
+        modifier = modifier
+    ) {
+        val (content, topBars) = createRefs()
+        var topBarHeight by remember { mutableStateOf(0) }
 
-        ) {
-        items(mediaItems, key = { it.id }) { mediaItem ->
-            AsyncImage(
-                model = mediaItem.src,
-                contentDescription = null,
-                modifier = Modifier
-                    .padding(0.dp)
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.medium)
-                    .clickable { onItemClicked(mediaItem) },
-                contentScale = ContentScale.FillWidth
+        SearchAndCollectionBar(
+            modifier = Modifier
+                .zIndex(1f)
+                .constrainAs(topBars) {
+                    top.linkTo(parent.top)
+                }
+                .onSizeChanged {
+                    topBarHeight = it.height
+                },
+            onSearch = { viewModel.onSearch() },
+            simpleCollectionBar = true,
+            collections = viewModel.collections.collectAsState().value,
+            selectedCollection = viewModel.selectedCollection.collectAsState().value,
+            onCollectionSelected = {
+                viewModel.onCollectionSelected(it)
+                viewModel.onSearch()
+            },
+            onAction = { _, _ -> }
+        )
+
+        LazyVerticalStaggeredGrid(
+            modifier = Modifier.constrainAs(content) {
+                top.linkTo(parent.top)
+                bottom.linkTo(parent.bottom)
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+            },
+            columns = StaggeredGridCells.Fixed(2),
+            verticalItemSpacing = 8.dp,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(
+                top = with(LocalDensity.current) {
+                    topBarHeight.toDp() + 7.dp
+                }
             )
+        ) {
+            items(mediaItems, key = { it.id }) { mediaItem ->
+                AsyncImage(
+                    model = mediaItem.src,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable { onItemClicked(mediaItem) },
+                    contentScale = ContentScale.FillWidth
+                )
+            }
         }
     }
 }
