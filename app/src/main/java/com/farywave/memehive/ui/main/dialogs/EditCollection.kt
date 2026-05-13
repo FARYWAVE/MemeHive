@@ -74,6 +74,6 @@ enum class EditCollectionAction(
     override val type: ActionType
 ) :
     SimpleDialogAction {
-    RENAME(R.string.action_rename, ActionType.NORMAL),
+    RENAME(R.string.action_edit, ActionType.NORMAL),
     CANCEL(R.string.button_cancel, ActionType.DISMISS)
 }

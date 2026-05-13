@@ -19,7 +19,7 @@
     <string name="button_cancel">Отмена</string>
     <string name="button_create">Создать</string>
     <string name="about_app_version">Версия</string>
-    <string name="about_app_source_code">Исходный Код</string>
+    <string name="about_app_source_code">Код</string>
     <string name="about_app_created_by">Разработчик</string>
     <string name="about_app_storage">Хранилище</string>
     <string name="about_app_cache">Кэш</string>
@@ -33,11 +33,11 @@
     <string name="action_edit">Редактировать</string>
     <string name="no_notifications_perm_error">Пожалуйста разрешите уведомления от MemeHive</string>
     <string name="action_enable_picker">Включить Уведомление</string>
-    <string name="picket_notification_text">Нажмите чтобы открыть Hive</string>
+    <string name="picket_notification_text">Нажмите чтобы открыть Галерею</string>
     <string name="copied_to_clipboard">Скопировано в Буфер</string>
     <string name="action_export">Экспорт</string>
     <string name="action_set_as_cover">Сделать Обложкой</string>
     <string name="toast_collection_exported">Успешно Экспортировано</string>
     <string name="import_error">Не удалось распаковать Коллекцию</string>
-    <string name="import_successful">Импортирована Коллекция</string>
+    <string name="import_successful">Коллекция импортирована</string>
 </resources>

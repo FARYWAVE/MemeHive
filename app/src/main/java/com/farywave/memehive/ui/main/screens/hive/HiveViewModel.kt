@@ -59,6 +59,8 @@ class HiveViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _mediaItems.value =
                 mediaItemRepository.search(selectedCollection.value.id, _searchQuery.value)
+
+            disableMassEditingMode()
         }
     }
 
@@ -185,14 +187,6 @@ class HiveViewModel(
                     cover = file
                 )
             )
-        }
-    }
-
-    fun setCollectionCover(context: Context, collection: Collection, cover: Uri) {
-        val path = DeviceTools.copyToInternalStorage(context, cover)
-        viewModelScope.launch(Dispatchers.IO) {
-            collection.cover?.let { DeviceTools.deleteFromInternalStorage(it) }
-            collectionRepository.updateCollection(collection.copy(cover = path))
         }
     }
 
