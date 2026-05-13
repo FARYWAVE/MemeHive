@@ -2,17 +2,15 @@ package com.farywave.memehive.ui.picker
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -21,9 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -31,9 +27,10 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
 import com.farywave.memehive.R
+import com.farywave.memehive.ui.components.MediaItemCardSimple
 import com.farywave.memehive.ui.components.SearchAndCollectionBar
 import com.farywave.memehive.ui.model.MediaItem
 import com.farywave.memehive.ui.theme.LocalAppColors
@@ -62,6 +59,8 @@ fun PickerScreen(onItemClicked: (mediaItem: MediaItem) -> Unit) {
         Content(
             modifier = Modifier
                 .padding(contentPadding)
+                .padding(horizontal = 10.dp)
+                .padding(top = 7.dp)
                 .background(LocalAppColors.current.backgroundPrimary)
                 .fillMaxSize(),
             viewModel = viewModel,
@@ -84,60 +83,54 @@ private fun Content(
     onItemClicked: (mediaItem: MediaItem) -> Unit,
 ) {
     val mediaItems by viewModel.mediaItems.collectAsState()
-
-    ConstraintLayout(
-        modifier = modifier
-    ) {
-        val (content, topBars) = createRefs()
-        var topBarHeight by remember { mutableStateOf(0) }
-
-        SearchAndCollectionBar(
-            modifier = Modifier
-                .zIndex(1f)
-                .constrainAs(topBars) {
-                    top.linkTo(parent.top)
-                }
-                .onSizeChanged {
-                    topBarHeight = it.height
-                },
-            onSearch = { viewModel.onSearch() },
-            simpleCollectionBar = true,
-            collections = viewModel.collections.collectAsState().value,
-            selectedCollection = viewModel.selectedCollection.collectAsState().value,
-            onCollectionSelected = {
-                viewModel.onCollectionSelected(it)
-                viewModel.onSearch()
-            },
-            onAction = { _, _ -> }
-        )
-
-        LazyVerticalStaggeredGrid(
-            modifier = Modifier.constrainAs(content) {
-                top.linkTo(parent.top)
-                bottom.linkTo(parent.bottom)
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-            },
-            columns = StaggeredGridCells.Fixed(2),
-            verticalItemSpacing = 8.dp,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(
-                top = with(LocalDensity.current) {
-                    topBarHeight.toDp() + 7.dp
-                }
-            )
+    Box(Modifier.background(LocalAppColors.current.backgroundPrimary)) {
+        ConstraintLayout(
+            modifier = modifier
         ) {
-            items(mediaItems, key = { it.id }) { mediaItem ->
-                AsyncImage(
-                    model = mediaItem.src,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.medium)
-                        .clickable { onItemClicked(mediaItem) },
-                    contentScale = ContentScale.FillWidth
+            val (content, topBars) = createRefs()
+            var topBarHeight by remember { mutableStateOf(0) }
+
+            SearchAndCollectionBar(
+                modifier = Modifier
+                    .zIndex(1f)
+                    .constrainAs(topBars) {
+                        top.linkTo(parent.top)
+                    }
+                    .onSizeChanged {
+                        topBarHeight = it.height
+                    },
+                onSearch = { viewModel.onSearch() },
+                simpleCollectionBar = true,
+                collections = viewModel.collections.collectAsState().value,
+                selectedCollection = viewModel.selectedCollection.collectAsState().value,
+                onCollectionSelected = {
+                    viewModel.onCollectionSelected(it)
+                    viewModel.onSearch()
+                },
+                onAction = { _, _ -> }
+            )
+
+            LazyVerticalStaggeredGrid(
+                modifier = Modifier.constrainAs(content) {
+                    top.linkTo(parent.top)
+                    bottom.linkTo(parent.bottom)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    width = Dimension.fillToConstraints
+                    height = Dimension.fillToConstraints
+                },
+                columns = StaggeredGridCells.Fixed(2),
+                verticalItemSpacing = 8.dp,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(
+                    top = with(LocalDensity.current) {
+                        topBarHeight.toDp() + 7.dp
+                    }
                 )
+            ) {
+                items(mediaItems, key = { it.id }) { mediaItem ->
+                    MediaItemCardSimple(mediaItem) { onItemClicked(mediaItem) }
+                }
             }
         }
     }
