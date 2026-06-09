@@ -18,4 +18,6 @@ sealed class Screen(val route: String) {
         fun createRoute(collectionName: String, coverSrc: Uri?, collectionId: Long) =
             "edit_collection_dialog/$collectionName/${ModelTools.encode(coverSrc?.toString())}/$collectionId"
     }
+
+    object ActivateSubscriptionDialog : Screen("activate_subscription_dialog")
 }

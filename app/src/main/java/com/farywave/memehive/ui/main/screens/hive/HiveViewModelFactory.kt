@@ -7,16 +7,17 @@ import com.farywave.memehive.data.local.db.MemeHiveDatabase
 import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 
-class HiveViewModelFactory: Factory {
+class HiveViewModelFactory : Factory {
 
     private val context: Context
 
     constructor(context: Context) {
         this.context = context
-}
+    }
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         val db = MemeHiveDatabase.getInstance(context)
+        val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
         val mediaItemRepo = MediaItemRepository(
             db.mediaItemDao(),
@@ -30,6 +31,10 @@ class HiveViewModelFactory: Factory {
             db.collectionEntryDao()
         )
 
-        return HiveViewModel(mediaItemRepo, collectionRepo) as T
+        return HiveViewModel(
+            mediaItemRepo,
+            collectionRepo,
+            prefs.getBoolean("isPremium", false)
+        ) as T
     }
 }

@@ -19,6 +19,7 @@ class EditingViewModelFactory : Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         val db = MemeHiveDatabase.getInstance(context)
+        val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
         val mediaItemRepo = MediaItemRepository(
             db.mediaItemDao(),
@@ -35,7 +36,8 @@ class EditingViewModelFactory : Factory {
         return EditingViewModel(
             mediaItemId,
             mediaItemRepo,
-            collectionRepo
+            collectionRepo,
+            prefs.getBoolean("isPremium", false)
         ) as T
     }
 }

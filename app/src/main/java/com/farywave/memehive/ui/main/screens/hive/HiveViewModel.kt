@@ -23,7 +23,8 @@ import java.io.File
 
 class HiveViewModel(
     val mediaItemRepository: MediaItemRepository,
-    val collectionRepository: CollectionRepository
+    val collectionRepository: CollectionRepository,
+    private val initialPremium: Boolean
 ) : ViewModel() {
     private val allCollection = Collection(-1, "All", mediaItemCount = 0)
     private val _collections = MutableStateFlow(listOf(allCollection))
@@ -40,6 +41,11 @@ class HiveViewModel(
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
+
+    private val _isPremium = MutableStateFlow(initialPremium)
+    val isPremium = _isPremium.asStateFlow()
+
+
 
     init {
         onRefresh()
@@ -252,6 +258,26 @@ class HiveViewModel(
         } catch (_: Exception) {
             Toast.makeText(context, context.getString(R.string.import_error), Toast.LENGTH_LONG)
                 .show()
+        }
+    }
+
+    fun onCodeRedeemed(context: Context, code: String) {
+        if (code == "7777-7777-7777-7777") {
+            Toast.makeText(
+                context,
+                context.getString(R.string.subscription_activation_successful),
+                Toast.LENGTH_LONG
+            ).show()
+
+            val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("isPremium", true).apply()
+            _isPremium.value = true
+        } else {
+            Toast.makeText(
+                context,
+                context.getString(R.string.subscription_activation_failed),
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 }

@@ -47,4 +47,11 @@
     <string name="toast_collection_exported">Export Successful</string>
     <string name="import_error">Couldn\'t unzip Collection</string>
     <string name="import_successful">Successfully imported</string>
+    <string name="action_activate_subscription">Activate Subscription</string>
+    <string name="button_activate">Activate</string>
+    <string name="subscription_code_hint" translatable="false">XXXX-XXXX-XXXX-XXXX</string>
+    <string name="subscription_code_format_error">Wrong code format</string>
+    <string name="subscription_activation_successful">Subscription Activated Successfully</string>
+    <string name="subscription_activation_failed">Invalid or Expired Code</string>
+    <string name="no_subscription">Purchase Premium to use Collections</string>
 </resources>

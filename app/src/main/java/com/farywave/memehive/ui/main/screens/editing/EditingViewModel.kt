@@ -25,7 +25,8 @@ import java.io.File
 class EditingViewModel(
     mediaItemId: Long,
     val mediaItemRepository: MediaItemRepository,
-    val collectionRepository: CollectionRepository
+    val collectionRepository: CollectionRepository,
+    val initialPremium: Boolean
 ) : ViewModel() {
 
     private val _mediaItem = MutableStateFlow(
@@ -51,6 +52,9 @@ class EditingViewModel(
 
     private val _selectedCollections = MutableStateFlow<Set<Long>>(emptySet())
     val selectedCollections = _selectedCollections.asStateFlow()
+
+    private val _isPremium = MutableStateFlow(initialPremium)
+    val isPremium = _isPremium.asStateFlow()
 
 
     private var originalMediaItem: MediaItem? = null

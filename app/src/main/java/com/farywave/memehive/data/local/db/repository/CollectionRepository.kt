@@ -59,9 +59,6 @@ class CollectionRepository(
             CollectionEntryEntity(collectionId, mediaItemId)
         )
 
-    suspend fun deleteCollectionEntry(collection: Collection, mediaItem: MediaItem) =
-        collectionEntryDao.deleteCollectionEntry(CollectionEntryEntity(collection.id, mediaItem.id))
-
     fun getCollectionsByMediaItem(mediaItem: MediaItem) =
         collectionEntryDao.getByMediaItemId(mediaItem.id)
 

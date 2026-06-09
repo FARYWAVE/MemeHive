@@ -99,7 +99,10 @@ private fun Content(
                     .onSizeChanged {
                         topBarHeight = it.height
                     },
-                onSearch = { viewModel.onSearch() },
+                onSearch = {
+                    viewModel.onSearchQueryChanged(it)
+                    viewModel.onSearch()
+                },
                 simpleCollectionBar = true,
                 collections = viewModel.collections.collectAsState().value,
                 selectedCollection = viewModel.selectedCollection.collectAsState().value,

@@ -1,19 +1,15 @@
 package com.farywave.memehive.core
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
-import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.farywave.memehive.MemeHiveApplication
@@ -169,5 +165,10 @@ object DeviceTools {
 
         NotificationManagerCompat.from(context)
             .cancel(MemeHiveApplication.PICKER_NOTIFICATION_ID)
+    }
+
+    fun noSubscriptionToast(context: Context) {
+        Toast.makeText(context, context.getString(R.string.no_subscription), Toast.LENGTH_LONG)
+            .show()
     }
 }

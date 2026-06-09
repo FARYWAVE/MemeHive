@@ -59,6 +59,7 @@ import com.farywave.memehive.ui.simple_components.SimpleIconButton
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.Typography
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 
 @Composable
 fun Hive(
@@ -70,6 +71,7 @@ fun Hive(
     val viewModel: HiveViewModel = viewModel(
         factory = HiveViewModelFactory(context)
     )
+    val isPremium by viewModel.isPremium.collectAsState()
 
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -120,6 +122,13 @@ fun Hive(
         }
     }
 
+    val activationCode = remember {
+        savedStateHandle.getStateFlow(
+            "subscriptionCode",
+            ""
+        )
+    }
+
 
     LaunchedEffect(editedCollectionEvent) {
         editedCollectionEvent.collect { event ->
@@ -148,6 +157,10 @@ fun Hive(
         }
     }
 
+    LaunchedEffect(activationCode) {
+        activationCode.drop(1).collect { code -> viewModel.onCodeRedeemed(context, code) }
+    }
+
     val focusManager = LocalFocusManager.current
 
     Scaffold(
@@ -163,6 +176,7 @@ fun Hive(
             },
         topBar = {
             Toolbar(
+                isPremium = isPremium,
                 onMassImport = { uris -> viewModel.onMassImport(context, uris) },
                 onCollectionImport = { importLauncher.launch(arrayOf("application/zip")) },
                 onEnableNotification = onEnableNotification,
@@ -184,6 +198,7 @@ fun Hive(
 
 @Composable
 private fun Toolbar(
+    isPremium: Boolean,
     onMassImport: (uris: List<Uri>) -> Unit,
     onCollectionImport: () -> Unit,
     onEnableNotification: (Boolean) -> Unit,
@@ -199,6 +214,7 @@ private fun Toolbar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         val launcher = DeviceTools.requestMultipleMedia { onMassImport(it) }
+        val context = LocalContext.current
 
         Row(
             Modifier
@@ -222,7 +238,10 @@ private fun Toolbar(
         SimpleActionMenu<CreateActions>(onSelected = { action ->
             when (action) {
                 CreateActions.CREATE_MEDIA_ITEM -> onNavigate(NavEvent.ToEditing(-1))
-                CreateActions.CREATE_COLLECTION -> onNavigate(NavEvent.NewCollectionDialog)
+                CreateActions.CREATE_COLLECTION -> {
+                    if (isPremium) onNavigate(NavEvent.NewCollectionDialog)
+                    else DeviceTools.noSubscriptionToast(context)
+                }
             }
         }) { onClick ->
             SimpleIconButton(
@@ -237,11 +256,13 @@ private fun Toolbar(
 
         SimpleActionMenu<MoreActions>(onSelected = { action ->
             when (action) {
+                MoreActions.ACTIVATE_SUBSCRIPTION -> onNavigate(NavEvent.ActivateSubscriptionDialog)
                 MoreActions.ENABLE_PICKER -> onEnableNotification(true)
 
                 MoreActions.VIEW_APP_INFO -> onNavigate(NavEvent.AboutAppDialog)
                 MoreActions.IMPORT_COLLECTION -> {
-                    onCollectionImport()
+                    if (isPremium) onCollectionImport()
+                    else DeviceTools.noSubscriptionToast(context)
                 }
 
                 MoreActions.MASS_IMPORT -> {
@@ -274,6 +295,7 @@ private fun Content(
     val selectedCollection by viewModel.selectedCollection.collectAsState()
     val isMassEditingMode by viewModel.isMassEditingMode.collectAsState()
     var showSheet by remember { mutableStateOf(false) }
+    val isPremium by viewModel.isPremium.collectAsState()
 
     val collectionToExport = remember { mutableStateOf<Collection?>(null) }
     val exportLauncher = rememberLauncherForActivityResult(
@@ -298,7 +320,10 @@ private fun Content(
                 .onSizeChanged {
                     topBarHeight = it.height
                 },
-            onSearch = { viewModel.onSearch() },
+            onSearch = {
+                viewModel.onSearchQueryChanged(it)
+                viewModel.onSearch()
+            },
             simpleCollectionBar = false,
             collections = collections,
             selectedCollection = selectedCollection,
@@ -349,7 +374,7 @@ private fun Content(
                     topBarHeight.toDp() + 7.dp
                 }
             )
-            ) {
+        ) {
             items(mediaItems, key = { it.id }) { mediaItem ->
                 MediaItemCardFull(
                     mediaItem = mediaItem,
@@ -394,7 +419,11 @@ private fun Content(
             SimpleActionMenu<MassEditActions>(
                 onSelected = { action ->
                     when (action) {
-                        MassEditActions.ADD_TO_COLLECTION -> showSheet = true
+                        MassEditActions.ADD_TO_COLLECTION -> {
+                            if (isPremium) showSheet = true
+                            else DeviceTools.noSubscriptionToast(context)
+                        }
+
                         MassEditActions.DELETE -> {
                             viewModel.deleteSelectedMediaItems()
                             viewModel.disableMassEditingMode()

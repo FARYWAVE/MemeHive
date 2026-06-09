@@ -12,4 +12,6 @@ sealed class NavEvent {
     object AboutAppDialog : NavEvent()
 
     data class ToEditCollectionDialog(val collectionName: String, val coverSrc: Uri?, val collectionId: Long) : NavEvent()
+
+    object  ActivateSubscriptionDialog : NavEvent()
 }

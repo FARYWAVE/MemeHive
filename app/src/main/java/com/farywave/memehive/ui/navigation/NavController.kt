@@ -1,7 +1,6 @@
 package com.farywave.memehive.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.core.net.toUri
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -10,8 +9,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.farywave.memehive.core.ModelTools
 import com.farywave.memehive.ui.main.dialogs.AboutApp
-import com.farywave.memehive.ui.main.dialogs.NewCollection
+import com.farywave.memehive.ui.main.dialogs.ActivateSubscription
 import com.farywave.memehive.ui.main.dialogs.EditCollection
+import com.farywave.memehive.ui.main.dialogs.NewCollection
 import com.farywave.memehive.ui.main.screens.editing.Editing
 import com.farywave.memehive.ui.main.screens.hive.Hive
 
@@ -33,6 +33,8 @@ fun NavController(onEnableNotification: (Boolean) -> Unit) {
                     event.collectionId
                 )
             )
+
+            NavEvent.ActivateSubscriptionDialog -> navController.navigate(Screen.ActivateSubscriptionDialog.route)
         }
     }
 
@@ -119,6 +121,15 @@ fun NavController(onEnableNotification: (Boolean) -> Unit) {
                     navController.popBackStack()
                 }
             )
+        }
+
+        dialog(Screen.ActivateSubscriptionDialog.route) {
+            ActivateSubscription(
+                onDismissRequest = { navController.popBackStack() }
+            ) {
+                navController.previousBackStackEntry?.savedStateHandle?.set("subscriptionCode", it)
+                navController.popBackStack()
+            }
         }
     }
 }

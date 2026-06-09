@@ -40,4 +40,10 @@
     <string name="toast_collection_exported">Успешно Экспортировано</string>
     <string name="import_error">Не удалось распаковать Коллекцию</string>
     <string name="import_successful">Коллекция импортирована</string>
+    <string name="action_activate_subscription">Активировать Подписку</string>
+    <string name="button_activate">Активировать</string>
+    <string name="subscription_code_format_error">Неверный формат кода</string>
+    <string name="subscription_activation_successful">Подписка успешно активирована</string>
+    <string name="subscription_activation_failed">Код не найден</string>
+    <string name="no_subscription">Активируйте Премиум, чтобы использовать коллекции</string>
 </resources>

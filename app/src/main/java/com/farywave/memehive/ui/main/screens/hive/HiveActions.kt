@@ -16,6 +16,7 @@ enum class MoreActions(
     @StringRes override val labelId: Int,
     override val highlighted: Boolean = false
 ) : ActionMenuOptions {
+    ACTIVATE_SUBSCRIPTION(R.string.action_activate_subscription),
     ENABLE_PICKER(R.string.action_enable_picker),
     IMPORT_COLLECTION(R.string.action_import_collection),
     MASS_IMPORT(R.string.action_mass_import),

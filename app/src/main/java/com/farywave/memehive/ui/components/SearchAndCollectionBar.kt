@@ -45,7 +45,7 @@ fun SearchAndCollectionBar(
         SearchBar(
             modifier = Modifier.padding(horizontal = 3.dp),
             hint = stringResource(R.string.media_search_hint),
-            onQueryChange = onSearch
+            onQueryChange = { onSearch(it) }
         )
 
         if (collections.size > 1) {

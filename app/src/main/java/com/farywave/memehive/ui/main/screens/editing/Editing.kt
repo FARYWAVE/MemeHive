@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
+import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.ui.components.CollectionPickerSheet
 import com.farywave.memehive.ui.components.CollectionSelectorSheet
 import com.farywave.memehive.ui.components.ImagePicker
@@ -79,6 +80,7 @@ fun Editing(
 
     val collections by viewModel.collections.collectAsState()
     val selectedIds by viewModel.selectedCollections.collectAsState()
+    val isPremium by viewModel.isPremium.collectAsState()
 
 
     BackHandler {
@@ -130,11 +132,13 @@ fun Editing(
                 onAction = { action ->
                     when (action) {
                         MoreActions.ADD_TO_COLLECTION -> {
-                            showSelectorSheet = true
+                            if (isPremium) showSelectorSheet = true
+                            else DeviceTools.noSubscriptionToast(context)
                         }
 
                         MoreActions.SET_AS_COVER -> {
-                            showPickerSheet = true
+                            if (isPremium) showPickerSheet = true
+                            else DeviceTools.noSubscriptionToast(context)
                         }
 
                         MoreActions.DUPLICATE -> {
