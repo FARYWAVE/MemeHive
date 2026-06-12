@@ -1,5 +1,6 @@
 package com.farywave.memehive.data.local.db.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.farywave.memehive.ui.model.Collection
@@ -7,10 +8,13 @@ import java.io.File
 
 @Entity(tableName = "collections")
 data class CollectionEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long,
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "id")
+    val id: Long,
+
+    @ColumnInfo(name = "name")
     val name: String,
-    val coverSrc: String?,
-) {
-    fun toCollection(entryCount: Int) =
-        Collection(id, name, coverSrc?.let { File(coverSrc) }, entryCount)
-}
+
+    @ColumnInfo(name = "cover_image_id")
+    val coverImageId: Long?,
+)

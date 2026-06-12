@@ -8,7 +8,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.farywave.memehive.data.local.db.entity.MediaItemEntity
-import com.farywave.memehive.data.local.db.relation.MediaWithTags
+import com.farywave.memehive.data.local.db.relation.MediaItemDetails
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -46,11 +46,11 @@ interface MediaItemDao {
 
     @Transaction
     @Query("SELECT * FROM media_items")
-    suspend fun getAllMediaWithTags(): List<MediaWithTags>
+    suspend fun getAllMediaWithTags(): List<MediaItemDetails>
 
     @Transaction
     @Query("SELECT * FROM media_items WHERE id IN (:ids)")
-    suspend fun getMediaWithTagsByIds(ids: List<Long>): List<MediaWithTags>
+    suspend fun getMediaWithTagsByIds(ids: List<Long>): List<MediaItemDetails>
 
     @Transaction
     @Query("""
@@ -63,11 +63,11 @@ interface MediaItemDao {
 """)
     suspend fun getMediaWithTagsByCollection(
         collectionId: Long?
-    ): List<MediaWithTags>
+    ): List<MediaItemDetails>
 
     @Transaction
     @Query("SELECT * FROM media_items WHERE id = :id")
-    suspend fun getMediaWithTagsById(id: Long): MediaWithTags?
+    suspend fun getMediaWithTagsById(id: Long): MediaItemDetails?
 
     @Query("SELECT id FROM media_items")
     suspend fun getAllIds(): List<Long>

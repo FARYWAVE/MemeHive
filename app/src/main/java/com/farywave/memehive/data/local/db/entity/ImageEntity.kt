@@ -1,0 +1,22 @@
+package com.farywave.memehive.data.local.db.entity
+
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
+
+@Entity(
+    tableName = "images",
+    indices = [Index(value = ["sha256"], unique = true), Index(value = ["path"], unique = true)]
+)
+data class ImageEntity (
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "id")
+    val id: Long,
+
+    @ColumnInfo(name = "path")
+    val path: String,
+
+    @ColumnInfo(name = "sha256")
+    val sha256: String
+)

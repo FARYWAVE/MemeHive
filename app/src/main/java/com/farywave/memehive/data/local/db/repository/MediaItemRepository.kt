@@ -1,6 +1,5 @@
 package com.farywave.memehive.data.local.db.repository
 
-import androidx.room.Query
 import androidx.room.Transaction
 import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.data.local.db.dao.CollectionEntryDao
@@ -11,10 +10,9 @@ import com.farywave.memehive.data.local.db.dao.TagDao
 import com.farywave.memehive.data.local.db.entity.MediaItemTagEntity
 import com.farywave.memehive.data.local.db.entity.MediaItemTrigramEntity
 import com.farywave.memehive.data.local.db.entity.TagEntity
-import com.farywave.memehive.data.local.db.relation.MediaWithTags
+import com.farywave.memehive.data.local.db.relation.MediaItemDetails
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
-import kotlinx.coroutines.flow.map
 
 class MediaItemRepository(
     private val mediaItemDao: MediaItemDao,
@@ -160,7 +158,7 @@ class MediaItemRepository(
 
         if (allMatchedIds.isEmpty()) return emptyList()
 
-        fun score(entity: MediaWithTags): Int {
+        fun score(entity: MediaItemDetails): Int {
             val id = entity.media.id
 
             return when {

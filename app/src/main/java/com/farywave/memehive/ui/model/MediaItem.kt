@@ -5,12 +5,9 @@ import java.io.File
 
 data class MediaItem(
     var id: Long,
-    var src: File?,
+    var imagePath: String?,
     var caption: String,
     var description: String,
     val tags: List<String>,
     var isSelected: Boolean = false,
-) {
-
-    fun toMediaItemEntity() = MediaItemEntity(id, src?.toString(), caption, description)
-}
+)

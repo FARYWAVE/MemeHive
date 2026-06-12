@@ -6,9 +6,6 @@ import java.io.File
 data class Collection(
     val id: Long,
     var name: String,
-    var cover: File? = null,
+    var coverPath: String?,
     val mediaItemCount: Int,
-) {
-
-    fun toCollectionEntity() = CollectionEntity(id, name, cover?.path)
-}
+)
