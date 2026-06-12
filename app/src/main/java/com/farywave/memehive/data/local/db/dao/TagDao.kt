@@ -11,17 +11,17 @@ import com.farywave.memehive.data.local.db.entity.TagEntity
 @Dao
 interface TagDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertTag(tagEntity: TagEntity): Long
+    suspend fun insert(tagEntity: TagEntity): Long
 
-    @Delete
-    suspend fun deleteTag(tagEntity: TagEntity)
+    @Query("DELETE FROM tags WHERE id = :tagId")
+    suspend fun delete(tagId: Long)
 
     @Query("SELECT * FROM tags")
-    suspend fun getAllTags(): List<TagEntity>
+    suspend fun getAll(): List<TagEntity>
 
     @Query("SELECT * FROM tags WHERE name in (:names)")
-    suspend fun getTagsByNames(names: List<String>): List<TagEntity>
+    suspend fun getByNames(names: List<String>): List<TagEntity>
 
     @Query("SELECT * FROM tags WHERE name = :name")
-    suspend fun getTagByName(name: String): TagEntity?
+    suspend fun getByName(name: String): TagEntity?
 }

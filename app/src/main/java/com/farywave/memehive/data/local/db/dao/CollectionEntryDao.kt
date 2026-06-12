@@ -12,35 +12,35 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface CollectionEntryDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertCollectionEntry(collectionEntryEntity: CollectionEntryEntity): Long
+    suspend fun insert(collectionEntryEntity: CollectionEntryEntity): Long
 
-    @Delete
-    suspend fun deleteCollectionEntry(collectionEntryEntity: CollectionEntryEntity)
+    @Query("DELETE FROM collection_entries WHERE collection_id = :collectionId AND media_item_id = :mediaItemId")
+    suspend fun delete(collectionId: Long, mediaItemId: Long)
 
     @Query("""
         SELECT * FROM collection_entries
-        WHERE collectionId = :collectionId
+        WHERE collection_id = :collectionId
     """)
-    fun getAllCollectionEntries(collectionId: Long): Flow<List<CollectionEntryEntity>>
+    fun getByCollection(collectionId: Long): Flow<List<CollectionEntryEntity>>
 
     @Query("""
-        SELECT mediaItemId FROM collection_entries
-        WHERE collectionId = :collectionId
+        SELECT media_item_id FROM collection_entries
+        WHERE collection_id = :collectionId
     """)
-    suspend fun getMediaIds(collectionId: Long): List<Long>
+    suspend fun getIDsByCollection(collectionId: Long): List<Long>
 
     @Query("""
         DELETE FROM collection_entries
-        WHERE collectionId = :collectionId
+        WHERE collection_id = :collectionId
     """)
     suspend fun deleteByCollection(collectionId: Long)
 
-    @Query("SELECT COUNT(*) FROM collection_entries WHERE collectionId = :collectionId")
+    @Query("SELECT COUNT(*) FROM collection_entries WHERE collection_id = :collectionId")
     fun getEntryCount(collectionId: Long): Flow<Int>
 
-    @Query("SELECT * FROM collection_entries WHERE mediaItemId = :id")
-    fun getByMediaItemId(id: Long): Flow<List<CollectionEntryEntity>>
+    @Query("SELECT * FROM collection_entries WHERE media_item_id = :mediaItemId")
+    fun getByMediaItem(mediaItemId: Long): Flow<List<CollectionEntryEntity>>
 
-    @Query("DELETE FROM collection_entries WHERE mediaItemId = :id")
-    fun deleteByMediaItemId(id: Long)
+    @Query("DELETE FROM collection_entries WHERE media_item_id = :mediaItemId")
+    fun deleteByMediaItem(mediaItemId: Long)
 }

@@ -10,26 +10,26 @@ import com.farywave.memehive.data.local.db.entity.MediaItemTrigramEntity
 @Dao
 interface MediaItemTrigramDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertMediaItemTrigram(
+    suspend fun insert(
         mediaItemTrigramEntity: MediaItemTrigramEntity
     ): Long
 
     @Query("SELECT * FROM media_item_trigrams")
-    suspend fun getAllMediaItemTrigram(): List<MediaItemTrigramEntity>
+    suspend fun getAll(): List<MediaItemTrigramEntity>
 
     @Query("""
-        SELECT mediaItemId 
+        SELECT media_item_id
         FROM media_item_trigrams
         WHERE trigram IN (:trigrams)
-        GROUP BY mediaItemId
+        GROUP BY media_item_id
         ORDER BY COUNT(*) DESC
     """)
-    suspend fun searchByTrigrams(trigrams: List<String>): List<Long>
+    suspend fun getMediaItemIDsByTrigrams(trigrams: List<String>): List<Long>
 
 
     @Query("""
         DELETE FROM media_item_trigrams
-        WHERE mediaItemId = :mediaItemId
+        WHERE media_item_id = :mediaItemId
     """)
-    suspend fun deleteTrigramsForMedia(mediaItemId: Long)
+    suspend fun deleteByMediaItem(mediaItemId: Long)
 }

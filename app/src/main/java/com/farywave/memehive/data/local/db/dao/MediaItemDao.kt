@@ -14,61 +14,47 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MediaItemDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun insertMediaItem(mediaItem: MediaItemEntity): Long
+    suspend fun insert(mediaItem: MediaItemEntity): Long
 
     @Update
-    suspend fun updateMediaItem(mediaItem: MediaItemEntity)
+    suspend fun update(mediaItem: MediaItemEntity)
 
-    @Delete
-    suspend fun deleteMediaItem(mediaItem: MediaItemEntity)
-
-    @Query("SELECT * FROM media_items")
-    fun getAllMediaItems(): Flow<List<MediaItemEntity>>
-
-    @Query("SELECT * FROM media_items WHERE id = :id")
-    suspend fun getMediaItem(id: Long): MediaItemEntity?
-
-    @Query("""
-    SELECT * FROM media_items
-    WHERE (:collectionId IS NULL OR id IN (
-        SELECT mediaItemId FROM collection_entries WHERE collectionId = :collectionId
-    ))
-    """)
-    suspend fun getByCollection(collectionId: Long?): List<MediaItemEntity>
-
-    @Query("""
-    SELECT mediaItemId FROM media_item_tags
-    WHERE tagId IN (:tagIds)
-    GROUP BY mediaItemId
-    HAVING COUNT(DISTINCT tagId) = :tagCount
-    """)
-    suspend fun getMediaIdsByTags(tagIds: List<Long>, tagCount: Int): List<Long>
+    @Query("DELETE FROM media_items WHERE id = :mediaItemId")
+    suspend fun delete(mediaItemId: Long)
 
     @Transaction
     @Query("SELECT * FROM media_items")
-    suspend fun getAllMediaWithTags(): List<MediaItemDetails>
+    fun getAll(): Flow<List<MediaItemDetails>>
 
     @Transaction
-    @Query("SELECT * FROM media_items WHERE id IN (:ids)")
-    suspend fun getMediaWithTagsByIds(ids: List<Long>): List<MediaItemDetails>
+    @Query("SELECT * FROM media_items WHERE id = :mediaItemId")
+    suspend fun get(mediaItemId: Long): MediaItemDetails?
+
+    @Query("""
+    SELECT media_item_id FROM media_item_tags
+    WHERE tag_id IN (:tagIds)
+    GROUP BY media_item_id
+    HAVING COUNT(DISTINCT tag_id) = :tagCount
+    """)
+    suspend fun getIDsByTags(tagIds: List<Long>, tagCount: Int): List<Long>
+
+    @Transaction
+    @Query("SELECT * FROM media_items WHERE id IN (:mediaItemIds)")
+    suspend fun getByIds(mediaItemIds: List<Long>): List<MediaItemDetails>
 
     @Transaction
     @Query("""
     SELECT * FROM media_items
     WHERE (:collectionId IS NULL OR id IN (
-        SELECT mediaItemId 
+        SELECT media_item_id 
         FROM collection_entries 
-        WHERE collectionId = :collectionId
+        WHERE collection_id = :collectionId
     ))
 """)
-    suspend fun getMediaWithTagsByCollection(
+    suspend fun getByCollection(
         collectionId: Long?
     ): List<MediaItemDetails>
 
-    @Transaction
-    @Query("SELECT * FROM media_items WHERE id = :id")
-    suspend fun getMediaWithTagsById(id: Long): MediaItemDetails?
-
     @Query("SELECT id FROM media_items")
-    suspend fun getAllIds(): List<Long>
+    suspend fun getAllIDs(): List<Long>
 }

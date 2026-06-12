@@ -12,14 +12,14 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface CollectionDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun insertCollection(collection: CollectionEntity): Long
+    suspend fun insert(collection: CollectionEntity): Long
 
     @Update
-    suspend fun updateCollection(collection: CollectionEntity)
+    suspend fun update(collection: CollectionEntity)
 
-    @Delete
-    suspend fun deleteCollection(collection: CollectionEntity)
+    @Query("DELETE FROM collections WHERE id = :collectionId")
+    suspend fun delete(collectionId: Long)
 
     @Query("SELECT * FROM collections")
-    fun getAllCollections(): Flow<List<CollectionEntity>>
+    fun getAll(): Flow<List<CollectionEntity>>
 }

@@ -86,9 +86,6 @@ class MediaItemRepository(
     }
 
 
-    suspend fun getByCollection(collection: Collection) =
-        mediaItemDao.getByCollection(collection.id).map { it.toMediaItem() }
-
     suspend fun getMediaWithTagsByCollection(collectionId: Long) =
         mediaItemDao.getMediaWithTagsByCollection(collectionId).map { it.toMediaItem() }
 
