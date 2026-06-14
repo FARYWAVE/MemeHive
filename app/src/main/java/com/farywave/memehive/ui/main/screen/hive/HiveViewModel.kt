@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.main.screens.hive
+package com.farywave.memehive.ui.main.screen.hive
 
 
 import android.content.Context

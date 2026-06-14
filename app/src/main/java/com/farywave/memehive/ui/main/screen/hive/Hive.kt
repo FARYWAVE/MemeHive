@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.main.screens.hive
+package com.farywave.memehive.ui.main.screen.hive
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -49,13 +49,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
-import com.farywave.memehive.ui.components.CollectionPickerSheet
-import com.farywave.memehive.ui.components.MediaItemCardFull
-import com.farywave.memehive.ui.components.SearchAndCollectionBar
+import com.farywave.memehive.ui.component.CollectionPickerSheet
+import com.farywave.memehive.ui.component.MediaItemCardFull
+import com.farywave.memehive.ui.component.SearchAndCollectionBar
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.navigation.NavEvent
-import com.farywave.memehive.ui.simple_components.SimpleActionMenu
-import com.farywave.memehive.ui.simple_components.SimpleIconButton
+import com.farywave.memehive.ui.simple_component.SimpleActionMenu
+import com.farywave.memehive.ui.simple_component.SimpleIconButton
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.Typography
 import kotlinx.coroutines.flow.combine

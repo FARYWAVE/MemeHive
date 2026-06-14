@@ -1,8 +1,8 @@
-package com.farywave.memehive.ui.main.screens.hive
+package com.farywave.memehive.ui.main.screen.hive
 
 import androidx.annotation.StringRes
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.simple_components.ActionMenuOptions
+import com.farywave.memehive.ui.simple_component.ActionMenuOptions
 
 enum class CreateActions(
     @StringRes override val labelId: Int,

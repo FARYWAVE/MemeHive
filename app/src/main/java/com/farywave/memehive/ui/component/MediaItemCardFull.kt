@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.components
+package com.farywave.memehive.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

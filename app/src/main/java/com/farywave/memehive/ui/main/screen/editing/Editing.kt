@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.main.screens.editing
+package com.farywave.memehive.ui.main.screen.editing
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -58,13 +58,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.components.CollectionPickerSheet
-import com.farywave.memehive.ui.components.CollectionSelectorSheet
-import com.farywave.memehive.ui.components.ImagePicker
+import com.farywave.memehive.ui.component.CollectionPickerSheet
+import com.farywave.memehive.ui.component.CollectionSelectorSheet
+import com.farywave.memehive.ui.component.ImagePicker
 import com.farywave.memehive.ui.navigation.NavEvent
-import com.farywave.memehive.ui.simple_components.SimpleActionMenu
-import com.farywave.memehive.ui.simple_components.SimpleIconButton
-import com.farywave.memehive.ui.simple_components.SimpleTextField
+import com.farywave.memehive.ui.simple_component.SimpleActionMenu
+import com.farywave.memehive.ui.simple_component.SimpleIconButton
+import com.farywave.memehive.ui.simple_component.SimpleTextField
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable

@@ -9,17 +9,9 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Scaffold
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.ContextCompat
-import androidx.core.view.WindowCompat
-import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
-import com.farywave.memehive.ui.main.screens.hive.Hive
-import com.farywave.memehive.ui.main.screens.hive.HiveViewModel
 import com.farywave.memehive.ui.navigation.NavController
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme

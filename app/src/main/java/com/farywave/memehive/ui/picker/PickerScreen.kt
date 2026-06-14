@@ -30,8 +30,8 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.components.MediaItemCardSimple
-import com.farywave.memehive.ui.components.SearchAndCollectionBar
+import com.farywave.memehive.ui.component.MediaItemCardSimple
+import com.farywave.memehive.ui.component.SearchAndCollectionBar
 import com.farywave.memehive.ui.model.MediaItem
 import com.farywave.memehive.ui.theme.LocalAppColors
 

@@ -17,7 +17,7 @@ class CollectionRepository(
     private val collectionEntryDao: CollectionEntryDao,
 ) {
     suspend fun insertCollection(collection: Collection) =
-        collectionDao.insertCollection(
+        collectionDao.insert(
             collection.toCollectionEntity()
         )
 

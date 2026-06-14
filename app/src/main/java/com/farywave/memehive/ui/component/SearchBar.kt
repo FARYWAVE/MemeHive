@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.components
+package com.farywave.memehive.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.simple_components.SimpleTextField
+import com.farywave.memehive.ui.simple_component.SimpleTextField
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable

@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.main.dialogs
+package com.farywave.memehive.ui.main.dialog
 
 import android.net.Uri
 import androidx.annotation.StringRes
@@ -14,33 +14,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.components.ImagePicker
-import com.farywave.memehive.ui.simple_components.ActionType
-import com.farywave.memehive.ui.simple_components.SimpleDialog
-import com.farywave.memehive.ui.simple_components.SimpleDialogAction
-import com.farywave.memehive.ui.simple_components.SimpleTextField
+import com.farywave.memehive.ui.component.ImagePicker
+import com.farywave.memehive.ui.simple_component.ActionType
+import com.farywave.memehive.ui.simple_component.SimpleDialog
+import com.farywave.memehive.ui.simple_component.SimpleDialogAction
+import com.farywave.memehive.ui.simple_component.SimpleTextField
 import com.farywave.memehive.ui.theme.LocalAppColors
 
+
 @Composable
-fun EditCollection(
-    collectionName: String,
-    collectionCover: String?,
-    onDismissRequest: () -> Unit,
-    onConfirm: (name: String?, cover: Uri?) -> Unit
-) {
-    val name = remember { mutableStateOf<String?>(collectionName) }
-    val coverSrc = remember { mutableStateOf(collectionCover?.toUri()) }
+fun NewCollection(onDismissRequest: () -> Unit, onConfirm: (name: String?, coverSrc: Uri?) -> Unit) {
+    val name = remember { mutableStateOf<String?>(null) }
+    val coverSrc = remember { mutableStateOf<Uri?>(null) }
 
     SimpleDialog(
-        title = stringResource(R.string.action_edit_collection),
-        actions = enumValues<EditCollectionAction>(),
+        title = stringResource(R.string.action_create_collection),
+        actions = enumValues<NewCollectionAction>(),
         onDismissRequest = onDismissRequest,
         onAction = { action ->
             when (action) {
-                EditCollectionAction.RENAME -> onConfirm(name.value, coverSrc.value)
-                EditCollectionAction.CANCEL -> onDismissRequest()
+                NewCollectionAction.CREATE -> onConfirm(name.value, coverSrc.value)
+                NewCollectionAction.CANCEL -> onDismissRequest()
             }
         },
     ) {
@@ -69,11 +64,8 @@ fun EditCollection(
 }
 
 
-enum class EditCollectionAction(
-    @StringRes override val text: Int,
-    override val type: ActionType
-) :
+enum class NewCollectionAction(@StringRes override val text: Int, override val type: ActionType) :
     SimpleDialogAction {
-    RENAME(R.string.action_edit, ActionType.NORMAL),
+    CREATE(R.string.button_create, ActionType.NORMAL),
     CANCEL(R.string.button_cancel, ActionType.DISMISS)
 }

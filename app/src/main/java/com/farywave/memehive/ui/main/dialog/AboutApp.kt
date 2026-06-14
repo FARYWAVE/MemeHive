@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.main.dialogs
+package com.farywave.memehive.ui.main.dialog
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
@@ -21,9 +21,9 @@ import androidx.compose.ui.unit.dp
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.core.ModelTools
-import com.farywave.memehive.ui.simple_components.ActionType
-import com.farywave.memehive.ui.simple_components.SimpleDialog
-import com.farywave.memehive.ui.simple_components.SimpleDialogAction
+import com.farywave.memehive.ui.simple_component.ActionType
+import com.farywave.memehive.ui.simple_component.SimpleDialog
+import com.farywave.memehive.ui.simple_component.SimpleDialogAction
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable

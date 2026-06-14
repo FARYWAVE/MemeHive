@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.main.screens.editing
+package com.farywave.memehive.ui.main.screen.editing
 
 import android.content.Context
 import androidx.lifecycle.ViewModel

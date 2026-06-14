@@ -1,7 +1,6 @@
 package com.farywave.memehive.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.core.net.toUri
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -9,11 +8,11 @@ import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.farywave.memehive.core.ModelTools
-import com.farywave.memehive.ui.main.dialogs.AboutApp
-import com.farywave.memehive.ui.main.dialogs.NewCollection
-import com.farywave.memehive.ui.main.dialogs.EditCollection
-import com.farywave.memehive.ui.main.screens.editing.Editing
-import com.farywave.memehive.ui.main.screens.hive.Hive
+import com.farywave.memehive.ui.main.dialog.AboutApp
+import com.farywave.memehive.ui.main.dialog.NewCollection
+import com.farywave.memehive.ui.main.dialog.EditCollection
+import com.farywave.memehive.ui.main.screen.editing.Editing
+import com.farywave.memehive.ui.main.screen.hive.Hive
 
 @Composable
 fun NavController(onEnableNotification: (Boolean) -> Unit) {

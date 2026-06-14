@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.components
+package com.farywave.memehive.ui.component
 
 import android.net.Uri
 import androidx.compose.foundation.background

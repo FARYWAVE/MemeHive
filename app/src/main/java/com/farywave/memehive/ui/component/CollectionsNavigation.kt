@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.components
+package com.farywave.memehive.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,9 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.farywave.memehive.ui.main.screens.hive.CollectionActions
+import com.farywave.memehive.ui.main.screen.hive.CollectionActions
 import com.farywave.memehive.ui.model.Collection
-import com.farywave.memehive.ui.simple_components.SimpleActionMenu
+import com.farywave.memehive.ui.simple_component.SimpleActionMenu
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable

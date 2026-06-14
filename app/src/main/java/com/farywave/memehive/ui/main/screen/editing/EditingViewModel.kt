@@ -1,8 +1,7 @@
-package com.farywave.memehive.ui.main.screens.editing
+package com.farywave.memehive.ui.main.screen.editing
 
 import android.content.Context
 import android.net.Uri
-import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
