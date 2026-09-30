@@ -2,7 +2,12 @@ package com.farywave.memehive.core.collection_transfer
 
 import android.content.Context
 import android.net.Uri
+import androidx.core.net.toFile
 import androidx.core.net.toUri
+import com.farywave.memehive.core.collection_transfer.entity.TransferCollection
+import com.farywave.memehive.core.collection_transfer.entity.TransferManifest
+import com.farywave.memehive.core.collection_transfer.entity.TransferMediaItem
+import com.farywave.memehive.data.local.db.relation.MediaItemDetails
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
 import kotlinx.serialization.encodeToString
@@ -15,18 +20,17 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
-object CollectionTransferTool {
+class CollectionTransferTool(val context: Context) {
     private val json = Json {
         prettyPrint = true
     }
 
     fun exportCollection(
-        context: Context,
         collection: Collection,
-        mediaItems: List<MediaItem>,
+        mediaItems: List<MediaItemDetails>,
         outputUri: Uri
     ) {
-        val tempDir = createTempExportDir(context)
+        val tempDir = createTempExportDir()
         val collectionDir = File(tempDir, "collection")
         val mediaDir = File(tempDir, "media")
 
@@ -38,34 +42,32 @@ object CollectionTransferTool {
 
         collection.cover?.let { cover ->
 
-            val coverUri = cover.toUri()
+            val coverUri = cover.uri
 
             copyUriToFile(
-                context,
                 coverUri,
                 File(tempDir, exportedCoverPath)
             )
         }
 
         //Media Preparation
-        val transferMediaItems = mediaItems.filter { it.src != null }.mapIndexed { index, item ->
-
-            val extension = item.src!!.extension
+        val transferMediaItems = mediaItems.filter { it.image != null }.mapIndexed { index, item ->
+            val image = File(item.image!!.path)
+            val extension = image.extension
 
             val exportName = "%03d.%s".format(index, extension)
 
             val relativePath = "media/$exportName"
             copyUriToFile(
-                context,
-                item.src!!.toUri(),
+                image.toUri(),
                 File(tempDir, relativePath)
             )
 
             TransferMediaItem(
-                src = relativePath,
-                caption = item.caption,
-                description = item.description,
-                tags = item.tags
+                path = relativePath,
+                caption = item.mediaItem.caption,
+                description = item.mediaItem.description,
+                tags = item.tags.map { it.name }
             )
         }
 
@@ -75,7 +77,7 @@ object CollectionTransferTool {
             exportedAt = System.currentTimeMillis(),
             collection = TransferCollection(
                 name = collection.name,
-                coverSrc = collection.cover?.let {
+                coverPath = collection.cover?.let {
                     "collection/cover.jpg"
                 }
             ),
@@ -98,7 +100,7 @@ object CollectionTransferTool {
             }
     }
 
-    fun unzipCollection(context: Context, uri: Uri): Pair<TransferManifest, File> {
+    fun unzipCollection(uri: Uri): Pair<TransferManifest, File> {
         val tempDir = File(context.cacheDir, "import_temp")
 
         if (tempDir.exists()) {
@@ -154,7 +156,7 @@ object CollectionTransferTool {
         return manifest to tempDir
     }
 
-    private fun createTempExportDir(context: Context): File {
+    private fun createTempExportDir(): File {
         val dir = File(context.cacheDir, "export_temp")
 
         if (dir.exists()) {
@@ -167,7 +169,6 @@ object CollectionTransferTool {
     }
 
     private fun copyUriToFile(
-        context: Context,
         uri: Uri,
         destination: File
     ) {

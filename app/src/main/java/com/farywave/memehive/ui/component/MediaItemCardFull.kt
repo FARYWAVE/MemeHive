@@ -1,5 +1,7 @@
 package com.farywave.memehive.ui.component
 
+import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -30,6 +32,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.core.net.toFile
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.model.MediaItem
@@ -80,7 +83,7 @@ fun MediaItemCardFull(
                         end.linkTo(parent.end)
                     }
                     .wrapContentSize(),
-                src = mediaItem.src,
+                src = mediaItem.image?.uri,
                 roundBottom = mediaItem.tags.isEmpty()
             )
 
@@ -96,7 +99,7 @@ fun MediaItemCardFull(
                     bottom.linkTo(parent.bottom)
                     start.linkTo(parent.start)
                 },
-                name = mediaItem.caption.orEmpty()
+                name = mediaItem.caption
             )
         }
 
@@ -116,11 +119,12 @@ fun MediaItemCardFull(
 }
 
 @Composable
-private fun NullableImage(modifier: Modifier, src: File?, roundBottom: Boolean) {
+private fun NullableImage(modifier: Modifier, src: Uri?, roundBottom: Boolean) {
     val roundedTopShape = MaterialTheme.shapes.medium.copy(
         bottomStart = CornerSize(0.dp),
         bottomEnd = CornerSize(0.dp)
     )
+    Log.d("NullableImage", "src: $src")
     if (src != null) AsyncImage(
         model = src,
         contentDescription = null,

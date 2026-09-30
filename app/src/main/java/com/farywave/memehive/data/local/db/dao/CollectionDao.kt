@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.farywave.memehive.data.local.db.entity.CollectionEntity
+import com.farywave.memehive.data.local.db.relation.CollectionDetails
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -17,9 +18,12 @@ interface CollectionDao {
     @Update
     suspend fun update(collection: CollectionEntity)
 
-    @Query("DELETE FROM collections WHERE id = :collectionId")
-    suspend fun delete(collectionId: Long)
+    @Query("DELETE FROM collections WHERE id = :collectionID")
+    suspend fun delete(collectionID: Long)
 
     @Query("SELECT * FROM collections")
-    fun getAll(): Flow<List<CollectionEntity>>
+    fun getAll(): Flow<List<CollectionDetails>>
+
+    @Query("UPDATE collections SET cover_image_id = :imageID WHERE id = :collectionID")
+    suspend fun setCover(collectionID: Long, imageID: Long)
 }

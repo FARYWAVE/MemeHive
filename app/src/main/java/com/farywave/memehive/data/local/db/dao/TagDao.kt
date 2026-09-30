@@ -19,9 +19,12 @@ interface TagDao {
     @Query("SELECT * FROM tags")
     suspend fun getAll(): List<TagEntity>
 
-    @Query("SELECT * FROM tags WHERE name in (:names)")
-    suspend fun getByNames(names: List<String>): List<TagEntity>
+    @Query("SELECT id FROM tags WHERE name in (:names)")
+    suspend fun getIDsByNames(names: List<String>): List<Long>
 
     @Query("SELECT * FROM tags WHERE name = :name")
     suspend fun getByName(name: String): TagEntity?
+
+    @Query("DELETE FROM tags WHERE id NOT IN (SELECT DISTINCT tag_id FROM media_item_tags)")
+    suspend fun deleteOrphanedTags()
 }

@@ -22,6 +22,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.core.net.toFile
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.model.MediaItem
@@ -55,7 +56,7 @@ fun MediaItemCardSimple(
                         end.linkTo(parent.end)
                     }
                     .wrapContentSize(),
-                src = mediaItem.src,
+                src = mediaItem.image?.uri?.toFile(),
                 roundBottom = mediaItem.tags.isEmpty()
             )
 

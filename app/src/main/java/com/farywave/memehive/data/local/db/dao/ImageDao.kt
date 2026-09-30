@@ -16,5 +16,17 @@ interface ImageDao {
     suspend fun delete(imageId: Long)
 
     @Query("SELECT * FROM images WHERE id = :imageId")
-    suspend fun get(imageId: Long): ImageEntity?
+    suspend fun getById(imageId: Long): ImageEntity?
+
+    @Query("SELECT * FROM images WHERE sha256 = :sha256")
+    suspend fun getBySHA256(sha256: String): ImageEntity?
+
+    @Query("""
+        SELECT (
+            SELECT COUNT(*) FROM collections WHERE cover_image_id = :imageId
+        ) + (
+            SELECT COUNT(*) FROM media_items WHERE image_id = :imageId
+        ) AS total_count
+    """)
+    suspend fun getUsageCount(imageId: Long): Int
 }

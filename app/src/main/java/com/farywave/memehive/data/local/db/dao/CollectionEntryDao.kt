@@ -14,6 +14,10 @@ interface CollectionEntryDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(collectionEntryEntity: CollectionEntryEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(collectionEntryEntities: List<CollectionEntryEntity>): List<Long>
+
+
     @Query("DELETE FROM collection_entries WHERE collection_id = :collectionId AND media_item_id = :mediaItemId")
     suspend fun delete(collectionId: Long, mediaItemId: Long)
 
@@ -42,5 +46,5 @@ interface CollectionEntryDao {
     fun getByMediaItem(mediaItemId: Long): Flow<List<CollectionEntryEntity>>
 
     @Query("DELETE FROM collection_entries WHERE media_item_id = :mediaItemId")
-    fun deleteByMediaItem(mediaItemId: Long)
+    suspend fun deleteByMediaItem(mediaItemId: Long)
 }

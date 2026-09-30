@@ -1,0 +1,428 @@
+package com.farywave.memehive.ui.activity.main.screen.editing
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.KeyboardActionHandler
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.farywave.memehive.R
+import com.farywave.memehive.ui.component.CollectionPickerSheet
+import com.farywave.memehive.ui.component.CollectionSelectorSheet
+import com.farywave.memehive.ui.component.ImagePicker
+import com.farywave.memehive.ui.navigation.NavEvent
+import com.farywave.memehive.ui.simple_component.SimpleActionMenu
+import com.farywave.memehive.ui.simple_component.SimpleIconButton
+import com.farywave.memehive.ui.simple_component.SimpleTextField
+import com.farywave.memehive.ui.theme.LocalAppColors
+
+@Composable
+fun Editing(
+    savedStateHandle: SavedStateHandle,
+    mediaItemId: Long, onNavigate: (NavEvent) -> Unit
+) {
+    val context = LocalContext.current
+    val viewModel: EditingViewModel = viewModel(
+        factory = EditingViewModelFactory(context, mediaItemId)
+    )
+
+    val collections by viewModel.collections.collectAsState()
+    val selectedIds by viewModel.selectedCollections.collectAsState()
+
+
+    BackHandler {
+        viewModel.onSave()
+        onNavigate(NavEvent.Back)
+    }
+    var showSelectorSheet by remember { mutableStateOf(false) }
+    var showPickerSheet by remember { mutableStateOf(false) }
+
+    val isEdited by viewModel.isEdited.collectAsState()
+    val newCollectionEvent = remember {
+        savedStateHandle.getStateFlow<String?>(
+            "newCollectionName",
+            null
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        newCollectionEvent.collect { name ->
+            if (!name.isNullOrBlank()) {
+                viewModel.createCollection(name)
+                savedStateHandle["newCollectionName"] = null
+            }
+        }
+    }
+
+    val focusManager = LocalFocusManager.current
+
+    Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(LocalAppColors.current.backgroundPrimary)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = {
+                        focusManager.clearFocus()
+                    }
+                )
+            },
+        contentWindowInsets = WindowInsets(0),
+        topBar = {
+            Toolbar(
+                isEdited = isEdited,
+                onExit = { viewModel.onSave() },
+                onNavigate = onNavigate,
+                onDiscard = {
+                    viewModel.discardChanges()
+                },
+                onAction = { action ->
+                    when (action) {
+                        MoreActions.ADD_TO_COLLECTION -> {
+                            showSelectorSheet = true
+                        }
+
+                        MoreActions.SET_AS_COVER -> {
+                            showPickerSheet = true
+                        }
+
+                        MoreActions.DUPLICATE -> {
+                            viewModel.onDuplicate()
+                        }
+
+                        MoreActions.DELETE -> {
+                            viewModel.onDelete()
+                            onNavigate(NavEvent.ToHive)
+                        }
+                    }
+                })
+        }
+    ) { contentPadding ->
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(contentPadding)
+                .imePadding()
+                .background(LocalAppColors.current.backgroundPrimary),
+        ) {
+            Content(
+                viewModel = viewModel,
+                modifier = Modifier
+                    .padding(horizontal = 10.dp)
+                    .fillMaxSize(),
+                onNavigate = onNavigate
+            )
+            CollectionSelectorSheet(
+                show = showSelectorSheet,
+                collections = collections.filter { it.id != -1L },
+                selectedIds = selectedIds,
+                onDismiss = { showSelectorSheet = false },
+                onCollectionClicked = { viewModel.toggleCollection(it) },
+                onNewCollectionClicked = { onNavigate(NavEvent.NewCollectionDialog) }
+            )
+
+            CollectionPickerSheet(
+                show = showPickerSheet,
+                collections = collections.filter { it.id != -1L },
+                onDismiss = { showPickerSheet = false },
+                onCollectionSelected = { viewModel.onSetAsCover(it) },
+                onNewCollectionClicked = { onNavigate(NavEvent.NewCollectionDialog) }
+            )
+        }
+    }
+}
+
+
+@Composable
+private fun Toolbar(
+    onExit: () -> Unit,
+    isEdited: Boolean,
+    onNavigate: (NavEvent) -> Unit,
+    onDiscard: () -> Unit,
+    onAction: (MoreActions) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .background(LocalAppColors.current.backgroundPrimary)
+            .padding(horizontal = 17.dp, vertical = 6.dp)
+            .statusBarsPadding(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        SimpleIconButton(
+            modifier = Modifier
+                .padding(7.dp)
+                .size(30.dp),
+            icon = painterResource(R.drawable.ic_back)
+        ) {
+            onExit()
+            onNavigate(NavEvent.ToHive)
+        }
+
+        Spacer(Modifier.weight(1f))
+
+        if (isEdited) SimpleIconButton(
+            modifier = Modifier
+                .padding(7.dp)
+                .size(30.dp),
+            icon = painterResource(R.drawable.ic_cross)
+        ) {
+            onDiscard()
+        }
+
+        SimpleActionMenu<MoreActions>(onSelected = { onAction(it) }) { onClick ->
+            SimpleIconButton(
+                modifier = Modifier
+                    .padding(7.dp)
+                    .size(30.dp),
+                icon = painterResource(R.drawable.ic_more)
+            ) {
+                onClick()
+            }
+        }
+    }
+}
+
+@Composable
+private fun Content(
+    viewModel: EditingViewModel,
+    modifier: Modifier = Modifier,
+    onNavigate: (NavEvent) -> Unit
+) {
+    val mediaItem by viewModel.mediaItem.collectAsState()
+    val editableTags by viewModel.editableTags.collectAsState()
+
+    val textMeasurer = rememberTextMeasurer()
+    val size = textMeasurer.measure(
+        text = AnnotatedString("Ambatukam"),
+        style = MaterialTheme.typography.bodyMedium
+    ).size.height / 2
+
+    val roundedShape = RoundedCornerShape(
+        with(LocalDensity.current) { size.toDp() } + 7.dp
+    )
+
+    LazyColumn(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item {
+            ImagePicker(initialSrc = mediaItem.image?.uri, shape = roundedShape) { uri ->
+                viewModel.updateImage(uri)
+            }
+        }
+        item {
+            SimpleTextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .background(
+                        LocalAppColors.current.backgroundSecondary,
+                        shape = roundedShape
+                    )
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                hint = stringResource(R.string.editing_caption_hint),
+                initialValue = mediaItem.caption,
+                onValueChange = { viewModel.updateName(it) },
+                callbackDelay = 0L
+            )
+        }
+
+        item {
+            SimpleTextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .background(
+                        LocalAppColors.current.backgroundSecondary,
+                        shape = roundedShape
+                    )
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                hint = stringResource(R.string.editing_description_hint),
+                numberOfLines = 3,
+                initialValue = mediaItem.description,
+                onValueChange = { viewModel.updateDescription(it) },
+                callbackDelay = 0L
+            )
+        }
+        item {
+            Text(
+                modifier = Modifier.padding(bottom = 5.dp, start = 10.dp),
+                text = stringResource(R.string.editing_tags_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = LocalAppColors.current.contentSecondary
+            )
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(horizontal = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                editableTags.forEach { tag ->
+                    key(tag.id) {
+                        TagChip(
+                            tag = tag.text,
+                            onFocusLost = { newText ->
+                                if (newText.isEmpty()) viewModel.removeTag(tag.id)
+                                else viewModel.updateTag(tag.id, newText)
+                            }
+                        )
+                    }
+                }
+
+                NewTagChip { newText ->
+                    if (newText.isNotEmpty()) {
+                        viewModel.addTag(newText)
+                    }
+                }
+            }
+        }
+        item { Spacer(modifier = Modifier.height(500.dp)) }
+    }
+}
+
+@Composable
+private fun TagChip(tag: String, onFocusLost: (tag: String) -> Unit) {
+    val value = rememberTextFieldState(tag)
+    val focusManager = LocalFocusManager.current
+
+
+    Box(
+        Modifier
+            .wrapContentSize()
+            .background(LocalAppColors.current.accentPrimary, shape = MaterialTheme.shapes.large)
+    ) {
+        BasicTextField(
+            state = value,
+            modifier = Modifier
+                .width(IntrinsicSize.Min)
+                .widthIn(min = 20.dp)
+                .padding(horizontal = 7.dp, vertical = 6.dp)
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused.not()) {
+                        onFocusLost(value.text.toString().trim().lowercase().replace(' ', '_'))
+                    }
+                },
+            textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalAppColors.current.contentPrimary),
+            lineLimits = TextFieldLineLimits.SingleLine,
+            cursorBrush = SolidColor(LocalAppColors.current.accentSecondary),
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done
+            ),
+            onKeyboardAction = KeyboardActionHandler {
+                focusManager.clearFocus()
+            }
+        )
+    }
+}
+
+
+@Composable
+private fun NewTagChip(onFocusLost: (tag: String) -> Unit) {
+    val value = rememberTextFieldState()
+    var isFocused by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { value.text }
+            .collect { text ->
+                if (text.isNotEmpty() && (text.trim().endsWith(","))) {
+                    onFocusLost(
+                        text.trim().dropLast(1).toString().trim().lowercase().replace(' ', '_')
+                    )
+                    value.setTextAndPlaceCursorAtEnd("")
+                }
+            }
+    }
+    Box(
+        Modifier
+            .wrapContentSize()
+            .background(LocalAppColors.current.accentPrimary, shape = MaterialTheme.shapes.large)
+            .widthIn(min = 30.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (value.text.isEmpty() && !isFocused) Text(
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 6.dp),
+            text = "+",
+            style = MaterialTheme.typography.bodyMedium,
+            color = LocalAppColors.current.contentPrimary,
+        )
+        BasicTextField(
+            state = value,
+            modifier = Modifier
+                .width(IntrinsicSize.Min)
+                .widthIn(min = 20.dp)
+                .padding(horizontal = 7.dp, vertical = 6.dp)
+                .onFocusChanged { focusState ->
+                    isFocused = focusState.isFocused
+                    if (!isFocused) {
+                        onFocusLost(value.text.toString().trim().lowercase())
+                        value.setTextAndPlaceCursorAtEnd("")
+                    }
+                },
+            textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalAppColors.current.contentPrimary),
+            lineLimits = TextFieldLineLimits.SingleLine,
+            cursorBrush = SolidColor(LocalAppColors.current.accentSecondary),
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done
+            ),
+            onKeyboardAction = KeyboardActionHandler {
+                onFocusLost(value.text.toString().trim().lowercase())
+                value.setTextAndPlaceCursorAtEnd("")
+            }
+        )
+    }
+}

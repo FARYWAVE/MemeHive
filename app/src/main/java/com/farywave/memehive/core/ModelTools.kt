@@ -25,4 +25,16 @@ object ModelTools {
     fun decode(arg: String?) = Uri.decode(arg ?: "")
 
     fun quickLog(message: String) = Log.d("MH_DEBUG", message)
+
+    fun generateTrigrams(text: String): Set<String> {
+        val normalized = text.lowercase()
+        if (normalized.length < 3) return emptySet()
+        val result = mutableSetOf<String>()
+
+        for (i in 0..normalized.length - 3) {
+            result.add(normalized.substring(i, i + 3))
+        }
+
+        return result
+    }
 }

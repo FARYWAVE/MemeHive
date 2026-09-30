@@ -1,5 +1,6 @@
 package com.farywave.memehive.data.local.db.repository
 
+import android.content.Context
 import androidx.room.Transaction
 import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.data.local.db.dao.CollectionDao
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlin.collections.emptyList
 
 class CollectionRepository(
     private val collectionDao: CollectionDao,
@@ -18,30 +20,30 @@ class CollectionRepository(
 ) {
     suspend fun insertCollection(collection: Collection) =
         collectionDao.insert(
-            collection.toCollectionEntity()
+            collection.toEntity()
         )
 
     suspend fun updateCollection(collection: Collection) =
-        collectionDao.updateCollection(collection.toCollectionEntity())
+        collectionDao.update(
+            collection.toEntity()
+        )
 
-    @Transaction
     suspend fun deleteCollection(collection: Collection) {
         collectionEntryDao.deleteByCollection(collection.id)
-        collectionDao.deleteCollection(collection.toCollectionEntity())
-        collection.cover?.let { DeviceTools.deleteFromInternalStorage(it) }
+        collectionDao.delete(collection.id)
     }
 
-    fun observeCollections() =
-        collectionDao.getAllCollections()
+    fun getAllCollections() =
+        collectionDao.getAll()
             .flatMapLatest { collections ->
 
                 if (collections.isEmpty()) {
                     flowOf(emptyList())
                 } else {
                     val flows = collections.map { collection ->
-                        collectionEntryDao.getEntryCount(collection.id)
+                        collectionEntryDao.getEntryCount(collection.collection.id)
                             .map { count ->
-                                collection.toCollection(count)
+                                collection.toModel(count)
                             }
                     }
 
@@ -49,30 +51,22 @@ class CollectionRepository(
                 }
             }
 
-    suspend fun insertCollectionEntry(collection: Collection, mediaItem: MediaItem) =
-        collectionEntryDao.insertCollectionEntry(
-            CollectionEntryEntity(collection.id, mediaItem.id)
+    suspend fun insertCollectionEntries(mediaItemIds: Set<Long>, collectionId: Long) =
+        collectionEntryDao.insert(
+            mediaItemIds.map { CollectionEntryEntity(collectionId, it)}
         )
 
-    suspend fun insertCollectionEntryByIds(collectionId: Long, mediaItemId: Long) =
-        collectionEntryDao.insertCollectionEntry(
-            CollectionEntryEntity(collectionId, mediaItemId)
-        )
+    fun getCollectionsByMediaItem(mediaItemId: Long) =
+        collectionEntryDao.getByMediaItem(mediaItemId)
 
-    suspend fun deleteCollectionEntry(collection: Collection, mediaItem: MediaItem) =
-        collectionEntryDao.deleteCollectionEntry(CollectionEntryEntity(collection.id, mediaItem.id))
-
-    fun getCollectionsByMediaItem(mediaItem: MediaItem) =
-        collectionEntryDao.getByMediaItemId(mediaItem.id)
-
-    @Transaction
-    suspend fun updateCollectionEntries(mediaItem: MediaItem, collectionIds: Set<Long>) {
-        collectionEntryDao.deleteByMediaItemId(mediaItem.id)
-
-        collectionIds.forEach { collectionId ->
-            collectionEntryDao.insertCollectionEntry(
-                CollectionEntryEntity(collectionId, mediaItem.id)
-            )
-        }
+    suspend fun deleteCollectionEntriesByItem(mediaItemId: Long) {
+        collectionEntryDao.deleteByMediaItem(mediaItemId)
     }
+
+    suspend fun addItemToCollections(mediaItemId: Long, collectionIds: List<Long>) =
+        collectionEntryDao.insert(
+            collectionIds.map { CollectionEntryEntity(it, mediaItemId) }
+        )
+
+    suspend fun setCollectionCover(collectionID: Long, imageID: Long) = collectionDao.setCover(collectionID, imageID)
 }

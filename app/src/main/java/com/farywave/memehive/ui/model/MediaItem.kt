@@ -1,13 +1,19 @@
 package com.farywave.memehive.ui.model
 
 import com.farywave.memehive.data.local.db.entity.MediaItemEntity
-import java.io.File
 
 data class MediaItem(
-    var id: Long,
-    var imagePath: String?,
-    var caption: String,
-    var description: String,
-    val tags: List<String>,
+    var id: Long = 0,
+    var image: Image? = null,
+    var caption: String = "",
+    var description: String = "",
+    val tags: List<String> = emptyList(),
     var isSelected: Boolean = false,
-)
+) {
+    fun toEntity() = MediaItemEntity(
+        id = id,
+        imageID = image?.id,
+        caption = caption,
+        description = description,
+    )
+}

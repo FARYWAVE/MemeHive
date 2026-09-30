@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.main.screen.hive.CollectionActions
+import com.farywave.memehive.ui.activity.main.screen.hive.CollectionActions
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.theme.LocalAppColors
 

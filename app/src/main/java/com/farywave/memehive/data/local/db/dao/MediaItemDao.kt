@@ -22,11 +22,12 @@ interface MediaItemDao {
     @Query("DELETE FROM media_items WHERE id = :mediaItemId")
     suspend fun delete(mediaItemId: Long)
 
-    @Transaction
+    @Query("DELETE FROM media_items WHERE id IN (:mediaItemIDs)")
+    suspend fun deleteByIDs(mediaItemIDs: List<Long>)
+
     @Query("SELECT * FROM media_items")
     fun getAll(): Flow<List<MediaItemDetails>>
 
-    @Transaction
     @Query("SELECT * FROM media_items WHERE id = :mediaItemId")
     suspend fun get(mediaItemId: Long): MediaItemDetails?
 
@@ -38,11 +39,9 @@ interface MediaItemDao {
     """)
     suspend fun getIDsByTags(tagIds: List<Long>, tagCount: Int): List<Long>
 
-    @Transaction
     @Query("SELECT * FROM media_items WHERE id IN (:mediaItemIds)")
     suspend fun getByIds(mediaItemIds: List<Long>): List<MediaItemDetails>
 
-    @Transaction
     @Query("""
     SELECT * FROM media_items
     WHERE (:collectionId IS NULL OR id IN (
@@ -52,7 +51,7 @@ interface MediaItemDao {
     ))
 """)
     suspend fun getByCollection(
-        collectionId: Long?
+        collectionId: Long
     ): List<MediaItemDetails>
 
     @Query("SELECT id FROM media_items")

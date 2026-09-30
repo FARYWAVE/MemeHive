@@ -10,6 +10,7 @@ import com.farywave.memehive.data.local.db.entity.*
 @Database(
     entities = [
         MediaItemEntity::class,
+        ImageEntity::class,
         TagEntity::class,
         MediaItemTagEntity::class,
         MediaItemTrigramEntity::class,
@@ -27,6 +28,8 @@ abstract class MemeHiveDatabase : RoomDatabase() {
 
     abstract fun collectionDao(): CollectionDao
     abstract fun collectionEntryDao(): CollectionEntryDao
+
+    abstract fun imageDao(): ImageDao
 
     companion object {
         @Volatile

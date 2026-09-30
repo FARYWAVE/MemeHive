@@ -1,24 +1,19 @@
 package com.farywave.memehive.core
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
-import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.picker.PickerActivity
+import com.farywave.memehive.ui.activity.picker.PickerActivity
 import java.io.File
 import java.io.IOException
 

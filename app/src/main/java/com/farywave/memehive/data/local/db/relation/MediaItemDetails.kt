@@ -32,7 +32,7 @@ data class MediaItemDetails(
     fun toMediaItem(): MediaItem {
         return MediaItem(
             id = mediaItem.id,
-            imagePath = image?.path,
+            image = image?.toModel(),
             caption = mediaItem.caption,
             description = mediaItem.description,
             tags = tags.map { it.name }

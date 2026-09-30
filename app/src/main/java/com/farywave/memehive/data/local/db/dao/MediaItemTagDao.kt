@@ -1,7 +1,6 @@
 package com.farywave.memehive.data.local.db.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -26,5 +25,11 @@ interface MediaItemTagDao {
         DELETE FROM media_item_tags
         WHERE media_item_id = :mediaItemId
     """)
-    suspend fun deleteByMediaItem(mediaItemId: Long)
+    suspend fun deleteByMediaItemID(mediaItemId: Long)
+
+    @Query("""
+        SELECT media_item_id FROM media_item_tags 
+        WHERE tag_id in (:tagIDs)
+    """)
+    suspend fun getMediaItemIDsByTags(tagIDs: List<Long>): List<Long>
 }

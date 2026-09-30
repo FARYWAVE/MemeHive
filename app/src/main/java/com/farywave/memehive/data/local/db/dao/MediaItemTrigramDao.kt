@@ -14,6 +14,9 @@ interface MediaItemTrigramDao {
         mediaItemTrigramEntity: MediaItemTrigramEntity
     ): Long
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAll(mediaItemTrigramEntities: List<MediaItemTrigramEntity>)
+
     @Query("SELECT * FROM media_item_trigrams")
     suspend fun getAll(): List<MediaItemTrigramEntity>
 
@@ -24,12 +27,12 @@ interface MediaItemTrigramDao {
         GROUP BY media_item_id
         ORDER BY COUNT(*) DESC
     """)
-    suspend fun getMediaItemIDsByTrigrams(trigrams: List<String>): List<Long>
+    suspend fun getMediaItemIDsByTrigrams(trigrams: Set<String>): List<Long>
 
 
     @Query("""
         DELETE FROM media_item_trigrams
-        WHERE media_item_id = :mediaItemId
+        WHERE media_item_id = :mediaItemID
     """)
-    suspend fun deleteByMediaItem(mediaItemId: Long)
+    suspend fun deleteByMediaItemID(mediaItemID: Long)
 }

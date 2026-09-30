@@ -16,12 +16,10 @@ data class CollectionDetails (
     )
     val coverImage: ImageEntity? = null
 ) {
-    fun toCollection(): Collection {
-        return Collection(
+    fun toModel(mediaItemCount: Int) = Collection(
             id = collection.id,
             name = collection.name,
-            coverPath = coverImage?.path,
-            mediaItemCount = 0
+            cover = coverImage?.toModel(),
+            mediaItemCount = mediaItemCount
         )
-    }
 }
