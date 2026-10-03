@@ -20,12 +20,11 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 fun SearchAndCollectionBar(
     modifier: Modifier = Modifier,
     onSearch: (String) -> Unit,
-    simpleCollectionBar: Boolean,
+    initialQuery: String = "",
     collections: List<Collection>,
-    selectedCollection: Collection,
-    onCollectionSelected: (Collection) -> Unit,
-    onAction: (collection: Collection, action: CollectionActions) -> Unit,
-
+    selectedCollectionId: Long?,
+    onCollectionSelected: (Long?) -> Unit,
+    onAction: ((collection: Collection, action: CollectionActions) -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
@@ -45,20 +44,15 @@ fun SearchAndCollectionBar(
         SearchBar(
             modifier = Modifier.padding(horizontal = 3.dp),
             hint = stringResource(R.string.media_search_hint),
+            initialQuery = initialQuery,
             onQueryChange = onSearch
         )
 
-        if (collections.size > 1) {
-            if (simpleCollectionBar) BasicCollectionsNavigation(
+        if (collections.isNotEmpty()) {
+            CollectionNavigation(
                 modifier = Modifier.padding(horizontal = 3.dp),
                 collections = collections,
-                selectedCollection = selectedCollection,
-                onCollectionSelected = onCollectionSelected,
-            )
-            else CollectionsNavigation(
-                modifier = Modifier.padding(horizontal = 3.dp),
-                collections = collections,
-                selectedCollection = selectedCollection,
+                selectedCollectionId = selectedCollectionId,
                 onCollectionSelected = onCollectionSelected,
                 onAction = onAction
             )

@@ -25,7 +25,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +45,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
@@ -220,7 +220,7 @@ private fun Toolbar(
 
         SimpleActionMenu<CreateActions>(onSelected = { action ->
             when (action) {
-                CreateActions.CREATE_MEDIA_ITEM -> onNavigate(NavEvent.ToEditing(-1))
+                CreateActions.CREATE_MEDIA_ITEM -> onNavigate(NavEvent.ToEditing(0L))
                 CreateActions.CREATE_COLLECTION -> onNavigate(NavEvent.NewCollectionDialog)
             }
         }) { onClick ->
@@ -266,10 +266,12 @@ private fun Content(
     viewModel: HiveViewModel,
     onNavigate: (NavEvent) -> Unit
 ) {
-    val mediaItems by viewModel.mediaItems.collectAsState()
-    val collections by viewModel.collections.collectAsState()
-    val selectedCollection by viewModel.selectedCollection.collectAsState()
-    val isMassEditingMode by viewModel.isMassEditingMode.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val mediaItems by viewModel.mediaItems.collectAsStateWithLifecycle()
+    val selectedMediaItemIds by viewModel.selectedMediaItemIds.collectAsStateWithLifecycle()
+    val collections by viewModel.collections.collectAsStateWithLifecycle()
+    val selectedCollectionId by viewModel.selectedCollectionId.collectAsStateWithLifecycle()
+    val isMassEditingMode by viewModel.isMassEditingMode.collectAsStateWithLifecycle()
     var showSheet by remember { mutableStateOf(false) }
 
     val collectionToExport = remember { mutableStateOf<Collection?>(null) }
@@ -295,14 +297,11 @@ private fun Content(
                 .onSizeChanged {
                     topBarHeight = it.height
                 },
-            onSearch = { viewModel.onSearch() },
-            simpleCollectionBar = false,
+            initialQuery = searchQuery,
+            onSearch = viewModel::onSearchQueryChanged,
             collections = collections,
-            selectedCollection = selectedCollection,
-            onCollectionSelected = {
-                viewModel.onCollectionSelected(it)
-                viewModel.onSearch()
-            },
+            selectedCollectionId = selectedCollectionId,
+            onCollectionSelected = viewModel::onCollectionSelected,
             onAction = { collection, action ->
                 when (action) {
                     CollectionActions.EXPORT -> {
@@ -350,21 +349,22 @@ private fun Content(
             items(mediaItems, key = { it.id }) { mediaItem ->
                 MediaItemCardFull(
                     mediaItem = mediaItem,
+                    isSelected = mediaItem.id in selectedMediaItemIds,
                     onClick = {
-                        if (isMassEditingMode) viewModel.toggleItemSelection(mediaItem)
+                        if (isMassEditingMode) viewModel.toggleItemSelection(mediaItem.id)
                         else onNavigate(NavEvent.ToEditing(mediaItem.id))
                     },
                     onLongClick = {
                         if (!isMassEditingMode) {
                             viewModel.enableMassEditingMode()
-                            viewModel.selectItem(mediaItem)
+                            viewModel.selectItem(mediaItem.id)
                         }
                     }
                 )
             }
         }
 
-        if (viewModel.isMassEditingMode.collectAsState().value) Column(
+        if (isMassEditingMode) Column(
             modifier = Modifier
                 .constrainAs(actions) {
                     bottom.linkTo(parent.bottom)

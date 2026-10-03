@@ -7,8 +7,6 @@ import com.farywave.memehive.data.local.db.MemeHiveDatabase
 import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.ImageRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
-import com.farywave.memehive.data.local.db.repository.TagRepository
-import com.farywave.memehive.data.local.db.repository.TrigramRepository
 import com.farywave.memehive.ui.use_case.CollectionUseCases
 import com.farywave.memehive.ui.use_case.media_item_search.MediaSearchUseCase
 
@@ -27,21 +25,17 @@ class PickerViewModelFactory: ViewModelProvider.Factory {
         val collectionDao = db.collectionDao()
         val collectionEntryDao = db.collectionEntryDao()
         val imageDao = db.imageDao()
-        val tagDao = db.tagDao()
-        val mediaItemTagDao = db.mediaItemTagDao()
-        val mediaItemTrigramDao = db.mediaItemTrigramDao()
 
+        val mediaItemRepo = MediaItemRepository(mediaItemDao)
         val collectionRepo = CollectionRepository(
             collectionDao,
             collectionEntryDao
         )
         val imageRepo = ImageRepository(context, imageDao)
-        val tagRepo = TagRepository(tagDao, mediaItemTagDao)
-        val trigramRepo = TrigramRepository(mediaItemTrigramDao)
 
         val collectionUseCases = CollectionUseCases(collectionRepo, imageRepo)
         val mediaSearchUseCase =
-            MediaSearchUseCase(mediaItemDao, tagRepo, trigramRepo, collectionRepo)
+            MediaSearchUseCase(mediaItemRepo)
 
         return PickerViewModel(collectionUseCases, mediaSearchUseCase) as T
     }

@@ -1,60 +1,47 @@
 package com.farywave.memehive.ui.activity.picker
 
-import android.content.Context
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.farywave.memehive.core.DeviceTools
-import com.farywave.memehive.data.local.db.repository.CollectionRepository
-import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.ui.model.Collection
-import com.farywave.memehive.ui.model.MediaItem
 import com.farywave.memehive.ui.use_case.CollectionUseCases
-import com.farywave.memehive.ui.use_case.MediaItemUseCases
 import com.farywave.memehive.ui.use_case.media_item_search.MediaSearchUseCase
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class PickerViewModel(
     val collectionUseCases: CollectionUseCases,
     val mediaSearchUseCase: MediaSearchUseCase
 ) : ViewModel() {
-    private val allCollection =
-        Collection(-1, "All", cover = null, mediaItemCount = 0)
-    private val _collections = MutableStateFlow(listOf(allCollection))
+    private val _collections = MutableStateFlow<List<Collection>>(emptyList())
     val collections = _collections.asStateFlow()
 
-    private val _selectedCollection = MutableStateFlow(_collections.value.first())
-    val selectedCollection = _selectedCollection.asStateFlow()
-
-    private val _mediaItems = MutableStateFlow<List<MediaItem>>(emptyList())
-    val mediaItems = _mediaItems.asStateFlow()
+    private val _selectedCollectionId = MutableStateFlow<Long?>(null)
+    val selectedCollectionId = _selectedCollectionId.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
+    val mediaItems = mediaSearchUseCase(selectedCollectionId, searchQuery)
+        .map { items -> items.filter { it.image != null } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     init {
-        onRefresh()
         loadCollections()
     }
 
-    fun loadCollections() {
-        viewModelScope.launch(Dispatchers.IO) {
-            collectionUseCases.getAllCollections()
-                .collect { list ->
-                    _collections.value = listOf(allCollection) + list
+    private fun loadCollections() {
+        viewModelScope.launch {
+            collectionUseCases.getAllCollections().collect { collections ->
+                _collections.value = collections
+                val selectedId = _selectedCollectionId.value
+                if (selectedId != null && collections.none { it.id == selectedId }) {
+                    _selectedCollectionId.value = null
                 }
-        }
-    }
-
-    fun onSearch() {
-        viewModelScope.launch(Dispatchers.IO) {
-            _mediaItems.value =
-                mediaSearchUseCase.invoke(selectedCollection.value.id, _searchQuery.value)
-                    .filter { it.image != null }
+            }
         }
     }
 
@@ -62,11 +49,7 @@ class PickerViewModel(
         _searchQuery.value = query
     }
 
-    fun onRefresh() {
-        onSearch()
-    }
-
-    fun onCollectionSelected(collection: Collection) {
-        _selectedCollection.value = collection
+    fun onCollectionSelected(collectionId: Long?) {
+        _selectedCollectionId.value = collectionId
     }
 }

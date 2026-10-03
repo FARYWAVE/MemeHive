@@ -1,11 +1,9 @@
 package com.farywave.memehive.data.local.db.entity
 
-import androidx.core.net.toUri
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.farywave.memehive.ui.model.Image
 
 @Entity(
     tableName = "images",
@@ -21,6 +19,4 @@ data class ImageEntity (
 
     @ColumnInfo(name = "sha256")
     val sha256: String
-) {
-    fun toModel() = Image(id, path.toUri())
-}
+)

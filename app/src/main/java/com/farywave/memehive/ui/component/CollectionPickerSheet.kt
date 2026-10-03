@@ -67,7 +67,7 @@ fun CollectionPickerSheet(
             }
 
             items(filteredCollections) { collection ->
-                if (collection.id != -1L) CollectionItem(collection) {
+                CollectionItem(collection) {
                     onCollectionSelected(
                         collection
                     )

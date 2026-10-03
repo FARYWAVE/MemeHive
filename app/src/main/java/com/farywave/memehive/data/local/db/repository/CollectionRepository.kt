@@ -6,6 +6,8 @@ import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.data.local.db.dao.CollectionDao
 import com.farywave.memehive.data.local.db.dao.CollectionEntryDao
 import com.farywave.memehive.data.local.db.entity.CollectionEntryEntity
+import com.farywave.memehive.data.local.db.mapper.toEntity
+import com.farywave.memehive.data.local.db.mapper.toModel
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.MediaItem
 import kotlinx.coroutines.flow.combine
@@ -56,14 +58,13 @@ class CollectionRepository(
             mediaItemIds.map { CollectionEntryEntity(collectionId, it)}
         )
 
-    fun getCollectionsByMediaItem(mediaItemId: Long) =
-        collectionEntryDao.getByMediaItem(mediaItemId)
-
+    suspend fun getCollectionIdsByMediaItem(mediaItemId: Long) =
+        collectionEntryDao.getByMediaItem(mediaItemId).map { it.collectionId }.toSet()
     suspend fun deleteCollectionEntriesByItem(mediaItemId: Long) {
         collectionEntryDao.deleteByMediaItem(mediaItemId)
     }
 
-    suspend fun addItemToCollections(mediaItemId: Long, collectionIds: List<Long>) =
+    suspend fun addItemToCollections(mediaItemId: Long, collectionIds: Set<Long>) =
         collectionEntryDao.insert(
             collectionIds.map { CollectionEntryEntity(it, mediaItemId) }
         )

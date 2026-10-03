@@ -43,7 +43,7 @@ interface CollectionEntryDao {
     fun getEntryCount(collectionId: Long): Flow<Int>
 
     @Query("SELECT * FROM collection_entries WHERE media_item_id = :mediaItemId")
-    fun getByMediaItem(mediaItemId: Long): Flow<List<CollectionEntryEntity>>
+    suspend fun getByMediaItem(mediaItemId: Long): List<CollectionEntryEntity>
 
     @Query("DELETE FROM collection_entries WHERE media_item_id = :mediaItemId")
     suspend fun deleteByMediaItem(mediaItemId: Long)

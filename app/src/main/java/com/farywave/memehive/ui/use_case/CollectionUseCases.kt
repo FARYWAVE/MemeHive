@@ -19,16 +19,14 @@ class CollectionUseCases(
         val image = collection.cover?.let { cover ->
             imageRepository.insertOrGet(cover.uri)
         }
-        collection.cover = image
-        return collectionRepository.insertCollection(collection)
+        return collectionRepository.insertCollection(collection.copy(cover = image))
     }
 
     suspend fun updateCollection(collection: Collection) {
         val image = collection.cover?.let { cover ->
             imageRepository.insertOrGet(cover.uri)
         }
-        collection.cover = image
-        collectionRepository.updateCollection(collection)
+        collectionRepository.updateCollection(collection.copy(cover = image))
     }
 
     suspend fun deleteCollection(collection: Collection) {
@@ -41,10 +39,10 @@ class CollectionUseCases(
     suspend fun addItemsToCollection(mediaItemIds: Set<Long>, collectionId: Long) =
         collectionRepository.insertCollectionEntries(mediaItemIds, collectionId)
 
-    fun getCollectionsByMediaItem(mediaItemId: Long) =
-        collectionRepository.getCollectionsByMediaItem(mediaItemId)
+    suspend fun getCollectionIdsByMediaItem(mediaItemId: Long) =
+        collectionRepository.getCollectionIdsByMediaItem(mediaItemId)
 
-    suspend fun updateMediaItemCollections(mediaItemId: Long, collectionIds: List<Long>) {
+    suspend fun updateMediaItemCollections(mediaItemId: Long, collectionIds: Set<Long>) {
         collectionRepository.deleteCollectionEntriesByItem(mediaItemId)
         collectionRepository.addItemToCollections(mediaItemId, collectionIds)
     }

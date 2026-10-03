@@ -1,17 +1,8 @@
 package com.farywave.memehive.ui.activity.main.screen.hive
 
-
-import android.content.Context
 import android.net.Uri
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.farywave.memehive.R
-import com.farywave.memehive.core.DeviceTools
-import com.farywave.memehive.core.collection_transfer.CollectionTransferTool
-import com.farywave.memehive.data.local.db.repository.CollectionRepository
-import com.farywave.memehive.data.local.db.repository.ImageRepository
-import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.Image
 import com.farywave.memehive.ui.model.MediaItem
@@ -21,11 +12,13 @@ import com.farywave.memehive.ui.use_case.MediaItemUseCases
 import com.farywave.memehive.ui.use_case.media_item_search.MediaSearchUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 
 class HiveViewModel(
     val mediaItemUseCases: MediaItemUseCases,
@@ -33,15 +26,14 @@ class HiveViewModel(
     val mediaSearchUseCase: MediaSearchUseCase,
     val collectionTransferUseCases: CollectionTransferUseCases
 ) : ViewModel() {
-    private val allCollection = Collection(-1, "All", cover = null, mediaItemCount = 0)
-    private val _collections = MutableStateFlow(listOf(allCollection))
+    private val _collections = MutableStateFlow<List<Collection>>(emptyList())
     val collections = _collections.asStateFlow()
 
-    private val _selectedCollection = MutableStateFlow(_collections.value.first())
-    val selectedCollection = _selectedCollection.asStateFlow()
+    private val _selectedCollectionId = MutableStateFlow<Long?>(null)
+    val selectedCollectionId = _selectedCollectionId.asStateFlow()
 
-    private val _mediaItems = MutableStateFlow<List<MediaItem>>(emptyList())
-    val mediaItems = _mediaItems.asStateFlow()
+    private val _selectedMediaItemIds = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedMediaItemIds = _selectedMediaItemIds.asStateFlow()
 
     private val _isMassEditingMode = MutableStateFlow(false)
     val isMassEditingMode = _isMassEditingMode.asStateFlow()
@@ -49,70 +41,59 @@ class HiveViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
+    val mediaItems = mediaSearchUseCase(selectedCollectionId, searchQuery)
+        .onEach { items ->
+            val visibleIds = items.mapTo(mutableSetOf()) { it.id }
+            _selectedMediaItemIds.update { it.intersect(visibleIds) }
+            if (_selectedMediaItemIds.value.isEmpty()) _isMassEditingMode.value = false
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     init {
-        onRefresh()
         loadCollections()
     }
 
-    fun loadCollections() {
-        viewModelScope.launch(Dispatchers.IO) {
-            collectionUseCases.getAllCollections()
-                .collect { list ->
-                    _collections.value = listOf(allCollection) + list
+    private fun loadCollections() {
+        viewModelScope.launch {
+            collectionUseCases.getAllCollections().collect { collections ->
+                _collections.value = collections
+                val selectedId = _selectedCollectionId.value
+                if (selectedId != null && collections.none { it.id == selectedId }) {
+                    onCollectionSelected(null)
                 }
+            }
         }
-    }
-
-    fun onSearch() {
-        viewModelScope.launch(Dispatchers.IO) {
-            _mediaItems.value =
-                mediaSearchUseCase.invoke(selectedCollection.value.id, searchQuery.value)
-
-            disableMassEditingMode()
-        }
-    }
-
-    fun onRefresh() {
-        onSearch()
     }
 
     fun onSearchQueryChanged(query: String) {
+        if (_searchQuery.value == query) return
+        disableMassEditingMode()
         _searchQuery.value = query
     }
 
-    fun onCollectionSelected(collection: Collection) {
-        _selectedCollection.value = collection
+    fun onCollectionSelected(collectionId: Long?) {
+        if (_selectedCollectionId.value == collectionId) return
+        disableMassEditingMode()
+        _selectedCollectionId.value = collectionId
     }
 
     fun disableMassEditingMode() {
         _isMassEditingMode.value = false
-        _mediaItems.update { list ->
-            list.map { it.copy(isSelected = false) }
-        }
+        _selectedMediaItemIds.value = emptySet()
     }
 
     fun enableMassEditingMode() {
         _isMassEditingMode.value = true
     }
 
-    fun toggleItemSelection(item: MediaItem) {
-        _mediaItems.update { list ->
-            list.map {
-                if (it.id == item.id) {
-                    it.copy(isSelected = !it.isSelected)
-                } else it
-            }
-        }
-        if (!_mediaItems.value.any { it.isSelected }) disableMassEditingMode()
+    fun toggleItemSelection(itemId: Long) {
+        if (itemId in _selectedMediaItemIds.value) _selectedMediaItemIds.value -= itemId
+        else _selectedMediaItemIds.value += itemId
+        if (_selectedMediaItemIds.value.isEmpty()) disableMassEditingMode()
     }
 
-    fun selectItem(item: MediaItem) {
-        _mediaItems.update { list ->
-            list.map {
-                if (it.id == item.id) it.copy(isSelected = true)
-                else it
-            }
-        }
+    fun selectItem(itemId: Long) {
+        _selectedMediaItemIds.value += itemId
     }
 
     fun createCollection(name: String, cover: Uri?) {
@@ -129,35 +110,31 @@ class HiveViewModel(
     }
 
     fun deleteSelectedMediaItems() {
-        val selected = _mediaItems.value.filter { it.isSelected }
-
+        val selectedIds = _selectedMediaItemIds.value
         viewModelScope.launch(Dispatchers.IO) {
-            mediaItemUseCases.deleteMediaItemsByIDs(selected.map { it.id })
-            onRefresh()
+            mediaItemUseCases.deleteMediaItemsByIDs(selectedIds)
         }
     }
 
     fun duplicateSelectedMediaItems() {
-        val selected = _mediaItems.value.filter { it.isSelected }
+        val selected = mediaItems.value.filter { it.id in _selectedMediaItemIds.value }
 
         viewModelScope.launch(Dispatchers.IO) {
             selected.forEach {
                 mediaItemUseCases.createMediaItem(it.copy(id = 0))
             }
-            onRefresh()
         }
     }
 
     fun addSelectedMediaItemsToCollection(collection: Collection) {
-        val selected = _mediaItems.value.filter { it.isSelected }
-
+        val selectedIds = _selectedMediaItemIds.value
         viewModelScope.launch(Dispatchers.IO) {
-            collectionUseCases.addItemsToCollection(selected.map { it.id }.toSet(), collection.id)
-            onRefresh()
+            collectionUseCases.addItemsToCollection(selectedIds, collection.id)
         }
     }
 
     fun onMassImport(uris: List<Uri>) {
+        val collectionId = _selectedCollectionId.value
         viewModelScope.launch(Dispatchers.IO) {
             val mediaItemIDs = uris.map {
                 mediaItemUseCases.createMediaItem(
@@ -167,12 +144,12 @@ class HiveViewModel(
                 )
             }
 
-            collectionUseCases.addItemsToCollection(
-                mediaItemIDs.toSet(),
-                _selectedCollection.value.id
-            )
-
-            onRefresh()
+            collectionId?.let {
+                collectionUseCases.addItemsToCollection(
+                    mediaItemIDs.toSet(),
+                    it
+                )
+            }
         }
     }
 
@@ -192,11 +169,6 @@ class HiveViewModel(
     fun deleteCollection(collection: Collection) {
         viewModelScope.launch(Dispatchers.IO) {
             collectionUseCases.deleteCollection(collection)
-
-            if (collection.id == _selectedCollection.value.id) {
-                _selectedCollection.value = allCollection
-                onRefresh()
-            }
         }
     }
 

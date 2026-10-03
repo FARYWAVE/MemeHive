@@ -4,8 +4,9 @@ import android.net.Uri
 import androidx.core.net.toUri
 import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.core.collection_transfer.CollectionTransferTool
+import com.farywave.memehive.core.collection_transfer.mapper.toCollection
+import com.farywave.memehive.core.collection_transfer.mapper.toMediaItem
 import com.farywave.memehive.ui.model.Collection
-import com.farywave.memehive.ui.model.Image
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -21,11 +22,8 @@ class CollectionTransferUseCases(
                 val (manifest, _) = transferTool.unzipCollection(uri)
 
                 val collectionId = collectionUseCases.createCollection(
-                    Collection(
-                        id = 0,
-                        name = manifest.collection.name,
-                        cover = manifest.collection.coverPath?.let { Image(uri = File(it).toUri()) }, //TODO Use Uri
-                        mediaItemCount = 0
+                    manifest.collection.toCollection(
+                        cover = manifest.collection.coverPath?.let { File(it).toUri() }
                     )
                 )
 

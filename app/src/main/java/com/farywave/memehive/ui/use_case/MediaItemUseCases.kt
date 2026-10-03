@@ -18,13 +18,13 @@ class MediaItemUseCases(
 ) {
     suspend fun createMediaItem(
         mediaItem: MediaItem,
-        collectionsIDsToAdd: List<Long> = emptyList()
+        collectionsIDsToAdd: Set<Long> = emptySet()
     ): Long {
-        mediaItem.image = mediaItem.image?.let {
+        val image = mediaItem.image?.let {
             if (it.id == 0L) imageRepository.insertOrGet(it.uri) else it
         }
 
-        val mediaItemID = mediaItemRepository.insertMediaItem(mediaItem.copy(id = 0))
+        val mediaItemID = mediaItemRepository.insertMediaItem(mediaItem.copy(id = 0, image = image))
 
         mediaItem.tags.forEach { tag ->
             tagRepository.insert(tag, mediaItemID)
@@ -43,17 +43,17 @@ class MediaItemUseCases(
         val oldMediaItem = mediaItemRepository.getMediaItemById(mediaItem.id)
 
         val image = mediaItem.image?.let { imageRepository.insertOrGet(it.uri) }
-        mediaItem.image = image
+        val updatedMediaItem = mediaItem.copy(image = image)
         oldMediaItem?.image?.let { imageRepository.deleteIfUnused(it.id) }
 
-        mediaItemRepository.updateMediaItem(mediaItem)
+        mediaItemRepository.updateMediaItem(updatedMediaItem)
 
-        tagRepository.updateTagsForMediaItem(mediaItem)
+        tagRepository.updateTagsForMediaItem(updatedMediaItem)
 
         trigramRepository.updateTrigramsForMediaItem(
-            mediaItem.id,
-            ModelTools.generateTrigrams(mediaItem.caption)
-                .union(ModelTools.generateTrigrams(mediaItem.description))
+            updatedMediaItem.id,
+            ModelTools.generateTrigrams(updatedMediaItem.caption)
+                .union(ModelTools.generateTrigrams(updatedMediaItem.description))
         )
 
     }
@@ -64,7 +64,7 @@ class MediaItemUseCases(
         tagRepository.deleteOrphanedTags()
     }
 
-    suspend fun deleteMediaItemsByIDs(mediaItemIDs: List<Long>) =
+    suspend fun deleteMediaItemsByIDs(mediaItemIDs: Set<Long>) =
         mediaItemRepository.deleteMediaItemsByIDs(mediaItemIDs)
 
     suspend fun getMediaItemByID(id: Long) = mediaItemRepository.getMediaItemById(id)

@@ -61,7 +61,7 @@ class HiveViewModelFactory : Factory {
                 mediaItemUseCases
             )
         val mediaSearchUseCase =
-            MediaSearchUseCase(mediaItemDao, tagRepo, trigramRepo, collectionRepo)
+            MediaSearchUseCase(mediaItemRepo)
 
         return HiveViewModel(
             mediaItemUseCases,

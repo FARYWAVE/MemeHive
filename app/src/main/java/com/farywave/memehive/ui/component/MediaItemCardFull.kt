@@ -43,6 +43,7 @@ import java.io.File
 @Composable
 fun MediaItemCardFull(
     mediaItem: MediaItem,
+    isSelected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
@@ -87,7 +88,7 @@ fun MediaItemCardFull(
                 roundBottom = mediaItem.tags.isEmpty()
             )
 
-            if (mediaItem.isSelected) Selection(
+            if (isSelected) Selection(
                 modifier = Modifier.constrainAs(selection) {
                     top.linkTo(parent.top)
                     end.linkTo(parent.end)

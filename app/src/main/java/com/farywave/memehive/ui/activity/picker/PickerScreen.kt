@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.component.MediaItemCardSimple
@@ -82,7 +82,8 @@ private fun Content(
     viewModel: PickerViewModel,
     onItemClicked: (mediaItem: MediaItem) -> Unit,
 ) {
-    val mediaItems by viewModel.mediaItems.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val mediaItems by viewModel.mediaItems.collectAsStateWithLifecycle()
     Box(Modifier.background(LocalAppColors.current.backgroundPrimary)) {
         ConstraintLayout(
             modifier = modifier
@@ -99,15 +100,11 @@ private fun Content(
                     .onSizeChanged {
                         topBarHeight = it.height
                     },
-                onSearch = { viewModel.onSearch() },
-                simpleCollectionBar = true,
-                collections = viewModel.collections.collectAsState().value,
-                selectedCollection = viewModel.selectedCollection.collectAsState().value,
-                onCollectionSelected = {
-                    viewModel.onCollectionSelected(it)
-                    viewModel.onSearch()
-                },
-                onAction = { _, _ -> }
+                initialQuery = searchQuery,
+                onSearch = viewModel::onSearchQueryChanged,
+                collections = viewModel.collections.collectAsStateWithLifecycle().value,
+                selectedCollectionId = viewModel.selectedCollectionId.collectAsStateWithLifecycle().value,
+                onCollectionSelected = viewModel::onCollectionSelected
             )
 
             LazyVerticalStaggeredGrid(

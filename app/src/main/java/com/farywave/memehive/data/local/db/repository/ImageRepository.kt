@@ -7,6 +7,7 @@ import androidx.core.net.toUri
 import com.farywave.memehive.core.extension.sha256
 import com.farywave.memehive.data.local.db.dao.ImageDao
 import com.farywave.memehive.data.local.db.entity.ImageEntity
+import com.farywave.memehive.data.local.db.mapper.toModel
 import com.farywave.memehive.ui.model.Image
 import java.io.File
 import java.io.IOException

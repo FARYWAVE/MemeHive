@@ -55,7 +55,7 @@ fun NavController(onEnableNotification: (Boolean) -> Unit) {
                 }
             )
         ) { backStackEntry ->
-            val mediaItemId = backStackEntry.arguments?.getLong("mediaItemId") ?: -1L
+            val mediaItemId = backStackEntry.arguments?.getLong("mediaItemId") ?: 0L
             Editing(
                 savedStateHandle = backStackEntry.savedStateHandle,
                 mediaItemId = mediaItemId,
@@ -95,7 +95,7 @@ fun NavController(onEnableNotification: (Boolean) -> Unit) {
             )
         ) { backStackEntry ->
             val collectionName = backStackEntry.arguments?.getString("collectionName") ?: ""
-            val collectionId = backStackEntry.arguments?.getLong("collectionId") ?: -1L
+            val collectionId = backStackEntry.arguments?.getLong("collectionId") ?: 0L
             val coverSrc = ModelTools.decode(backStackEntry.arguments?.getString("coverSrc"))
             ModelTools.quickLog(coverSrc.toString())
             EditCollection(

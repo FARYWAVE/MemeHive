@@ -7,8 +7,6 @@ import com.farywave.memehive.data.local.db.entity.ImageEntity
 import com.farywave.memehive.data.local.db.entity.MediaItemEntity
 import com.farywave.memehive.data.local.db.entity.MediaItemTagEntity
 import com.farywave.memehive.data.local.db.entity.TagEntity
-import com.farywave.memehive.ui.model.MediaItem
-import java.io.File
 
 data class MediaItemDetails(
     @Embedded val mediaItem: MediaItemEntity,
@@ -28,14 +26,4 @@ data class MediaItemDetails(
         entityColumn = "id"
     )
     val image: ImageEntity? = null
-) {
-    fun toMediaItem(): MediaItem {
-        return MediaItem(
-            id = mediaItem.id,
-            image = image?.toModel(),
-            caption = mediaItem.caption,
-            description = mediaItem.description,
-            tags = tags.map { it.name }
-        )
-    }
-}
+)

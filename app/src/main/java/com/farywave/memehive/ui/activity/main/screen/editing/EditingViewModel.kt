@@ -3,9 +3,11 @@ package com.farywave.memehive.ui.activity.main.screen.editing
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.farywave.memehive.ui.mapper.toDraft
+import com.farywave.memehive.ui.mapper.toMediaItem
 import com.farywave.memehive.ui.model.Collection
 import com.farywave.memehive.ui.model.Image
-import com.farywave.memehive.ui.model.MediaItem
+import com.farywave.memehive.ui.model.MediaItemDraft
 import com.farywave.memehive.ui.use_case.CollectionUseCases
 import com.farywave.memehive.ui.use_case.MediaItemUseCases
 import kotlinx.coroutines.Dispatchers
@@ -13,7 +15,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -23,107 +24,70 @@ class EditingViewModel(
     val mediaItemUseCases: MediaItemUseCases,
     val collectionUseCases: CollectionUseCases,
 ) : ViewModel() {
-
-    private val _mediaItem = MutableStateFlow(
-        MediaItem(
-            -1,
+    private val _mediaItemDraft = MutableStateFlow(
+        MediaItemDraft(
+            0L,
             null,
             "",
             "",
-            emptyList()
+            emptyList(),
+            emptySet()
         )
     )
-    val mediaItem = _mediaItem.asStateFlow()
+    val mediaItemDraft = _mediaItemDraft.asStateFlow()
 
-    private val _editableTags = MutableStateFlow<List<EditableTag>>(emptyList())
-    val editableTags = _editableTags.asStateFlow()
+    private var originalMediaItem: MediaItemDraft? = null
 
-    private val allCollection = Collection(-1, "All")
-    private val _collections = MutableStateFlow(listOf(allCollection))
+    private val _refresh = MutableStateFlow(0)
+    val isEdited = combine(mediaItemDraft, _refresh) { draft, _ ->
+        !(draft.image?.uri == originalMediaItem?.image?.uri &&
+                draft.caption == originalMediaItem?.caption &&
+                draft.description == originalMediaItem?.description &&
+                draft.tags.map { it.text }.toSet() == originalMediaItem?.tags?.map { it.text }
+            ?.toSet() &&
+                draft.collectionIds == originalMediaItem?.collectionIds)
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        false
+    )
+
+    private val _collections = MutableStateFlow<List<Collection>>(emptyList())
     val collections = _collections.asStateFlow()
 
-    private val _selectedCollections = MutableStateFlow<Set<Long>>(emptySet())
-    val selectedCollections = _selectedCollections.asStateFlow()
-
-
-    private var originalMediaItem: MediaItem? = null
-    private var originalTags: List<EditableTag> = emptyList()
-    private var originalCollections: Set<Long> = emptySet()
-    private val _refresh = MutableStateFlow(0)
-
-    val isEdited =
-        combine(
-            mediaItem,
-            editableTags,
-            selectedCollections,
-            _refresh
-
-        ) { mediaItem, tags, selectedCollections, _ ->
-            originalMediaItem?.image?.uri != mediaItem.image?.uri ||
-            originalMediaItem?.caption != mediaItem.caption ||
-                    originalMediaItem?.description != mediaItem.description ||
-                    originalTags.map { it.text } != tags.map { it.text } ||
-                    originalCollections != selectedCollections
-        }.stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            false
-        )
+    private var nextTagId = 0
+    private fun generateTagId() = nextTagId++
 
     init {
-        loadMediaItem(mediaItemId)
         loadCollections()
+        viewModelScope.launch(Dispatchers.IO) {
+            loadMediaItem(mediaItemId)
+            saveOriginalValue()
+        }
+
     }
 
-    private var nextId = 0L
-
-    private fun generateId(): Long {
-        return nextId++
-    }
-
-    data class EditableTag(
-        val id: Long,
-        val text: String
-    )
-
-    fun saveOriginalValues() {
-        originalMediaItem = mediaItem.value
-        originalTags = editableTags.value
-        originalCollections = selectedCollections.value
+    fun saveOriginalValue() {
+        originalMediaItem = mediaItemDraft.value
 
         _refresh.update { it + 1 }
     }
 
     fun discardChanges() {
-        originalMediaItem?.let { _mediaItem.value = it }
-        _editableTags.value = originalTags
-        _selectedCollections.value = originalCollections
+        originalMediaItem?.let { _mediaItemDraft.value = it }
 
         _refresh.update { it + 1 }
     }
 
-    fun loadMediaItem(id: Long) {
-        if (id != -1L) {
-            viewModelScope.launch {
-                val item = mediaItemUseCases.getMediaItemByID(id)
 
-                if (item != null) {
-                    _mediaItem.value = item
-
-                    _editableTags.value = item.tags.map {
-                        EditableTag(
-                            id = generateId(),
-                            text = it
-                        )
-                    }
-
-                    loadSelectedCollections()
-                    saveOriginalValues()
-                }
+    suspend fun loadMediaItem(id: Long) {
+        if (id != 0L) {
+            val item = mediaItemUseCases.getMediaItemByID(id)
+            if (item != null) {
+                val collectionIds = collectionUseCases.getCollectionIdsByMediaItem(item.id)
+                _mediaItemDraft.value = item.toDraft(collectionIds)
+                nextTagId = _mediaItemDraft.value.tags.size
             }
-        } else {
-            _selectedCollections.value = emptySet()
-            saveOriginalValues()
         }
     }
 
@@ -131,25 +95,15 @@ class EditingViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             collectionUseCases.getAllCollections()
                 .collect { list ->
-                    _collections.value = listOf(allCollection) + list
+                    _collections.value = list
                 }
         }
     }
 
-    suspend fun loadSelectedCollections() {
-
-        val entries = collectionUseCases
-            .getCollectionsByMediaItem(mediaItem.value.id)
-            .first()
-
-        _selectedCollections.value = entries
-            .map { it.collectionId }
-            .toSet()
-    }
-
     fun toggleCollection(collection: Collection) {
-        if (_selectedCollections.value.contains(collection.id)) _selectedCollections.value -= collection.id
-        else _selectedCollections.value += collection.id
+        if (_mediaItemDraft.value.collectionIds.contains(collection.id))
+            _mediaItemDraft.update { it.copy(collectionIds = _mediaItemDraft.value.collectionIds - collection.id) }
+        else _mediaItemDraft.update { it.copy(collectionIds = _mediaItemDraft.value.collectionIds + collection.id) }
     }
 
     fun createCollection(name: String) {
@@ -160,91 +114,90 @@ class EditingViewModel(
         }
     }
 
-    fun updateCollectionEntries() {
-        viewModelScope.launch(Dispatchers.IO) {
-            collectionUseCases.updateMediaItemCollections(
-                _mediaItem.value.id,
-                _selectedCollections.value.toList()
-            )
-        }
-    }
-
     fun updateName(name: String) {
-        _mediaItem.update { current ->
+        _mediaItemDraft.update { current ->
             current.copy(caption = name)
         }
     }
 
     fun updateDescription(description: String) {
-        _mediaItem.update { current ->
+        _mediaItemDraft.update { current ->
             current.copy(description = description)
         }
     }
 
-    fun updateTag(id: Long, newText: String) {
-        if (_editableTags.value.any { it.text == newText && it.id != id }) removeTag(id)
-        _editableTags.update { list ->
-            list.map {
-                if (it.id == id) it.copy(text = newText) else it
-            }
+    fun updateTag(key: Int, newText: String) {
+        if (_mediaItemDraft.value.tags.any { it.text == newText && it.key != key }) removeTag(key)
+        _mediaItemDraft.update { current ->
+            current.copy(tags = current.tags.map {
+                if (it.key == key) it.copy(text = newText) else it
+            })
         }
     }
 
-    fun removeTag(id: Long) {
-        _editableTags.update { list ->
-            list.filterNot { it.id == id }
+    fun removeTag(key: Int) {
+        _mediaItemDraft.update { current ->
+            current.copy(tags = current.tags.filterNot { it.key == key })
         }
     }
 
     fun addTag(text: String) {
-        if (_editableTags.value.any { it.text == text }) return
-        _editableTags.update { list ->
-            list + EditableTag(generateId(), text)
-        }
-    }
-
-    private fun commitTags() {
-        val cleanTags = _editableTags.value
-            .map { it.text.trim() }
-            .filter { it.isNotEmpty() }
-
-        _mediaItem.update {
-            it.copy(tags = cleanTags)
+        if (_mediaItemDraft.value.tags.any { it.text == text }) return
+        _mediaItemDraft.update { current ->
+            current.copy(tags = current.tags + MediaItemDraft.EditableTag(generateTagId(), text))
         }
     }
 
     fun updateImage(uri: Uri?) {
-        _mediaItem.value = _mediaItem.value.copy(image = uri?.let { Image(uri = it) })
+        _mediaItemDraft.update { current ->
+            current.copy(image = uri?.let { Image(uri = uri) })
+        }
     }
 
     fun onSave() {
-        if (_mediaItem.value.id == -1L && _mediaItem.value.image == null || !isEdited.value) return
-        commitTags()
+        if (_mediaItemDraft.value.id == 0L && _mediaItemDraft.value.image == null || !isEdited.value) return
+
         viewModelScope.launch(Dispatchers.IO) {
-            if (_mediaItem.value.id == -1L) {
-                mediaItemUseCases.createMediaItem(_mediaItem.value)
+            if (_mediaItemDraft.value.id == 0L) {
+                val id = mediaItemUseCases.createMediaItem(_mediaItemDraft.value.toMediaItem())
+                collectionUseCases.updateMediaItemCollections(
+                    id,
+                    _mediaItemDraft.value.collectionIds
+                )
             } else {
-                mediaItemUseCases.updateMediaItem(_mediaItem.value)
+                mediaItemUseCases.updateMediaItem(_mediaItemDraft.value.toMediaItem())
+                collectionUseCases.updateMediaItemCollections(
+                    _mediaItemDraft.value.id,
+                    _mediaItemDraft.value.collectionIds
+                )
             }
         }
-        updateCollectionEntries()
     }
 
     fun onDuplicate() {
         viewModelScope.launch(Dispatchers.IO) {
-            mediaItemUseCases.createMediaItem(mediaItem.value.copy(id = 0L))
+            originalMediaItem?.let {
+                mediaItemUseCases.createMediaItem(
+                    it.toMediaItem().copy(id = 0L)
+                )
+            }
         }
     }
 
     fun onDelete() {
         viewModelScope.launch(Dispatchers.IO) {
-            mediaItemUseCases.deleteMediaItem(_mediaItem.value)
+            originalMediaItem?.let { mediaItemUseCases.deleteMediaItem(it.toMediaItem()) }
         }
     }
 
     fun onSetAsCover(collection: Collection) {
         viewModelScope.launch(Dispatchers.IO) {
-            collectionUseCases.setCollectionCover(collection.id, _mediaItem.value.id)
+            originalMediaItem?.image?.let {
+                collectionUseCases.setCollectionCover(
+                    collection.id,
+                    it.id
+                )
+            }
         }
     }
 }

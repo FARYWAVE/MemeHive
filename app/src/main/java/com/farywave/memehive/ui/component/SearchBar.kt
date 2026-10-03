@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -18,7 +19,13 @@ import com.farywave.memehive.ui.simple_component.SimpleTextField
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
-fun SearchBar(modifier: Modifier = Modifier, hint: String, onQueryChange: (query: String) -> Unit) {
+fun SearchBar(
+    modifier: Modifier = Modifier,
+    hint: String,
+    initialQuery: String = "",
+    onQueryChange: (query: String) -> Unit,
+) {
+    val initialValue = remember { initialQuery }
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -39,7 +46,7 @@ fun SearchBar(modifier: Modifier = Modifier, hint: String, onQueryChange: (query
         SimpleTextField(
             modifier = Modifier.weight(1f),
             hint = hint,
-            initialValue = null,
+            initialValue = initialValue,
             onValueChange = onQueryChange
         )
     }

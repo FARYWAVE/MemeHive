@@ -61,6 +61,7 @@ import com.farywave.memehive.R
 import com.farywave.memehive.ui.component.CollectionPickerSheet
 import com.farywave.memehive.ui.component.CollectionSelectorSheet
 import com.farywave.memehive.ui.component.ImagePicker
+import com.farywave.memehive.ui.model.MediaItemDraft
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.simple_component.SimpleActionMenu
 import com.farywave.memehive.ui.simple_component.SimpleIconButton
@@ -78,7 +79,7 @@ fun Editing(
     )
 
     val collections by viewModel.collections.collectAsState()
-    val selectedIds by viewModel.selectedCollections.collectAsState()
+    val mediaItemDraft by viewModel.mediaItemDraft.collectAsState()
 
 
     BackHandler {
@@ -157,16 +158,16 @@ fun Editing(
                 .background(LocalAppColors.current.backgroundPrimary),
         ) {
             Content(
-                viewModel = viewModel,
                 modifier = Modifier
                     .padding(horizontal = 10.dp)
                     .fillMaxSize(),
-                onNavigate = onNavigate
+                viewModel = viewModel,
+                mediaItemDraft = mediaItemDraft
             )
             CollectionSelectorSheet(
                 show = showSelectorSheet,
-                collections = collections.filter { it.id != -1L },
-                selectedIds = selectedIds,
+                collections = collections,
+                selectedIds = mediaItemDraft.collectionIds,
                 onDismiss = { showSelectorSheet = false },
                 onCollectionClicked = { viewModel.toggleCollection(it) },
                 onNewCollectionClicked = { onNavigate(NavEvent.NewCollectionDialog) }
@@ -174,7 +175,7 @@ fun Editing(
 
             CollectionPickerSheet(
                 show = showPickerSheet,
-                collections = collections.filter { it.id != -1L },
+                collections = collections,
                 onDismiss = { showPickerSheet = false },
                 onCollectionSelected = { viewModel.onSetAsCover(it) },
                 onNewCollectionClicked = { onNavigate(NavEvent.NewCollectionDialog) }
@@ -237,13 +238,10 @@ private fun Toolbar(
 
 @Composable
 private fun Content(
-    viewModel: EditingViewModel,
     modifier: Modifier = Modifier,
-    onNavigate: (NavEvent) -> Unit
+    viewModel: EditingViewModel,
+    mediaItemDraft: MediaItemDraft
 ) {
-    val mediaItem by viewModel.mediaItem.collectAsState()
-    val editableTags by viewModel.editableTags.collectAsState()
-
     val textMeasurer = rememberTextMeasurer()
     val size = textMeasurer.measure(
         text = AnnotatedString("Ambatukam"),
@@ -259,7 +257,7 @@ private fun Content(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            ImagePicker(initialSrc = mediaItem.image?.uri, shape = roundedShape) { uri ->
+            ImagePicker(initialSrc = mediaItemDraft.image?.uri, shape = roundedShape) { uri ->
                 viewModel.updateImage(uri)
             }
         }
@@ -274,7 +272,7 @@ private fun Content(
                     )
                     .padding(horizontal = 10.dp, vertical = 7.dp),
                 hint = stringResource(R.string.editing_caption_hint),
-                initialValue = mediaItem.caption,
+                initialValue = mediaItemDraft.caption,
                 onValueChange = { viewModel.updateName(it) },
                 callbackDelay = 0L
             )
@@ -292,7 +290,7 @@ private fun Content(
                     .padding(horizontal = 10.dp, vertical = 7.dp),
                 hint = stringResource(R.string.editing_description_hint),
                 numberOfLines = 3,
-                initialValue = mediaItem.description,
+                initialValue = mediaItemDraft.description,
                 onValueChange = { viewModel.updateDescription(it) },
                 callbackDelay = 0L
             )
@@ -312,13 +310,13 @@ private fun Content(
                 horizontalArrangement = Arrangement.spacedBy(7.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                editableTags.forEach { tag ->
-                    key(tag.id) {
+                mediaItemDraft.tags.forEach { tag ->
+                    key(tag.key) {
                         TagChip(
                             tag = tag.text,
                             onFocusLost = { newText ->
-                                if (newText.isEmpty()) viewModel.removeTag(tag.id)
-                                else viewModel.updateTag(tag.id, newText)
+                                if (newText.isEmpty()) viewModel.removeTag(tag.key)
+                                else viewModel.updateTag(tag.key, newText)
                             }
                         )
                     }
