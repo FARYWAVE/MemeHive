@@ -14,5 +14,5 @@ class MediaItemTrigramEntity(
     val trigram: String,
 
     @ColumnInfo(name = "media_item_id")
-    val mediaItemID: Long,
+    val mediaItemId: Long,
 )

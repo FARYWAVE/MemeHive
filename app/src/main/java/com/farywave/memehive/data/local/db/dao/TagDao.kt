@@ -20,7 +20,7 @@ interface TagDao {
     suspend fun getAll(): List<TagEntity>
 
     @Query("SELECT id FROM tags WHERE name in (:names)")
-    suspend fun getIDsByNames(names: List<String>): List<Long>
+    suspend fun getIdsByNames(names: List<String>): List<Long>
 
     @Query("SELECT * FROM tags WHERE name = :name")
     suspend fun getByName(name: String): TagEntity?

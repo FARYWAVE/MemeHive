@@ -12,24 +12,24 @@ class TagRepository(
 ) {
     suspend fun getAll() = tagDao.getAll()
 
-    suspend fun getIDsByNames(names: List<String>) = tagDao.getIDsByNames(names);
+    suspend fun getIdsByNames(names: List<String>) = tagDao.getIdsByNames(names);
 
-    suspend fun getMediaItemIDsByTagIDs(tagIDs: List<Long>) =
-        mediaItemTagDao.getMediaItemIDsByTags(tagIDs)
+    suspend fun getMediaItemIdsByTagIds(tagIds: List<Long>) =
+        mediaItemTagDao.getMediaItemIdsByTags(tagIds)
 
     suspend fun getByName(name: String) = tagDao.getByName(name)
 
-    suspend fun insert(name: String, mediaItemID: Long? = null) {
+    suspend fun insert(name: String, mediaItemId: Long? = null) {
         val tag = getByName(name)?.id ?: tagDao.insert(TagEntity(name = name))
-        if (mediaItemID != null) mediaItemTagDao.insert(MediaItemTagEntity(mediaItemID, tag))
+        if (mediaItemId != null) mediaItemTagDao.insert(MediaItemTagEntity(mediaItemId, tag))
     }
 
-    suspend fun deleteByMediaItemID(mediaItemID: Long) = mediaItemTagDao.deleteByMediaItemID(mediaItemID)
+    suspend fun deleteByMediaItemId(mediaItemId: Long) = mediaItemTagDao.deleteByMediaItemId(mediaItemId)
 
     suspend fun deleteOrphanedTags() = tagDao.deleteOrphanedTags()
 
     suspend fun updateTagsForMediaItem(mediaItem: MediaItem) {
-        deleteByMediaItemID(mediaItem.id)
+        deleteByMediaItemId(mediaItem.id)
         mediaItem.tags.forEach { tag ->
             insert(tag, mediaItem.id)
         }

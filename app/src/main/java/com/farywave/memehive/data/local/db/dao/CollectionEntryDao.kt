@@ -31,7 +31,7 @@ interface CollectionEntryDao {
         SELECT media_item_id FROM collection_entries
         WHERE collection_id = :collectionId
     """)
-    suspend fun getIDsByCollection(collectionId: Long): List<Long>
+    suspend fun getIdsByCollection(collectionId: Long): List<Long>
 
     @Query("""
         DELETE FROM collection_entries

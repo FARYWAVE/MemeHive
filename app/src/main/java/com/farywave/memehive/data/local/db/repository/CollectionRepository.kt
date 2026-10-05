@@ -69,5 +69,7 @@ class CollectionRepository(
             collectionIds.map { CollectionEntryEntity(it, mediaItemId) }
         )
 
-    suspend fun setCollectionCover(collectionID: Long, imageID: Long) = collectionDao.setCover(collectionID, imageID)
+    suspend fun setCollectionCover(collectionId: Long, imageId: Long) = collectionDao.setCover(collectionId, imageId)
+
+    suspend fun getCollectionCoverId(collectionId: Long) = collectionDao.getCoverId(collectionId)
 }

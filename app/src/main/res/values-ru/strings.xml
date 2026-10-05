@@ -40,4 +40,5 @@
     <string name="toast_collection_exported">Успешно Экспортировано</string>
     <string name="import_error">Не удалось распаковать Коллекцию</string>
     <string name="import_successful">Коллекция импортирована</string>
+    <string name="all_collection_name">Все</string>
 </resources>

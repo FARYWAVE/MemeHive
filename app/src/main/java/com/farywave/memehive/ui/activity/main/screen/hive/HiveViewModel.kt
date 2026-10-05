@@ -112,7 +112,7 @@ class HiveViewModel(
     fun deleteSelectedMediaItems() {
         val selectedIds = _selectedMediaItemIds.value
         viewModelScope.launch(Dispatchers.IO) {
-            mediaItemUseCases.deleteMediaItemsByIDs(selectedIds)
+            mediaItemUseCases.deleteMediaItemsByIds(selectedIds)
         }
     }
 
@@ -136,7 +136,7 @@ class HiveViewModel(
     fun onMassImport(uris: List<Uri>) {
         val collectionId = _selectedCollectionId.value
         viewModelScope.launch(Dispatchers.IO) {
-            val mediaItemIDs = uris.map {
+            val mediaItems = uris.map {
                 mediaItemUseCases.createMediaItem(
                     MediaItem(
                         image = Image(uri = it),
@@ -146,7 +146,7 @@ class HiveViewModel(
 
             collectionId?.let {
                 collectionUseCases.addItemsToCollection(
-                    mediaItemIDs.toSet(),
+                    mediaItems.map { item -> item.id }.toSet(),
                     it
                 )
             }
@@ -160,7 +160,7 @@ class HiveViewModel(
             collectionUseCases.updateCollection(
                 collection.copy(
                     name = newName ?: collection.name,
-                    cover = newCover?.let { Image(uri = it) } ?: collection.cover
+                    cover = newCover?.let { Image(uri = it) }
                 )
             )
         }

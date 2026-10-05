@@ -22,49 +22,65 @@ interface MediaItemDao {
     @Query("DELETE FROM media_items WHERE id = :mediaItemId")
     suspend fun delete(mediaItemId: Long)
 
-    @Query("DELETE FROM media_items WHERE id IN (:mediaItemIDs)")
-    suspend fun deleteByIDs(mediaItemIDs: Set<Long>)
+    @Query("DELETE FROM media_items WHERE id IN (:mediaItemIds)")
+    suspend fun deleteByIds(mediaItemIds: Set<Long>)
 
     @Query("SELECT * FROM media_items")
+    @Transaction
     fun getAll(): Flow<List<MediaItemDetails>>
 
     @Query("SELECT * FROM media_items WHERE id = :mediaItemId")
+    @Transaction
     suspend fun get(mediaItemId: Long): MediaItemDetails?
 
-    @Query("""
+    @Query(
+        """
     SELECT media_item_id FROM media_item_tags
     WHERE tag_id IN (:tagIds)
     GROUP BY media_item_id
     HAVING COUNT(DISTINCT tag_id) = :tagCount
-    """)
-    suspend fun getIDsByTags(tagIds: List<Long>, tagCount: Int): List<Long>
+    """
+    )
+    suspend fun getIdsByTags(tagIds: List<Long>, tagCount: Int): List<Long>
 
     @Query("SELECT * FROM media_items WHERE id IN (:mediaItemIds)")
+    @Transaction
     suspend fun getByIds(mediaItemIds: List<Long>): List<MediaItemDetails>
 
-    @Query("""
+    @Query(
+        """
     SELECT * FROM media_items
     WHERE (:collectionId IS NULL OR id IN (
         SELECT media_item_id 
         FROM collection_entries 
         WHERE collection_id = :collectionId
     ))
-""")
+"""
+    )
+    @Transaction
     suspend fun getByCollection(
         collectionId: Long
     ): List<MediaItemDetails>
 
-    @Transaction
-    @Query("""
+    @Query(
+        """
         SELECT * FROM media_items
         WHERE (:collectionId IS NULL OR id IN (
             SELECT media_item_id FROM collection_entries
             WHERE collection_id = :collectionId
         ))
         ORDER BY id
-    """)
+    """
+    )
+    @Transaction
     fun observeByCollection(collectionId: Long?): Flow<List<MediaItemDetails>>
 
     @Query("SELECT id FROM media_items")
-    suspend fun getAllIDs(): List<Long>
+    suspend fun getAllIds(): List<Long>
+
+    @Query("SELECT image_id FROM media_items WHERE id = :mediaItemId")
+    suspend fun getImageId(mediaItemId: Long): Long?
+
+    @Query("SELECT image_id FROM media_items WHERE id IN (:mediaItemIds)")
+    suspend fun getImageIds(mediaItemIds: Set<Long>): List<Long>
 }

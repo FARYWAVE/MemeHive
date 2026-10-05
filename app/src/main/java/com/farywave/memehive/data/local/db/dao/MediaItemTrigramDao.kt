@@ -27,12 +27,12 @@ interface MediaItemTrigramDao {
         GROUP BY media_item_id
         ORDER BY COUNT(*) DESC
     """)
-    suspend fun getMediaItemIDsByTrigrams(trigrams: Set<String>): List<Long>
+    suspend fun getMediaItemIdsByTrigrams(trigrams: Set<String>): List<Long>
 
 
     @Query("""
         DELETE FROM media_item_trigrams
-        WHERE media_item_id = :mediaItemID
+        WHERE media_item_id = :mediaItemId
     """)
-    suspend fun deleteByMediaItemID(mediaItemID: Long)
+    suspend fun deleteByMediaItemId(mediaItemId: Long)
 }

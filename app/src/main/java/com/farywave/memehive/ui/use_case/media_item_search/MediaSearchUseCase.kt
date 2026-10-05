@@ -38,8 +38,6 @@ class MediaSearchUseCase(
     private suspend fun search(items: List<MediaItem>, query: String): List<MediaItem> {
         if (query.isEmpty()) return items
 
-        // Every query length searches the same fields. Extending a query can narrow
-        // the matching set, but cannot introduce matches absent for its prefix.
         val context = currentCoroutineContext()
         return items.mapNotNull { item ->
             context.ensureActive()

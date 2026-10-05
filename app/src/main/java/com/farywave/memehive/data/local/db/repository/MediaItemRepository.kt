@@ -19,11 +19,15 @@ class MediaItemRepository(
     suspend fun insertMediaItem(mediaItem: MediaItem) = mediaItemDao.insert(mediaItem.toEntity())
     suspend fun getMediaItemById(id: Long) = mediaItemDao.get(id)?.toMediaItem()
 
-    suspend fun getMediaItemsByCollectionID(collectionID: Long) = mediaItemDao.getByCollection(collectionID)
+    suspend fun getMediaItemsByCollectionId(collectionId: Long) = mediaItemDao.getByCollection(collectionId)
 
     suspend fun updateMediaItem(mediaItem: MediaItem) = mediaItemDao.update(mediaItem.toEntity())
 
     suspend fun deleteMediaItem(mediaItem: MediaItem) = mediaItemDao.delete(mediaItem.id)
 
-    suspend fun deleteMediaItemsByIDs(mediaItemIDs: Set<Long>) = mediaItemDao.deleteByIDs(mediaItemIDs)
+    suspend fun deleteMediaItemsByIds(mediaItemIds: Set<Long>) = mediaItemDao.deleteByIds(mediaItemIds)
+
+    suspend fun getMediaItemImageId(mediaItemId: Long) = mediaItemDao.getImageId(mediaItemId)
+
+    suspend fun getMediaItemImageIds(mediaItemIds: Set<Long>) = mediaItemDao.getImageIds(mediaItemIds).toSet()
 }

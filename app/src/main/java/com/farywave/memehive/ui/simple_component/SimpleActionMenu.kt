@@ -19,11 +19,11 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 @Composable
 inline fun <reified T> SimpleActionMenu(
     modifier: Modifier = Modifier,
+    options: List<T> = enumValues<T>().toList(),
     crossinline onSelected: (T) -> Unit,
     trigger: @Composable (onClick: () -> Unit) -> Unit
 ) where T: Enum<T>, T: ActionMenuOptions {
     var expanded by remember { mutableStateOf(false) }
-    val items = enumValues<T>()
 
     Box {
         trigger { expanded = true }
@@ -37,7 +37,7 @@ inline fun <reified T> SimpleActionMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            items.forEach { option ->
+            options.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(
                             text = stringResource(option.labelId),

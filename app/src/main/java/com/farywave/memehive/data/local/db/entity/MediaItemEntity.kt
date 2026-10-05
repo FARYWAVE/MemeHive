@@ -11,7 +11,7 @@ data class MediaItemEntity(
     val id: Long = 0,
 
     @ColumnInfo(name = "image_id")
-    val imageID: Long?,
+    val imageId: Long?,
 
     @ColumnInfo(name = "caption")
     val caption: String,

@@ -6,7 +6,7 @@ import com.farywave.memehive.ui.model.MediaItem
 
 fun MediaItem.toEntity() = MediaItemEntity(
     id = id,
-    imageID = image?.id,
+    imageId = image?.id,
     caption = caption,
     description = description
 )

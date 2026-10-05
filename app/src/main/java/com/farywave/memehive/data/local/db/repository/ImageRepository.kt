@@ -9,6 +9,8 @@ import com.farywave.memehive.data.local.db.dao.ImageDao
 import com.farywave.memehive.data.local.db.entity.ImageEntity
 import com.farywave.memehive.data.local.db.mapper.toModel
 import com.farywave.memehive.ui.model.Image
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 
@@ -16,12 +18,32 @@ class ImageRepository(
     private val context: Context,
     private val imageDao: ImageDao,
 ) {
-    suspend fun deleteIfUnused(imageId: Long) {
-        if (imageDao.getUsageCount(imageId) > 0) return
+    suspend fun <T> withImageCleanup(
+        block: suspend (cleanup: suspend (Set<Long?>) -> Unit) -> T,
+    ): T {
+        val pathsToDelete = mutableSetOf<String>()
 
-        val image = imageDao.getById(imageId) ?: throw IllegalStateException("Image not found")
-        deleteFromInternalStorage(File(image.path))
-        imageDao.delete(imageId)
+        val result = block { imageIds ->
+            imageIds.forEach { imageId ->
+                if (imageId != null && imageDao.getUsageCount(imageId) == 0) {
+                    imageDao.getById(imageId)?.let { image ->
+                        imageDao.delete(imageId)
+                        pathsToDelete += image.path
+                    }
+                }
+            }
+        }
+
+        withContext(Dispatchers.IO) {
+            for (path in pathsToDelete) {
+                val file = File(path)
+                if (!file.delete() && file.exists()) {
+                    Log.w("ImageRepository", "Failed to delete unused file: $path")
+                }
+            }
+        }
+
+        return result
     }
 
     suspend fun insertOrGet(uri: Uri): Image {
@@ -61,10 +83,6 @@ class ImageRepository(
         }
 
         return file
-    }
-
-    private fun deleteFromInternalStorage(file: File) {
-        file.delete()
     }
 
     private fun getFileName(uri: Uri): String? {

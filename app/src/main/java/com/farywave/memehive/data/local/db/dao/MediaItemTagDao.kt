@@ -25,11 +25,11 @@ interface MediaItemTagDao {
         DELETE FROM media_item_tags
         WHERE media_item_id = :mediaItemId
     """)
-    suspend fun deleteByMediaItemID(mediaItemId: Long)
+    suspend fun deleteByMediaItemId(mediaItemId: Long)
 
     @Query("""
         SELECT media_item_id FROM media_item_tags 
-        WHERE tag_id in (:tagIDs)
+        WHERE tag_id in (:tagIds)
     """)
-    suspend fun getMediaItemIDsByTags(tagIDs: List<Long>): List<Long>
+    suspend fun getMediaItemIdsByTags(tagIds: List<Long>): List<Long>
 }

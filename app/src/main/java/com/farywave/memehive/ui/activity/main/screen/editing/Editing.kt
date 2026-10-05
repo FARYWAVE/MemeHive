@@ -67,6 +67,7 @@ import com.farywave.memehive.ui.simple_component.SimpleActionMenu
 import com.farywave.memehive.ui.simple_component.SimpleIconButton
 import com.farywave.memehive.ui.simple_component.SimpleTextField
 import com.farywave.memehive.ui.theme.LocalAppColors
+import kotlin.enums.enumEntries
 
 @Composable
 fun Editing(
@@ -83,13 +84,12 @@ fun Editing(
 
 
     BackHandler {
-        viewModel.onSave()
         onNavigate(NavEvent.Back)
     }
     var showSelectorSheet by remember { mutableStateOf(false) }
     var showPickerSheet by remember { mutableStateOf(false) }
 
-    val isEdited by viewModel.isEdited.collectAsState()
+    val screenState by viewModel.screenState.collectAsState()
     val newCollectionEvent = remember {
         savedStateHandle.getStateFlow<String?>(
             "newCollectionName",
@@ -122,8 +122,9 @@ fun Editing(
         contentWindowInsets = WindowInsets(0),
         topBar = {
             Toolbar(
-                isEdited = isEdited,
-                onExit = { viewModel.onSave() },
+                screenState = screenState,
+                onSave = { viewModel.saveCurrentItem() },
+                onExit = { onNavigate(NavEvent.Back) },
                 onNavigate = onNavigate,
                 onDiscard = {
                     viewModel.discardChanges()
@@ -139,11 +140,11 @@ fun Editing(
                         }
 
                         MoreActions.DUPLICATE -> {
-                            viewModel.onDuplicate()
+                            viewModel.duplicateCurrentItem()
                         }
 
                         MoreActions.DELETE -> {
-                            viewModel.onDelete()
+                            viewModel.deleteCurrentItem()
                             onNavigate(NavEvent.ToHive)
                         }
                     }
@@ -177,7 +178,7 @@ fun Editing(
                 show = showPickerSheet,
                 collections = collections,
                 onDismiss = { showPickerSheet = false },
-                onCollectionSelected = { viewModel.onSetAsCover(it) },
+                onCollectionSelected = { viewModel.setCurrentItemAsCover(it) },
                 onNewCollectionClicked = { onNavigate(NavEvent.NewCollectionDialog) }
             )
         }
@@ -188,9 +189,10 @@ fun Editing(
 @Composable
 private fun Toolbar(
     onExit: () -> Unit,
-    isEdited: Boolean,
+    screenState: ScreenState,
     onNavigate: (NavEvent) -> Unit,
     onDiscard: () -> Unit,
+    onSave: () -> Unit,
     onAction: (MoreActions) -> Unit
 ) {
     Row(
@@ -214,16 +216,36 @@ private fun Toolbar(
 
         Spacer(Modifier.weight(1f))
 
-        if (isEdited) SimpleIconButton(
-            modifier = Modifier
-                .padding(7.dp)
-                .size(30.dp),
-            icon = painterResource(R.drawable.ic_cross)
-        ) {
-            onDiscard()
+        if (screenState in listOf(ScreenState.EDITING, ScreenState.CREATION)) {
+            SimpleIconButton(
+                modifier = Modifier
+                    .padding(7.dp)
+                    .size(30.dp),
+                icon = painterResource(R.drawable.ic_check),
+            ) {
+                onSave()
+            }
+
+            SimpleIconButton(
+                modifier = Modifier
+                    .padding(7.dp)
+                    .size(30.dp),
+                icon = painterResource(R.drawable.ic_cross)
+            ) {
+                onDiscard()
+            }
         }
 
-        SimpleActionMenu<MoreActions>(onSelected = { onAction(it) }) { onClick ->
+        SimpleActionMenu<MoreActions>(
+            options = enumEntries<MoreActions>().filter { option ->
+                when (option) {
+                    MoreActions.DUPLICATE, MoreActions.SET_AS_COVER -> screenState == ScreenState.SAVED
+                    MoreActions.DELETE -> screenState in listOf(ScreenState.EDITING, ScreenState.SAVED)
+                    else -> true
+                }
+            },
+            onSelected = { onAction(it) }
+        ) { onClick ->
             SimpleIconButton(
                 modifier = Modifier
                     .padding(7.dp)

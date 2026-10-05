@@ -10,13 +10,13 @@ import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.ui.use_case.CollectionUseCases
 import com.farywave.memehive.ui.use_case.media_item_search.MediaSearchUseCase
 
-class PickerViewModelFactory: ViewModelProvider.Factory {
+class PickerViewModelFactory : ViewModelProvider.Factory {
 
     private val context: Context
 
     constructor(context: Context) {
         this.context = context
-}
+    }
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         val db = MemeHiveDatabase.getInstance(context)
@@ -33,7 +33,7 @@ class PickerViewModelFactory: ViewModelProvider.Factory {
         )
         val imageRepo = ImageRepository(context, imageDao)
 
-        val collectionUseCases = CollectionUseCases(collectionRepo, imageRepo)
+        val collectionUseCases = CollectionUseCases(db, collectionRepo, imageRepo)
         val mediaSearchUseCase =
             MediaSearchUseCase(mediaItemRepo)
 

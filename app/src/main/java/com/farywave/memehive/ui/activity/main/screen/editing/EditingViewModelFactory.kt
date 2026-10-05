@@ -45,13 +45,14 @@ class EditingViewModelFactory : Factory {
         val trigramRepo = TrigramRepository(trigramDao = mediaItemTrigramDao)
 
         val mediaItemUseCases = MediaItemUseCases(
+            db,
             mediaItemRepo,
             tagRepo,
             collectionRepo,
             trigramRepo,
             imageRepo
         )
-        val collectionUseCases = CollectionUseCases(collectionRepo, imageRepo)
+        val collectionUseCases = CollectionUseCases(db,collectionRepo, imageRepo)
 
 
         return EditingViewModel(

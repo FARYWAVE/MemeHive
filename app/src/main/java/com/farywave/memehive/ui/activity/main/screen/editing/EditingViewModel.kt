@@ -39,7 +39,7 @@ class EditingViewModel(
     private var originalMediaItem: MediaItemDraft? = null
 
     private val _refresh = MutableStateFlow(0)
-    val isEdited = combine(mediaItemDraft, _refresh) { draft, _ ->
+    private val isEdited = combine(mediaItemDraft, _refresh) { draft, _ ->
         !(draft.image?.uri == originalMediaItem?.image?.uri &&
                 draft.caption == originalMediaItem?.caption &&
                 draft.description == originalMediaItem?.description &&
@@ -50,6 +50,23 @@ class EditingViewModel(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
         false
+    )
+
+    val screenState = combine(mediaItemDraft, isEdited) { draft, edited ->
+        when {
+            (draft.id == 0L) && !edited -> ScreenState.BLANK
+            draft.id == 0L -> ScreenState.CREATION
+            edited -> ScreenState.EDITING
+            else -> ScreenState.SAVED
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = if (mediaItemId == 0L) {
+            ScreenState.CREATION
+        } else {
+            ScreenState.SAVED
+        }
     )
 
     private val _collections = MutableStateFlow<List<Collection>>(emptyList())
@@ -68,7 +85,7 @@ class EditingViewModel(
     }
 
     fun saveOriginalValue() {
-        originalMediaItem = mediaItemDraft.value
+        originalMediaItem = _mediaItemDraft.value
 
         _refresh.update { it + 1 }
     }
@@ -82,7 +99,7 @@ class EditingViewModel(
 
     suspend fun loadMediaItem(id: Long) {
         if (id != 0L) {
-            val item = mediaItemUseCases.getMediaItemByID(id)
+            val item = mediaItemUseCases.getMediaItemById(id)
             if (item != null) {
                 val collectionIds = collectionUseCases.getCollectionIdsByMediaItem(item.id)
                 _mediaItemDraft.value = item.toDraft(collectionIds)
@@ -154,27 +171,24 @@ class EditingViewModel(
         }
     }
 
-    fun onSave() {
-        if (_mediaItemDraft.value.id == 0L && _mediaItemDraft.value.image == null || !isEdited.value) return
-
+    fun saveCurrentItem() {
         viewModelScope.launch(Dispatchers.IO) {
-            if (_mediaItemDraft.value.id == 0L) {
-                val id = mediaItemUseCases.createMediaItem(_mediaItemDraft.value.toMediaItem())
-                collectionUseCases.updateMediaItemCollections(
-                    id,
+            if (screenState.value == ScreenState.CREATION) {
+                _mediaItemDraft.value = mediaItemUseCases.createMediaItem(
+                    _mediaItemDraft.value.toMediaItem(),
                     _mediaItemDraft.value.collectionIds
-                )
+                ).toDraft(_mediaItemDraft.value.collectionIds)
             } else {
-                mediaItemUseCases.updateMediaItem(_mediaItemDraft.value.toMediaItem())
-                collectionUseCases.updateMediaItemCollections(
-                    _mediaItemDraft.value.id,
+                _mediaItemDraft.value = mediaItemUseCases.updateMediaItem(
+                    _mediaItemDraft.value.toMediaItem(),
                     _mediaItemDraft.value.collectionIds
-                )
+                ).toDraft(_mediaItemDraft.value.collectionIds)
             }
+            saveOriginalValue()
         }
     }
 
-    fun onDuplicate() {
+    fun duplicateCurrentItem() {
         viewModelScope.launch(Dispatchers.IO) {
             originalMediaItem?.let {
                 mediaItemUseCases.createMediaItem(
@@ -184,13 +198,13 @@ class EditingViewModel(
         }
     }
 
-    fun onDelete() {
+    fun deleteCurrentItem() {
         viewModelScope.launch(Dispatchers.IO) {
             originalMediaItem?.let { mediaItemUseCases.deleteMediaItem(it.toMediaItem()) }
         }
     }
 
-    fun onSetAsCover(collection: Collection) {
+    fun setCurrentItemAsCover(collection: Collection) {
         viewModelScope.launch(Dispatchers.IO) {
             originalMediaItem?.image?.let {
                 collectionUseCases.setCollectionCover(

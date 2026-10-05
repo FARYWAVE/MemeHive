@@ -46,16 +46,18 @@ class HiveViewModelFactory : Factory {
         val trigramRepo = TrigramRepository(mediaItemTrigramDao)
 
         val mediaItemUseCases = MediaItemUseCases(
+            db,
             mediaItemRepo,
             tagRepo,
             collectionRepo,
             trigramRepo,
             imageRepo
         )
-        val collectionUseCases = CollectionUseCases(collectionRepo, imageRepo)
+        val collectionUseCases = CollectionUseCases(db,collectionRepo, imageRepo)
         val collectionTransferTool = CollectionTransferTool(context)
         val collectionTransferUseCases =
             CollectionTransferUseCases(
+                db,
                 collectionTransferTool,
                 collectionUseCases,
                 mediaItemUseCases
