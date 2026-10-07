@@ -57,6 +57,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.component.CollectionPickerSheet
 import com.farywave.memehive.ui.component.CollectionSelectorSheet
@@ -70,14 +71,21 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 import kotlin.enums.enumEntries
 
 @Composable
-fun Editing(
+fun EditingScreen(
     savedStateHandle: SavedStateHandle,
     mediaItemId: Long, onNavigate: (NavEvent) -> Unit
 ) {
     val context = LocalContext.current
-    val viewModel: EditingViewModel = viewModel(
-        factory = EditingViewModelFactory(context, mediaItemId)
-    )
+    val viewModel: EditingViewModel =
+        (context.applicationContext as MemeHiveApplication).container.let {
+            viewModel(
+                factory = EditingViewModelFactory(
+                    mediaItemId,
+                    it.mediaItemUseCases,
+                    it.collectionUseCases
+                )
+            )
+        }
 
     val collections by viewModel.collections.collectAsState()
     val mediaItemDraft by viewModel.mediaItemDraft.collectAsState()
@@ -240,7 +248,11 @@ private fun Toolbar(
             options = enumEntries<MoreActions>().filter { option ->
                 when (option) {
                     MoreActions.DUPLICATE, MoreActions.SET_AS_COVER -> screenState == ScreenState.SAVED
-                    MoreActions.DELETE -> screenState in listOf(ScreenState.EDITING, ScreenState.SAVED)
+                    MoreActions.DELETE -> screenState in listOf(
+                        ScreenState.EDITING,
+                        ScreenState.SAVED
+                    )
+
                     else -> true
                 }
             },

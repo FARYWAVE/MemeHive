@@ -4,11 +4,11 @@ import com.farywave.memehive.data.local.db.dao.MediaItemTagDao
 import com.farywave.memehive.data.local.db.dao.TagDao
 import com.farywave.memehive.data.local.db.entity.MediaItemTagEntity
 import com.farywave.memehive.data.local.db.entity.TagEntity
-import com.farywave.memehive.ui.model.MediaItem
+import com.farywave.memehive.domain.model.MediaItem
 
 class TagRepository(
-    val tagDao: TagDao,
-    val mediaItemTagDao: MediaItemTagDao
+    private val tagDao: TagDao,
+    private val mediaItemTagDao: MediaItemTagDao
 ) {
     suspend fun getAll() = tagDao.getAll()
 

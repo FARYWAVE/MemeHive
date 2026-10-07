@@ -1,5 +1,7 @@
 package com.farywave.memehive.ui.model
 
+import com.farywave.memehive.domain.model.Image
+
 data class MediaItemDraft(
     val id: Long = 0,
     val image: Image? = null,

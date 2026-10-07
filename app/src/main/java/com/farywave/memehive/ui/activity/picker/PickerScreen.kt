@@ -29,18 +29,22 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.component.MediaItemCardSimple
 import com.farywave.memehive.ui.component.SearchAndCollectionBar
-import com.farywave.memehive.ui.model.MediaItem
+import com.farywave.memehive.domain.model.MediaItem
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
 fun PickerScreen(onItemClicked: (mediaItem: MediaItem) -> Unit) {
     val context = LocalContext.current
-    val viewModel: PickerViewModel = viewModel(
-        factory = PickerViewModelFactory(context)
-    )
+    val viewModel: PickerViewModel =
+        (context.applicationContext as MemeHiveApplication).container.let {
+            viewModel(
+                factory = PickerViewModelFactory(it.collectionUseCases, it.mediaSearchUseCase)
+            )
+        }
 
     val focusManager = LocalFocusManager.current
 

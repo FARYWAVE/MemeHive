@@ -2,7 +2,7 @@ package com.farywave.memehive.data.local.db.mapper
 
 import androidx.core.net.toUri
 import com.farywave.memehive.data.local.db.entity.ImageEntity
-import com.farywave.memehive.ui.model.Image
+import com.farywave.memehive.domain.model.Image
 import java.io.File
 
 fun Image.toEntity(sha256: String) = ImageEntity(

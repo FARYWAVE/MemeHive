@@ -14,71 +14,83 @@ import androidx.core.app.NotificationManagerCompat
 import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.activity.picker.PickerActivity
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
 
 object DeviceTools {
-    fun copyToInternalStorage(context: Context, uri: Uri): File {
+    suspend fun copyToInternalStorage(
+        context: Context,
+        uri: Uri,
+        ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+        onFileCreated: (File) -> Unit = {},
+    ): File = withContext(ioDispatcher) {
         val resolver = context.contentResolver
 
         val mimeType = resolver.getType(uri)
         val extFromMime = mimeType?.substringAfter("/")
-        val extFromName = getFileName(context, uri)?.substringAfterLast('.', "")
+        val extFromName = getFileName(context, uri, ioDispatcher)?.substringAfterLast('.', "")
 
         val extension = extFromMime ?: extFromName ?: "jpg"
 
-        val file = File(
-            context.filesDir,
-            "image_${System.currentTimeMillis()}.$extension"
-        )
-
-        resolver.openInputStream(uri)?.use { input ->
-            file.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        } ?: throw IllegalStateException("Can't open input stream")
-
-        if (!file.exists() || file.length() == 0L) {
-            throw IOException("Failed to copy file")
+        copyImageToDirectory(context.filesDir, extension, ioDispatcher, onFileCreated) {
+            resolver.openInputStream(uri) ?: throw IOException("Could not open the source image.")
         }
-
-        return file
     }
 
-    fun copyToInternalStorage(
+    suspend fun copyToInternalStorage(
         context: Context,
-        sourceFile: File
-    ): File {
-
-        val extension = sourceFile.extension.ifBlank {
-            "jpg"
+        sourceFile: File,
+        ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    ): File = withContext(ioDispatcher) {
+        copyImageToDirectory(context.filesDir, sourceFile.extension, ioDispatcher) {
+            sourceFile.inputStream()
         }
+    }
 
-        val destinationFile = File(
-            context.filesDir,
-            "image_${System.currentTimeMillis()}.$extension"
-        )
-
-        sourceFile.inputStream().use { input ->
-            destinationFile.outputStream().use { output ->
-                input.copyTo(output)
+    internal suspend fun copyImageToDirectory(
+        directory: File,
+        extension: String,
+        ioDispatcher: CoroutineDispatcher,
+        onFileCreated: (File) -> Unit = {},
+        openInput: () -> InputStream,
+    ): File = withContext(ioDispatcher) {
+        openInput().use { input ->
+            val file = File.createTempFile("image_", ".${extension.ifBlank { "jpg" }}", directory)
+            // Register inside the IO block: cancellation can discard a withContext return value.
+            onFileCreated(file)
+            file.outputStream().use { output ->
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                while (true) {
+                    ensureActive()
+                    val count = input.read(buffer)
+                    if (count == -1) break
+                    output.write(buffer, 0, count)
+                }
             }
+            if (file.length() == 0L) throw IOException("Failed to copy file")
+            file
         }
-
-        if (!destinationFile.exists() || destinationFile.length() == 0L) {
-            throw IOException("Failed to copy file")
-        }
-
-        return destinationFile
     }
 
-    fun deleteFromInternalStorage(file: File) {
-        file.delete()
+    suspend fun deleteFromInternalStorage(
+        file: File,
+        ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    ) {
+        withContext(ioDispatcher) { file.delete() }
     }
 
-    fun getFileName(context: Context, uri: Uri): String? {
+    suspend fun getFileName(
+        context: Context,
+        uri: Uri,
+        ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    ): String? = withContext(ioDispatcher) {
         val cursor = context.contentResolver.query(uri, null, null, null, null)
-        return cursor?.use {
+        cursor?.use {
             val index = it.getColumnIndex("_display_name")
             if (it.moveToFirst() && index != -1) {
                 it.getString(index)
@@ -95,8 +107,14 @@ object DeviceTools {
         }
     }
 
-    fun dirSize(dir: File): Long {
-        return dir.walkBottomUp().sumOf { it.length() }
+    suspend fun dirSize(
+        dir: File,
+        ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    ): Long = withContext(ioDispatcher) {
+        dir.walkBottomUp().sumOf {
+            ensureActive()
+            it.length()
+        }
     }
 
     fun openLink(context: Context, url: String) {

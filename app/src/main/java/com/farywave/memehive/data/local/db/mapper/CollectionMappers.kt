@@ -2,8 +2,8 @@ package com.farywave.memehive.data.local.db.mapper
 
 import com.farywave.memehive.data.local.db.entity.CollectionEntity
 import com.farywave.memehive.data.local.db.relation.CollectionDetails
-import com.farywave.memehive.ui.model.Collection
-import com.farywave.memehive.ui.model.Image
+import com.farywave.memehive.domain.model.Collection
+import com.farywave.memehive.domain.model.Image
 
 fun Collection.toEntity() = CollectionEntity(
     id = id,

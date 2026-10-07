@@ -28,7 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.model.Collection
+import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.ui.simple_component.SimpleBottomSheet
 import com.farywave.memehive.ui.theme.LocalAppColors
 

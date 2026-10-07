@@ -2,9 +2,9 @@ package com.farywave.memehive.ui.activity.picker
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.farywave.memehive.ui.model.Collection
+import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.ui.use_case.CollectionUseCases
-import com.farywave.memehive.ui.use_case.media_item_search.MediaSearchUseCase
+import com.farywave.memehive.ui.use_case.MediaSearchUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,8 +13,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class PickerViewModel(
-    val collectionUseCases: CollectionUseCases,
-    val mediaSearchUseCase: MediaSearchUseCase
+    private val collectionUseCases: CollectionUseCases,
+    private val mediaSearchUseCase: MediaSearchUseCase
 ) : ViewModel() {
     private val _collections = MutableStateFlow<List<Collection>>(emptyList())
     val collections = _collections.asStateFlow()

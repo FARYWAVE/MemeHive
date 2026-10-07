@@ -5,12 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.farywave.memehive.ui.mapper.toDraft
 import com.farywave.memehive.ui.mapper.toMediaItem
-import com.farywave.memehive.ui.model.Collection
-import com.farywave.memehive.ui.model.Image
+import com.farywave.memehive.domain.model.Collection
+import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.ui.model.MediaItemDraft
 import com.farywave.memehive.ui.use_case.CollectionUseCases
 import com.farywave.memehive.ui.use_case.MediaItemUseCases
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,8 +20,8 @@ import kotlinx.coroutines.launch
 
 class EditingViewModel(
     mediaItemId: Long,
-    val mediaItemUseCases: MediaItemUseCases,
-    val collectionUseCases: CollectionUseCases,
+    private val mediaItemUseCases: MediaItemUseCases,
+    private val collectionUseCases: CollectionUseCases,
 ) : ViewModel() {
     private val _mediaItemDraft = MutableStateFlow(
         MediaItemDraft(
@@ -77,7 +76,7 @@ class EditingViewModel(
 
     init {
         loadCollections()
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             loadMediaItem(mediaItemId)
             saveOriginalValue()
         }
@@ -109,7 +108,7 @@ class EditingViewModel(
     }
 
     fun loadCollections() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             collectionUseCases.getAllCollections()
                 .collect { list ->
                     _collections.value = list
@@ -124,7 +123,7 @@ class EditingViewModel(
     }
 
     fun createCollection(name: String) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             collectionUseCases.createCollection(
                 Collection(name = name)
             )
@@ -172,7 +171,7 @@ class EditingViewModel(
     }
 
     fun saveCurrentItem() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             if (screenState.value == ScreenState.CREATION) {
                 _mediaItemDraft.value = mediaItemUseCases.createMediaItem(
                     _mediaItemDraft.value.toMediaItem(),
@@ -189,7 +188,7 @@ class EditingViewModel(
     }
 
     fun duplicateCurrentItem() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             originalMediaItem?.let {
                 mediaItemUseCases.createMediaItem(
                     it.toMediaItem().copy(id = 0L)
@@ -199,13 +198,13 @@ class EditingViewModel(
     }
 
     fun deleteCurrentItem() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             originalMediaItem?.let { mediaItemUseCases.deleteMediaItem(it.toMediaItem()) }
         }
     }
 
     fun setCurrentItemAsCover(collection: Collection) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             originalMediaItem?.image?.let {
                 collectionUseCases.setCollectionCover(
                     collection.id,
@@ -215,4 +214,3 @@ class EditingViewModel(
         }
     }
 }
-

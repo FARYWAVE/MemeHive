@@ -35,7 +35,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.net.toFile
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.model.MediaItem
+import com.farywave.memehive.domain.model.MediaItem
 import com.farywave.memehive.ui.theme.LocalAppColors
 import java.io.File
 

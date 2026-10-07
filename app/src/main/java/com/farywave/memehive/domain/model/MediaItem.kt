@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.model
+package com.farywave.memehive.domain.model
 
 data class MediaItem(
     val id: Long = 0,

@@ -3,7 +3,7 @@ package com.farywave.memehive.data.local.db.repository
 import com.farywave.memehive.data.local.db.dao.MediaItemDao
 import com.farywave.memehive.data.local.db.mapper.toEntity
 import com.farywave.memehive.data.local.db.mapper.toMediaItem
-import com.farywave.memehive.ui.model.MediaItem
+import com.farywave.memehive.domain.model.MediaItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map

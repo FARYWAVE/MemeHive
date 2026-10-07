@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,6 +27,7 @@ import com.farywave.memehive.ui.simple_component.ActionType
 import com.farywave.memehive.ui.simple_component.SimpleDialog
 import com.farywave.memehive.ui.simple_component.SimpleDialogAction
 import com.farywave.memehive.ui.theme.LocalAppColors
+import java.io.File
 
 @Composable
 fun AboutApp(onDismissRequest: () -> Unit) {
@@ -69,20 +72,12 @@ enum class AboutAppEntry(@StringRes val title: Int, val content: @Composable () 
 
     STORAGE(title = R.string.about_app_storage, content = {
         val context = LocalContext.current
-        Text(
-            text = ModelTools.formatBytes(DeviceTools.dirSize(context.filesDir)),
-            style = MaterialTheme.typography.bodyMedium,
-            color = LocalAppColors.current.contentPrimary
-        )
+        DirectorySize(context.filesDir)
     }),
 
     CACHE(title = R.string.about_app_cache, content = {
         val context = LocalContext.current
-        Text(
-            text = ModelTools.formatBytes(DeviceTools.dirSize(context.cacheDir)),
-            style = MaterialTheme.typography.bodyMedium,
-            color = LocalAppColors.current.contentPrimary
-        )
+        DirectorySize(context.cacheDir)
     }),
 
     SOURCE_CODE(title = R.string.about_app_source_code, content = {
@@ -114,6 +109,18 @@ enum class AboutAppEntry(@StringRes val title: Int, val content: @Composable () 
             )
         }
     })
+}
+
+@Composable
+private fun DirectorySize(directory: File) {
+    val size by produceState<Long?>(initialValue = null, key1 = directory) {
+        value = DeviceTools.dirSize(directory)
+    }
+    Text(
+        text = size?.let { ModelTools.formatBytes(it) } ?: "…",
+        style = MaterialTheme.typography.bodyMedium,
+        color = LocalAppColors.current.contentPrimary
+    )
 }
 
 enum class AboutAppAction(@StringRes override val text: Int, override val type: ActionType) :

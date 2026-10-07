@@ -11,8 +11,8 @@ import com.farywave.memehive.core.ModelTools
 import com.farywave.memehive.ui.activity.main.dialog.AboutApp
 import com.farywave.memehive.ui.activity.main.dialog.NewCollection
 import com.farywave.memehive.ui.activity.main.dialog.EditCollection
-import com.farywave.memehive.ui.activity.main.screen.editing.Editing
-import com.farywave.memehive.ui.activity.main.screen.hive.Hive
+import com.farywave.memehive.ui.activity.main.screen.editing.EditingScreen
+import com.farywave.memehive.ui.activity.main.screen.hive.HiveScreen
 
 @Composable
 fun NavController(onEnableNotification: (Boolean) -> Unit) {
@@ -40,7 +40,7 @@ fun NavController(onEnableNotification: (Boolean) -> Unit) {
         startDestination = Screen.Hive.route
     ) {
         composable(Screen.Hive.route) { backStackEntry ->
-            Hive(
+            HiveScreen(
                 backStackEntry.savedStateHandle,
                 onEnableNotification,
                 onNavigate
@@ -56,7 +56,7 @@ fun NavController(onEnableNotification: (Boolean) -> Unit) {
             )
         ) { backStackEntry ->
             val mediaItemId = backStackEntry.arguments?.getLong("mediaItemId") ?: 0L
-            Editing(
+            EditingScreen(
                 savedStateHandle = backStackEntry.savedStateHandle,
                 mediaItemId = mediaItemId,
                 onNavigate = onNavigate

@@ -47,5 +47,9 @@
     <string name="toast_collection_exported">Export Successful</string>
     <string name="import_error">Couldn\'t unzip Collection</string>
     <string name="import_successful">Successfully imported</string>
+    <string name="import_invalid_archive">This file is not a valid collection archive, or some images are missing.</string>
+    <string name="collection_transfer_io_error">Couldn\'t read or save the collection files. Check that the files are available and there is enough storage space.</string>
+    <string name="collection_transfer_permission_error">MemeHive doesn\'t have permission to access the selected file. Select it again and retry.</string>
+    <string name="collection_transfer_database_error">Couldn\'t load or save the collection. Please try again.</string>
     <string name="all_collection_name">All</string>
 </resources>

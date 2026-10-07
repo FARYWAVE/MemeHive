@@ -2,7 +2,7 @@ package com.farywave.memehive.data.local.db.mapper
 
 import com.farywave.memehive.data.local.db.entity.MediaItemEntity
 import com.farywave.memehive.data.local.db.relation.MediaItemDetails
-import com.farywave.memehive.ui.model.MediaItem
+import com.farywave.memehive.domain.model.MediaItem
 
 fun MediaItem.toEntity() = MediaItemEntity(
     id = id,

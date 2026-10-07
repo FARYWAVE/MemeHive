@@ -40,5 +40,9 @@
     <string name="toast_collection_exported">Успешно Экспортировано</string>
     <string name="import_error">Не удалось распаковать Коллекцию</string>
     <string name="import_successful">Коллекция импортирована</string>
+    <string name="import_invalid_archive">Некорректный архив коллекции или отсутствуют изображения.</string>
+    <string name="collection_transfer_io_error">Не удалось прочитать или сохранить файлы коллекции. Проверьте доступность файлов и свободное место.</string>
+    <string name="collection_transfer_permission_error">У MemeHive нет разрешения на доступ к выбранному файлу. Выберите его заново и повторите попытку.</string>
+    <string name="collection_transfer_database_error">Не удалось загрузить или сохранить коллекцию. Повторите попытку.</string>
     <string name="all_collection_name">Все</string>
 </resources>

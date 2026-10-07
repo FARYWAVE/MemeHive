@@ -1,9 +1,8 @@
-package com.farywave.memehive.ui.use_case.media_item_search
+package com.farywave.memehive.ui.use_case
 
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
-import com.farywave.memehive.ui.model.MediaItem
+import com.farywave.memehive.domain.model.MediaItem
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -17,7 +16,7 @@ import kotlinx.coroutines.flow.mapLatest
 
 class MediaSearchUseCase(
     private val mediaItemRepository: MediaItemRepository,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val dispatcher: CoroutineDispatcher,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(

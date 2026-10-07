@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.model
+package com.farywave.memehive.domain.model
 
 data class Collection(
     val id: Long = 0,

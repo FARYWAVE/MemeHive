@@ -5,6 +5,9 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 
 class MemeHiveApplication : Application() {
+    val container: AppContainer by lazy {
+        AppContainer(this)
+    }
 
     override fun onCreate() {
         super.onCreate()

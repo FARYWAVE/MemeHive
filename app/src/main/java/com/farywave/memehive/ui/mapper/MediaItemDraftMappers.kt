@@ -1,6 +1,6 @@
 package com.farywave.memehive.ui.mapper
 
-import com.farywave.memehive.ui.model.MediaItem
+import com.farywave.memehive.domain.model.MediaItem
 import com.farywave.memehive.ui.model.MediaItemDraft
 
 fun MediaItem.toDraft(collectionIds: Set<Long>) = MediaItemDraft(

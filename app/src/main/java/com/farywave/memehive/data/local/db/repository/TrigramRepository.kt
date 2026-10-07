@@ -4,7 +4,7 @@ import com.farywave.memehive.data.local.db.dao.MediaItemTrigramDao
 import com.farywave.memehive.data.local.db.entity.MediaItemTrigramEntity
 
 class TrigramRepository(
-    val trigramDao: MediaItemTrigramDao
+    private val trigramDao: MediaItemTrigramDao
 ) {
     suspend fun getMediaItemIdsByTrigrams(trigrams: Set<String>) = trigramDao.getMediaItemIdsByTrigrams(trigrams)
 

@@ -2,40 +2,44 @@ package com.farywave.memehive.core.collection_transfer
 
 import android.content.Context
 import android.net.Uri
-import androidx.core.net.toFile
 import androidx.core.net.toUri
 import com.farywave.memehive.core.collection_transfer.entity.TransferCollection
 import com.farywave.memehive.core.collection_transfer.entity.TransferManifest
 import com.farywave.memehive.core.collection_transfer.entity.TransferMediaItem
 import com.farywave.memehive.data.local.db.relation.MediaItemDetails
-import com.farywave.memehive.ui.model.Collection
-import com.farywave.memehive.ui.model.MediaItem
+import com.farywave.memehive.domain.model.Collection
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
+import java.io.IOException
 import java.io.OutputStream
 import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
-class CollectionTransferTool(val context: Context) {
+class CollectionTransferTool(
+    private val context: Context,
+    private val ioDispatcher: CoroutineDispatcher,
+) {
     private val json = Json {
         prettyPrint = true
     }
 
-    fun exportCollection(
+    suspend fun exportCollection(
         collection: Collection,
         mediaItems: List<MediaItemDetails>,
         outputUri: Uri
-    ) {
+    ): Unit = withContext(ioDispatcher) {
         val tempDir = createTempExportDir()
         val collectionDir = File(tempDir, "collection")
         val mediaDir = File(tempDir, "media")
 
-        collectionDir.mkdirs()
-        mediaDir.mkdirs()
+        createDirectory(collectionDir)
+        createDirectory(mediaDir)
 
         //Collection Preparation
         val exportedCoverPath = "collection/cover.jpg"
@@ -52,6 +56,7 @@ class CollectionTransferTool(val context: Context) {
 
         //Media Preparation
         val transferMediaItems = mediaItems.filter { it.image != null }.mapIndexed { index, item ->
+            ensureActive()
             val image = File(item.image!!.path)
             val extension = image.extension
 
@@ -92,78 +97,34 @@ class CollectionTransferTool(val context: Context) {
         )
 
         // Zip the directory
-        context.contentResolver
-            .openOutputStream(outputUri)
-            ?.use { output ->
-
-                zipDirectory(tempDir, output)
-            }
+        val output = context.contentResolver.openOutputStream(outputUri)
+            ?: throw IOException("Could not open the export destination.")
+        output.use { zipDirectory(tempDir, it) }
     }
 
-    fun unzipCollection(uri: Uri): Pair<TransferManifest, File> {
+    suspend fun unzipCollection(uri: Uri): Pair<TransferManifest, File> = withContext(ioDispatcher) {
         val tempDir = File(context.cacheDir, "import_temp")
 
-        if (tempDir.exists()) {
-            tempDir.deleteRecursively()
+        if (tempDir.exists() && !tempDir.deleteRecursively()) {
+            throw IOException("Could not clear the temporary import directory.")
         }
 
-        tempDir.mkdirs()
+        createDirectory(tempDir)
 
-        //Import into Temp Directory
-        ZipInputStream(
-            BufferedInputStream(
-                context.contentResolver.openInputStream(uri)
-            )
-        ).use { zipIn ->
-
-            var entry = zipIn.nextEntry
-
-            while (entry != null) {
-
-                val outFile = File(tempDir, entry.name)
-
-                val normalizedPath = outFile.canonicalPath
-                val targetPath = tempDir.canonicalPath
-
-                if (!normalizedPath.startsWith(targetPath)) {
-                    throw SecurityException("Bad zip entry")
-                }
-
-                if (entry.isDirectory) {
-
-                    outFile.mkdirs()
-
-                } else {
-
-                    outFile.parentFile?.mkdirs()
-
-                    outFile.outputStream().use { output ->
-                        zipIn.copyTo(output)
-                    }
-                }
-
-                zipIn.closeEntry()
-
-                entry = zipIn.nextEntry
-            }
-        }
-
-        //Reading Manifest
-        val manifestFile = File(tempDir, "manifest.json")
-        val manifest = Json.decodeFromString<TransferManifest>(
-            manifestFile.readText()
-        )
-        return manifest to tempDir
+        val input = context.contentResolver.openInputStream(uri)
+            ?: throw IOException("Could not open the collection archive.")
+        val manifest = CollectionArchiveReader.extract(input, tempDir)
+        manifest to tempDir
     }
 
     private fun createTempExportDir(): File {
         val dir = File(context.cacheDir, "export_temp")
 
-        if (dir.exists()) {
-            dir.deleteRecursively()
+        if (dir.exists() && !dir.deleteRecursively()) {
+            throw IOException("Could not clear the temporary export directory.")
         }
 
-        dir.mkdirs()
+        createDirectory(dir)
 
         return dir
     }
@@ -172,14 +133,22 @@ class CollectionTransferTool(val context: Context) {
         uri: Uri,
         destination: File
     ) {
-        context.contentResolver.openInputStream(uri)?.use { input ->
+        val input = context.contentResolver.openInputStream(uri)
+            ?: throw IOException("Could not open an image for export.")
+        input.use {
             destination.outputStream().use { output ->
-                input.copyTo(output)
+                it.copyTo(output)
             }
         }
     }
 
-    private fun zipDirectory(
+    private fun createDirectory(directory: File) {
+        if (!directory.mkdirs() && !directory.isDirectory) {
+            throw IOException("Could not create directory: $directory")
+        }
+    }
+
+    private suspend fun zipDirectory(
         sourceDir: File,
         outputStream: OutputStream
     ) {
@@ -191,6 +160,7 @@ class CollectionTransferTool(val context: Context) {
             sourceDir.walkTopDown()
                 .filter { it.isFile }
                 .forEach { file ->
+                    currentCoroutineContext().ensureActive()
 
                     val entryName = file
                         .relativeTo(sourceDir)

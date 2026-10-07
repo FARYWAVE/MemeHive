@@ -22,6 +22,8 @@ import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,12 +49,13 @@ import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.ui.component.CollectionPickerSheet
 import com.farywave.memehive.ui.component.MediaItemCardFull
 import com.farywave.memehive.ui.component.SearchAndCollectionBar
-import com.farywave.memehive.ui.model.Collection
+import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.simple_component.SimpleActionMenu
 import com.farywave.memehive.ui.simple_component.SimpleIconButton
@@ -61,15 +64,34 @@ import com.farywave.memehive.ui.theme.Typography
 import kotlinx.coroutines.flow.combine
 
 @Composable
-fun Hive(
+fun HiveScreen(
     savedStateHandle: SavedStateHandle,
     onEnableNotification: (Boolean) -> Unit,
     onNavigate: (NavEvent) -> Unit
 ) {
     val context = LocalContext.current
-    val viewModel: HiveViewModel = viewModel(
-        factory = HiveViewModelFactory(context)
-    )
+    val viewModel: HiveViewModel =
+        (context.applicationContext as MemeHiveApplication).container.let {
+            viewModel(
+                factory = HiveViewModelFactory(
+                    it.mediaItemUseCases,
+                    it.collectionUseCases,
+                    it.mediaSearchUseCase,
+                    it.collectionTransferUseCases
+                )
+            )
+        }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val transferMessages by viewModel.transferMessages.collectAsStateWithLifecycle()
+    val transferMessage = transferMessages.firstOrNull()
+
+    LaunchedEffect(transferMessage) {
+        transferMessage?.let { message ->
+            snackbarHostState.showSnackbar(context.getString(message.textRes))
+            viewModel.onTransferMessageShown(message.id)
+        }
+    }
 
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -150,6 +172,7 @@ fun Hive(
     val focusManager = LocalFocusManager.current
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = Modifier
             .fillMaxSize()
             .background(LocalAppColors.current.backgroundPrimary)
@@ -345,7 +368,7 @@ private fun Content(
                     topBarHeight.toDp() + 7.dp
                 }
             )
-            ) {
+        ) {
             items(mediaItems, key = { it.id }) { mediaItem ->
                 MediaItemCardFull(
                     mediaItem = mediaItem,

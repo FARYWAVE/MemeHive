@@ -8,8 +8,8 @@ import com.farywave.memehive.data.local.db.dao.CollectionEntryDao
 import com.farywave.memehive.data.local.db.entity.CollectionEntryEntity
 import com.farywave.memehive.data.local.db.mapper.toEntity
 import com.farywave.memehive.data.local.db.mapper.toModel
-import com.farywave.memehive.ui.model.Collection
-import com.farywave.memehive.ui.model.MediaItem
+import com.farywave.memehive.domain.model.Collection
+import com.farywave.memehive.domain.model.MediaItem
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
