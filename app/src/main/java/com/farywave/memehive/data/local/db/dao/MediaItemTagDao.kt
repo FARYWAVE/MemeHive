@@ -15,21 +15,19 @@ interface MediaItemTagDao {
     @Query("DELETE FROM media_item_tags WHERE tag_id = :tagId AND media_item_id = :mediaItemId")
     suspend fun delete(tagId: Long, mediaItemId: Long)
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM media_item_tags 
         WHERE tag_id = :tagId
-    """)
+    """
+    )
     fun getByTag(tagId: Long): Flow<List<MediaItemTagEntity>>
 
-    @Query("""
+    @Query(
+        """
         DELETE FROM media_item_tags
         WHERE media_item_id = :mediaItemId
-    """)
+    """
+    )
     suspend fun deleteByMediaItemId(mediaItemId: Long)
-
-    @Query("""
-        SELECT media_item_id FROM media_item_tags 
-        WHERE tag_id in (:tagIds)
-    """)
-    suspend fun getMediaItemIdsByTags(tagIds: List<Long>): List<Long>
 }

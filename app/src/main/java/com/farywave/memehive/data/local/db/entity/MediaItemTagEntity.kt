@@ -3,9 +3,12 @@ package com.farywave.memehive.data.local.db.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 
 @Entity(
     tableName = "media_item_tags",
+    indices = [Index(value = ["tag_id"])],
+
     primaryKeys = ["media_item_id", "tag_id"],
     foreignKeys = [
         ForeignKey(

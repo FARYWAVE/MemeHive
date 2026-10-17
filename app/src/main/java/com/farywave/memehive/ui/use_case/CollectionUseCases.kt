@@ -23,7 +23,6 @@ class CollectionUseCases(
         }
     }
 
-    /** Use inside imageRepository.withImageChanges, sharing the tracker for the whole transaction. */
     suspend fun createCollection(collection: Collection, changes: ImageChanges): Collection {
         return db.withTransaction {
             val image = collection.cover?.let { cover ->

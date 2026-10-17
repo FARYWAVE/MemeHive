@@ -18,7 +18,7 @@ fun CollectionEntity.toModel(cover: Image?, mediaItemCount: Int) = Collection(
     mediaItemCount = mediaItemCount
 )
 
-fun CollectionDetails.toModel(mediaItemCount: Int) = collection.toModel(
+fun CollectionDetails.toModel() = collection.toModel(
     cover = coverImage?.toModel(),
     mediaItemCount = mediaItemCount
 )

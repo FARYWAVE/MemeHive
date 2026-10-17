@@ -12,11 +12,6 @@ class TagRepository(
 ) {
     suspend fun getAll() = tagDao.getAll()
 
-    suspend fun getIdsByNames(names: List<String>) = tagDao.getIdsByNames(names);
-
-    suspend fun getMediaItemIdsByTagIds(tagIds: List<Long>) =
-        mediaItemTagDao.getMediaItemIdsByTags(tagIds)
-
     suspend fun getByName(name: String) = tagDao.getByName(name)
 
     suspend fun insert(name: String, mediaItemId: Long? = null) {

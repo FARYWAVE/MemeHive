@@ -11,6 +11,7 @@ import com.farywave.memehive.data.local.db.mapper.toModel
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.MediaItem
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -35,23 +36,11 @@ class CollectionRepository(
         collectionDao.delete(collection.id)
     }
 
-    fun getAllCollections() =
-        collectionDao.getAll()
-            .flatMapLatest { collections ->
-
-                if (collections.isEmpty()) {
-                    flowOf(emptyList())
-                } else {
-                    val flows = collections.map { collection ->
-                        collectionEntryDao.getEntryCount(collection.collection.id)
-                            .map { count ->
-                                collection.toModel(count)
-                            }
-                    }
-
-                    combine(flows) { it.toList() }
-                }
+    fun getAllCollections() = collectionDao.getAll()
+            .map { collections ->
+                collections.map { it.toModel() }
             }
+            .distinctUntilChanged()
 
     suspend fun insertCollectionEntries(mediaItemIds: Set<Long>, collectionId: Long) =
         collectionEntryDao.insert(

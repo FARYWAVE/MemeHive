@@ -1,5 +1,6 @@
 package com.farywave.memehive.data.local.db.relation
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Relation
 import com.farywave.memehive.data.local.db.entity.CollectionEntity
@@ -9,9 +10,9 @@ data class CollectionDetails (
     @Embedded
     val collection: CollectionEntity,
 
-    @Relation(
-        parentColumn = "cover_image_id",
-        entityColumn = "id"
-    )
-    val coverImage: ImageEntity? = null
+    @Embedded(prefix = "cover_")
+    val coverImage: ImageEntity? = null,
+
+    @ColumnInfo(name = "media_item_count")
+    val mediaItemCount: Int,
 )

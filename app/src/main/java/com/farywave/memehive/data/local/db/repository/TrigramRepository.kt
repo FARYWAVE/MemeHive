@@ -6,8 +6,6 @@ import com.farywave.memehive.data.local.db.entity.MediaItemTrigramEntity
 class TrigramRepository(
     private val trigramDao: MediaItemTrigramDao
 ) {
-    suspend fun getMediaItemIdsByTrigrams(trigrams: Set<String>) = trigramDao.getMediaItemIdsByTrigrams(trigrams)
-
     suspend fun insertAll(trigrams: Set<String>, mediaItemId: Long) = trigramDao.insertAll(
         trigrams.map { MediaItemTrigramEntity(trigram = it, mediaItemId = mediaItemId) }
     )

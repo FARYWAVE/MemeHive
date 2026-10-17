@@ -21,11 +21,6 @@ class ImageRepository(
     private val imageDao: ImageDao,
     private val ioDispatcher: CoroutineDispatcher,
 ) {
-    /**
-     * Tracks new image files for one operation. Put the outermost db.withTransaction inside
-     * this block and pass its tracker to each creation call. Only tracked files without a
-     * database row are removed.
-     */
     suspend fun <T> withImageChanges(block: suspend (ImageChanges) -> T): T =
         ImageChanges.track(
             ioDispatcher = ioDispatcher,
@@ -77,7 +72,6 @@ class ImageRepository(
         return Image(id, file.toUri())
     }
 
-    /** Reused images are not tracked; a new copy is recorded before copying or inserting can fail. */
     suspend fun insertOrGet(uri: Uri, changes: ImageChanges): Image {
         val sha256 = uri.sha256(context, ioDispatcher)
 
