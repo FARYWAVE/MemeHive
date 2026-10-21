@@ -21,8 +21,8 @@ interface ImageDao {
     @Query("SELECT * FROM images WHERE sha256 = :sha256")
     suspend fun getBySHA256(sha256: String): ImageEntity?
 
-    @Query("SELECT EXISTS(SELECT 1 FROM images WHERE path = :path)")
-    suspend fun existsByPath(path: String): Boolean
+    @Query("SELECT EXISTS(SELECT 1 FROM images WHERE name = :name)")
+    suspend fun existsByName(name: String): Boolean
 
     @Query("""
         SELECT (

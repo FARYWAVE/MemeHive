@@ -1,6 +1,5 @@
 package com.farywave.memehive.data.local.storage
 
-import com.farywave.memehive.core.DeviceTools
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
@@ -30,11 +29,11 @@ class ImageChangesTest {
 
     @Test
     fun `successful operation preserves saved images and uses unique file names`() = runTest {
-        val storedPaths = mutableSetOf<String>()
-        val files = withChanges(storedPaths) { changes ->
+        val storedNames = mutableSetOf<String>()
+        val files = withChanges(storedNames) { changes ->
             val first = copy(changes, "first".byteInputStream())
             val second = copy(changes, "second".byteInputStream())
-            storedPaths.addAll(listOf(first.path, second.path))
+            storedNames.addAll(listOf(first.name, second.name))
             first to second
         }
 
@@ -46,12 +45,12 @@ class ImageChangesTest {
     @Test
     fun `rollback removes this operations new files and leaves existing images alone`() = runTest {
         val existing = directory.newFile("existing.jpg").apply { writeText("saved") }
-        val storedPaths = mutableSetOf(existing.path)
+        val storedNames = mutableSetOf(existing.name)
         val newFiles = mutableListOf<File>()
         val originalFailure = IOException("Failed to save tags")
 
         val failure = expectFailure<IOException> {
-            withChanges(storedPaths) { changes ->
+            withChanges(storedNames) { changes ->
                 newFiles += copy(changes, "cover".byteInputStream())
                 newFiles += copy(changes, "media item".byteInputStream())
                 // A rolled-back transaction leaves no database rows for either new file.
@@ -66,22 +65,22 @@ class ImageChangesTest {
 
     @Test
     fun `one failed operation does not delete another operations uncommitted file`() = runTest {
-        val storedPaths = mutableSetOf<String>()
+        val storedNames = mutableSetOf<String>()
         val otherFileReady = CompletableDeferred<File>()
         val allowOtherCommit = CompletableDeferred<Unit>()
         val otherOperation = async {
-            withChanges(storedPaths) { changes ->
+            withChanges(storedNames) { changes ->
                 val file = copy(changes, "other operation".byteInputStream())
                 otherFileReady.complete(file)
                 allowOtherCommit.await()
-                storedPaths.add(file.path)
+                storedNames.add(file.name)
             }
         }
         val otherFile = otherFileReady.await()
         lateinit var abandoned: File
 
         expectFailure<IOException> {
-            withChanges(storedPaths) { changes ->
+            withChanges(storedNames) { changes ->
                 abandoned = copy(changes, "failed operation".byteInputStream())
                 throw IOException("Save failed")
             }
@@ -89,7 +88,7 @@ class ImageChangesTest {
 
         assertFalse(abandoned.exists())
         assertTrue(otherFile.exists())
-        assertFalse(otherFile.path in storedPaths)
+        assertFalse(otherFile.name in storedNames)
         allowOtherCommit.complete(Unit)
         otherOperation.await()
         assertEquals("other operation", otherFile.readText())
@@ -114,7 +113,7 @@ class ImageChangesTest {
 
         val failure = expectFailure<IOException> {
             withChanges { changes ->
-                DeviceTools.copyImageToDirectory(
+                ImageStorage.copyImageToDirectory(
                     directory.root, "jpg", StandardTestDispatcher(testScheduler),
                     onFileCreated = {
                         partialFile = it
@@ -148,7 +147,7 @@ class ImageChangesTest {
                 }
             }
             withChanges { changes ->
-                DeviceTools.copyImageToDirectory(
+                ImageStorage.copyImageToDirectory(
                     directory.root, "jpg", StandardTestDispatcher(testScheduler),
                     onFileCreated = {
                         copiedFile = it
@@ -168,12 +167,12 @@ class ImageChangesTest {
 
     @Test
     fun `cancellation after the database commit preserves the saved file`() = runTest {
-        val storedPaths = mutableSetOf<String>()
+        val storedNames = mutableSetOf<String>()
         val committedFile = CompletableDeferred<File>()
         val operation = launch {
-            withChanges(storedPaths) { changes ->
+            withChanges(storedNames) { changes ->
                 val file = copy(changes, "saved image".byteInputStream())
-                storedPaths.add(file.path)
+                storedNames.add(file.name)
                 committedFile.complete(file)
                 awaitCancellation()
             }
@@ -230,21 +229,21 @@ class ImageChangesTest {
     }
 
     private suspend fun <T> TestScope.withChanges(
-        storedPaths: Set<String> = emptySet(),
+        storedNames: Set<String> = emptySet(),
         cleanupFailures: MutableList<Exception> = mutableListOf(),
         block: suspend (ImageChanges) -> T,
     ): T = ImageChanges.track(
         ioDispatcher = StandardTestDispatcher(testScheduler),
         isStored = { path ->
             yield() // The real DAO lookup suspends, including during cancellation cleanup.
-            path in storedPaths
+            path in storedNames
         },
         onCleanupFailure = { _, error -> cleanupFailures += error },
         block = block,
     )
 
     private suspend fun TestScope.copy(changes: ImageChanges, input: InputStream): File =
-        DeviceTools.copyImageToDirectory(
+        ImageStorage.copyImageToDirectory(
             directory.root, "jpg", StandardTestDispatcher(testScheduler),
             onFileCreated = changes::recordCreated,
             openInput = { input },

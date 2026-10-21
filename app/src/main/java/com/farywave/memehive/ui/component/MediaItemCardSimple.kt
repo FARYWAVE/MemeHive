@@ -22,12 +22,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.core.net.toFile
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.domain.model.MediaItem
 import com.farywave.memehive.ui.theme.LocalAppColors
-import java.io.File
+import android.net.Uri
 
 @Composable
 fun MediaItemCardSimple(
@@ -56,7 +55,7 @@ fun MediaItemCardSimple(
                         end.linkTo(parent.end)
                     }
                     .wrapContentSize(),
-                src = mediaItem.image?.uri?.toFile(),
+                src = mediaItem.image?.uri,
                 roundBottom = mediaItem.tags.isEmpty()
             )
 
@@ -71,7 +70,7 @@ fun MediaItemCardSimple(
 }
 
 @Composable
-private fun NullableImage(modifier: Modifier, src: File?, roundBottom: Boolean) {
+private fun NullableImage(modifier: Modifier, src: Uri?, roundBottom: Boolean) {
     val roundedTopShape = MaterialTheme.shapes.medium.copy(
         bottomStart = CornerSize(0.dp),
         bottomEnd = CornerSize(0.dp)

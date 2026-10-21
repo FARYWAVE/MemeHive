@@ -30,7 +30,7 @@ interface CollectionDao {
         c.name,
         c.cover_image_id,
         i.id AS cover_id,
-        i.path AS cover_path,
+        i.name AS cover_name,
         i.sha256 AS cover_sha256,
         COUNT(ce.media_item_id) AS media_item_count
     FROM collections AS c
@@ -43,7 +43,7 @@ interface CollectionDao {
         c.name,
         c.cover_image_id,
         i.id,
-        i.path,
+        i.name,
         i.sha256
     ORDER BY c.id
     """

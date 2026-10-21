@@ -52,4 +52,5 @@
     <string name="collection_transfer_permission_error">MemeHive doesn\'t have permission to access the selected file. Select it again and retry.</string>
     <string name="collection_transfer_database_error">Couldn\'t load or save the collection. Please try again.</string>
     <string name="all_collection_name">All</string>
+    <string name="image_copy_failed">Could not copy the image. It may no longer be available.</string>
 </resources>

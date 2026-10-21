@@ -147,7 +147,7 @@ private fun CollectionItem(collection: Collection, isSelected: Boolean, onClicke
                 .size(40.dp)
                 .clip(MaterialTheme.shapes.small),
             contentScale = ContentScale.Crop,
-            model = collection.cover,
+            model = collection.cover.uri,
             contentDescription = null
         ) else Icon(
             modifier = Modifier.size(40.dp),

@@ -45,4 +45,5 @@
     <string name="collection_transfer_permission_error">У MemeHive нет разрешения на доступ к выбранному файлу. Выберите его заново и повторите попытку.</string>
     <string name="collection_transfer_database_error">Не удалось загрузить или сохранить коллекцию. Повторите попытку.</string>
     <string name="all_collection_name">Все</string>
+    <string name="image_copy_failed">Не удалось скопировать изображение. Возможно, оно больше недоступно.</string>
 </resources>

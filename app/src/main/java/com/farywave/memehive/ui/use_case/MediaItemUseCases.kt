@@ -23,25 +23,8 @@ class MediaItemUseCases(
         mediaItem: MediaItem,
         collectionIdsToAdd: Set<Long> = emptySet()
     ): MediaItem {
-        return db.withTransaction {
-            val image = mediaItem.image?.let {
-                if (it.id == 0L) imageRepository.insertOrGet(it.uri) else it
-            }
-
-            val mediaItemId =
-                mediaItemRepository.insertMediaItem(mediaItem.copy(id = 0, image = image))
-
-            mediaItem.tags.forEach { tag ->
-                tagRepository.insert(tag, mediaItemId)
-            }
-
-            collectionRepository.addItemToCollections(mediaItemId, collectionIdsToAdd)
-
-            val trigrams = ModelTools.generateTrigrams(mediaItem.caption)
-                .union(ModelTools.generateTrigrams(mediaItem.description))
-            trigramRepository.insertAll(trigrams, mediaItemId)
-
-            mediaItem.copy(id = mediaItemId, image = image)
+        return imageRepository.withImageChanges { changes ->
+            createMediaItem(mediaItem, changes, collectionIdsToAdd)
         }
     }
 
@@ -74,29 +57,31 @@ class MediaItemUseCases(
     }
 
     suspend fun updateMediaItem(mediaItem: MediaItem, replacementCollectionIds: Set<Long> = emptySet()): MediaItem {
-        return imageRepository.withImageCleanup { cleanup ->
-            db.withTransaction {
-                val oldImageId = mediaItemRepository.getMediaItemImageId(mediaItem.id)
+        return imageRepository.withImageChanges { changes ->
+            imageRepository.withImageCleanup { cleanup ->
+                db.withTransaction {
+                    val oldImageId = mediaItemRepository.getMediaItemImageId(mediaItem.id)
 
-                val image = mediaItem.image?.let { imageRepository.insertOrGet(it.uri) }
-                val updatedMediaItem = mediaItem.copy(image = image)
+                    val image = mediaItem.image?.let { imageRepository.insertOrGet(it.uri, changes) }
+                    val updatedMediaItem = mediaItem.copy(image = image)
 
-                mediaItemRepository.updateMediaItem(updatedMediaItem)
+                    mediaItemRepository.updateMediaItem(updatedMediaItem)
 
-                tagRepository.updateTagsForMediaItem(updatedMediaItem)
+                    tagRepository.updateTagsForMediaItem(updatedMediaItem)
 
-                trigramRepository.updateTrigramsForMediaItem(
-                    updatedMediaItem.id,
-                    ModelTools.generateTrigrams(updatedMediaItem.caption)
-                        .union(ModelTools.generateTrigrams(updatedMediaItem.description))
-                )
+                    trigramRepository.updateTrigramsForMediaItem(
+                        updatedMediaItem.id,
+                        ModelTools.generateTrigrams(updatedMediaItem.caption)
+                            .union(ModelTools.generateTrigrams(updatedMediaItem.description))
+                    )
 
-                collectionRepository.deleteCollectionEntriesByItem(mediaItem.id)
-                collectionRepository.addItemToCollections(mediaItem.id, replacementCollectionIds)
+                    collectionRepository.deleteCollectionEntriesByItem(mediaItem.id)
+                    collectionRepository.addItemToCollections(mediaItem.id, replacementCollectionIds)
 
-                cleanup(setOf(oldImageId))
+                    cleanup(setOf(oldImageId))
 
-                mediaItem.copy(image = image)
+                    mediaItem.copy(image = image)
+                }
             }
         }
     }
@@ -125,6 +110,8 @@ class MediaItemUseCases(
             }
         }
     }
+
+    suspend fun getImageSharingUri(imageId: Long) = imageRepository.sharingUri(imageId)
 
     suspend fun getMediaItemById(id: Long) = mediaItemRepository.getMediaItemById(id)
 

@@ -1,5 +1,7 @@
 package com.farywave.memehive.data.local.db.repository
 
+import com.farywave.memehive.data.local.db.entity.ImageEntity
+import com.farywave.memehive.domain.model.Image
 import android.content.Context
 import androidx.room.Transaction
 import com.farywave.memehive.core.DeviceTools
@@ -19,6 +21,7 @@ import kotlin.collections.emptyList
 
 class CollectionRepository(
     private val collectionDao: CollectionDao,
+    private val resolveImage: (ImageEntity) -> Image,
     private val collectionEntryDao: CollectionEntryDao,
 ) {
     suspend fun insertCollection(collection: Collection) =
@@ -38,7 +41,7 @@ class CollectionRepository(
 
     fun getAllCollections() = collectionDao.getAll()
             .map { collections ->
-                collections.map { it.toModel() }
+                collections.map { it.toModel(it.coverImage?.let(resolveImage)) }
             }
             .distinctUntilChanged()
 

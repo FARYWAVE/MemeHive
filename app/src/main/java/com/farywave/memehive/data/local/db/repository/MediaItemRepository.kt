@@ -1,5 +1,7 @@
 package com.farywave.memehive.data.local.db.repository
 
+import com.farywave.memehive.data.local.db.entity.ImageEntity
+import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.data.local.db.dao.MediaItemDao
 import com.farywave.memehive.data.local.db.mapper.toEntity
 import com.farywave.memehive.data.local.db.mapper.toMediaItem
@@ -10,16 +12,17 @@ import kotlinx.coroutines.flow.map
 
 class MediaItemRepository(
     private val mediaItemDao: MediaItemDao,
+    private val resolveImage: (ImageEntity) -> Image,
 ) {
     fun observeMediaItems(collectionId: Long?): Flow<List<MediaItem>> =
         mediaItemDao.observeByCollection(collectionId)
-            .map { items -> items.map { it.toMediaItem() } }
+            .map { items -> items.map { it.toMediaItem(it.image?.let(resolveImage)) } }
             .distinctUntilChanged()
 
     suspend fun insertMediaItem(mediaItem: MediaItem) = mediaItemDao.insert(mediaItem.toEntity())
-    suspend fun getMediaItemById(id: Long) = mediaItemDao.get(id)?.toMediaItem()
+    suspend fun getMediaItemById(id: Long) = mediaItemDao.get(id)?.let { it.toMediaItem(it.image?.let(resolveImage)) }
 
-    suspend fun getMediaItemsByCollectionId(collectionId: Long) = mediaItemDao.getByCollection(collectionId)
+    suspend fun getMediaItemsByCollectionId(collectionId: Long) = mediaItemDao.getByCollection(collectionId).map { it.toMediaItem(it.image?.let(resolveImage)) }
 
     suspend fun updateMediaItem(mediaItem: MediaItem) = mediaItemDao.update(mediaItem.toEntity())
 

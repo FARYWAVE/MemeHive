@@ -17,7 +17,7 @@ import com.farywave.memehive.data.local.db.entity.*
         CollectionEntity::class,
         CollectionEntryEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class MemeHiveDatabase : RoomDatabase() {
@@ -42,7 +42,7 @@ abstract class MemeHiveDatabase : RoomDatabase() {
                     context.applicationContext,
                     MemeHiveDatabase::class.java,
                     "memehive_db"
-                ).addMigrations(MIGRATION_1_2).build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_1_2, ImageFilenameMigration(context.applicationContext.filesDir)).build().also { INSTANCE = it }
             }
         }
     }

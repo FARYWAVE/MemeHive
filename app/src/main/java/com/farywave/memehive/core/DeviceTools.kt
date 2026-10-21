@@ -23,67 +23,6 @@ import java.io.IOException
 import java.io.InputStream
 
 object DeviceTools {
-    suspend fun copyToInternalStorage(
-        context: Context,
-        uri: Uri,
-        ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-        onFileCreated: (File) -> Unit = {},
-    ): File = withContext(ioDispatcher) {
-        val resolver = context.contentResolver
-
-        val mimeType = resolver.getType(uri)
-        val extFromMime = mimeType?.substringAfter("/")
-        val extFromName = getFileName(context, uri, ioDispatcher)?.substringAfterLast('.', "")
-
-        val extension = extFromMime ?: extFromName ?: "jpg"
-
-        copyImageToDirectory(context.filesDir, extension, ioDispatcher, onFileCreated) {
-            resolver.openInputStream(uri) ?: throw IOException("Could not open the source image.")
-        }
-    }
-
-    suspend fun copyToInternalStorage(
-        context: Context,
-        sourceFile: File,
-        ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    ): File = withContext(ioDispatcher) {
-        copyImageToDirectory(context.filesDir, sourceFile.extension, ioDispatcher) {
-            sourceFile.inputStream()
-        }
-    }
-
-    internal suspend fun copyImageToDirectory(
-        directory: File,
-        extension: String,
-        ioDispatcher: CoroutineDispatcher,
-        onFileCreated: (File) -> Unit = {},
-        openInput: () -> InputStream,
-    ): File = withContext(ioDispatcher) {
-        openInput().use { input ->
-            val file = File.createTempFile("image_", ".${extension.ifBlank { "jpg" }}", directory)
-            // Register inside the IO block: cancellation can discard a withContext return value.
-            onFileCreated(file)
-            file.outputStream().use { output ->
-                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                while (true) {
-                    ensureActive()
-                    val count = input.read(buffer)
-                    if (count == -1) break
-                    output.write(buffer, 0, count)
-                }
-            }
-            if (file.length() == 0L) throw IOException("Failed to copy file")
-            file
-        }
-    }
-
-    suspend fun deleteFromInternalStorage(
-        file: File,
-        ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    ) {
-        withContext(ioDispatcher) { file.delete() }
-    }
-
     suspend fun getFileName(
         context: Context,
         uri: Uri,
@@ -176,11 +115,5 @@ object DeviceTools {
                 MemeHiveApplication.PICKER_NOTIFICATION_ID,
                 notification
             )
-    }
-
-    fun hidePickerNotification(context: Context) {
-
-        NotificationManagerCompat.from(context)
-            .cancel(MemeHiveApplication.PICKER_NOTIFICATION_ID)
     }
 }

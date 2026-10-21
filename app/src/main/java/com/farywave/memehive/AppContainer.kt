@@ -1,13 +1,13 @@
 package com.farywave.memehive
 
 import android.content.Context
-import com.farywave.memehive.core.collection_transfer.CollectionTransferTool
 import com.farywave.memehive.data.local.db.MemeHiveDatabase
 import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.ImageRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.data.local.db.repository.TagRepository
 import com.farywave.memehive.data.local.db.repository.TrigramRepository
+import com.farywave.memehive.data.local.storage.ImageStorage
 import com.farywave.memehive.ui.use_case.CollectionTransferUseCases
 import com.farywave.memehive.ui.use_case.CollectionUseCases
 import com.farywave.memehive.ui.use_case.MediaItemUseCases
@@ -31,14 +31,14 @@ class AppContainer(
     private val mediaItemTagDao = database.mediaItemTagDao()
     private val mediaItemTrigramDao = database.mediaItemTrigramDao()
 
-    private val mediaItemRepo = MediaItemRepository(
-        mediaItemDao
-    )
+    private val imageStorage = ImageStorage(appContext, ioDispatcher)
+    private val imageRepo = ImageRepository(appContext, imageDao, ioDispatcher, imageStorage)
+    private val mediaItemRepo = MediaItemRepository(mediaItemDao, imageRepo::toModel)
     private val collectionRepo = CollectionRepository(
         collectionDao,
+        imageRepo::toModel,
         collectionEntryDao
     )
-    private val imageRepo = ImageRepository(appContext, imageDao, ioDispatcher)
     private val tagRepo = TagRepository(tagDao, mediaItemTagDao)
     private val trigramRepo = TrigramRepository(mediaItemTrigramDao)
 
@@ -51,11 +51,11 @@ class AppContainer(
         imageRepo
     )
     val collectionUseCases = CollectionUseCases(database, collectionRepo, imageRepo)
-    private val collectionTransferTool = CollectionTransferTool(appContext, ioDispatcher)
     val collectionTransferUseCases =
         CollectionTransferUseCases(
             database,
-            collectionTransferTool,
+            appContext,
+            ioDispatcher,
             collectionUseCases,
             mediaItemUseCases,
             imageRepo

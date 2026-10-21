@@ -20,7 +20,7 @@ class ImageChanges private constructor() {
     internal companion object {
         suspend fun <T> track(
             ioDispatcher: CoroutineDispatcher,
-            isStored: suspend (path: String) -> Boolean,
+            isStored: suspend (name: String) -> Boolean,
             onCleanupFailure: (File, Exception) -> Unit,
             block: suspend (ImageChanges) -> T,
         ): T {
@@ -32,7 +32,7 @@ class ImageChanges private constructor() {
                     withContext(ioDispatcher) {
                         for (file in changes.filesForCleanup()) {
                             try {
-                                if (!isStored(file.path) && !file.delete() && file.exists()) {
+                                if (!isStored(file.name) && !file.delete() && file.exists()) {
                                     throw IOException("Could not delete abandoned image: $file")
                                 }
                             } catch (error: Exception) {

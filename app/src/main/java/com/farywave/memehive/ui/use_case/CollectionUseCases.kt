@@ -13,13 +13,8 @@ class CollectionUseCases(
     private val imageRepository: ImageRepository,
 ) {
     suspend fun createCollection(collection: Collection): Collection {
-        return db.withTransaction {
-            val image = collection.cover?.let { cover ->
-                imageRepository.insertOrGet(cover.uri)
-            }
-            val id = collectionRepository.insertCollection(collection.copy(cover = image))
-
-            collection.copy(id = id, cover = image)
+        return imageRepository.withImageChanges { changes ->
+            createCollection(collection, changes)
         }
     }
 
@@ -35,20 +30,22 @@ class CollectionUseCases(
     }
 
     suspend fun updateCollection(collection: Collection): Collection {
-        return imageRepository.withImageCleanup { cleanup ->
-            db.withTransaction {
-                val oldCoverId =
-                    collectionRepository.getCollectionCoverId(collection.id)
-                val image = collection.cover?.let { cover ->
-                    imageRepository.insertOrGet(cover.uri)
+        return imageRepository.withImageChanges { changes ->
+            imageRepository.withImageCleanup { cleanup ->
+                db.withTransaction {
+                    val oldCoverId =
+                        collectionRepository.getCollectionCoverId(collection.id)
+                    val image = collection.cover?.let { cover ->
+                        imageRepository.insertOrGet(cover.uri, changes)
+                    }
+
+                    val updatedCollection = collection.copy(cover = image)
+                    collectionRepository.updateCollection(updatedCollection)
+
+                    cleanup(setOf(oldCoverId))
+
+                    updatedCollection
                 }
-
-                val updatedCollection = collection.copy(cover = image)
-                collectionRepository.updateCollection(updatedCollection)
-
-                cleanup(setOf(oldCoverId))
-
-                updatedCollection
             }
         }
     }

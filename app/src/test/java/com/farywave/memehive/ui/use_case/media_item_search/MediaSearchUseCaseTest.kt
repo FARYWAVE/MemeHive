@@ -184,7 +184,7 @@ class MediaSearchUseCaseTest {
     private fun TestScope.observeSearch(): SearchFixture {
         val fixture = SearchFixture()
         val search = MediaSearchUseCase(
-            MediaItemRepository(fixture.dao),
+            MediaItemRepository(fixture.dao) { error("Fixture contains no images") },
             StandardTestDispatcher(testScheduler),
         )
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {

@@ -1,5 +1,6 @@
 package com.farywave.memehive.core
 
+import com.farywave.memehive.data.local.storage.ImageStorage
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -63,7 +64,7 @@ class DeviceToolsTest {
             }
         }
 
-        DeviceTools.deleteFromInternalStorage(observedFile, ioDispatcher)
+        ImageStorage.deleteFile(observedFile, ioDispatcher)
 
         assertFalse(file.exists())
         assertSame(ioThread.get(), deletionThread)

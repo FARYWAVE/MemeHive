@@ -13,7 +13,7 @@ class CollectionMappersTest {
             mediaItemCount = 3
         )
 
-        val renamed = storedCollection.toModel().copy(name = "Renamed")
+        val renamed = storedCollection.toModel(cover = null).copy(name = "Renamed")
         val update = renamed.toEntity()
 
         assertEquals(42L, update.id)
