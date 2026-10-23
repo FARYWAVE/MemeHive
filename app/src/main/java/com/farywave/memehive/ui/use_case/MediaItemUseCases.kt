@@ -1,5 +1,6 @@
 package com.farywave.memehive.ui.use_case
 
+import android.net.Uri
 import androidx.room.withTransaction
 import com.farywave.memehive.core.ModelTools
 import com.farywave.memehive.data.local.db.MemeHiveDatabase
@@ -106,15 +107,20 @@ class MediaItemUseCases(
                 mediaItemRepository.deleteMediaItemsByIds(mediaItemIds)
                 tagRepository.deleteOrphanedTags()
 
-                cleanup(imageIds)
+                cleanup(imageIds.minus(null))
             }
         }
     }
 
-    suspend fun getImageSharingUri(imageId: Long) = imageRepository.sharingUri(imageId)
+    suspend fun getImageSharingUri(imageId: Long): Uri {
+        return imageRepository.sharingUri(imageId)
+    }
 
-    suspend fun getMediaItemById(id: Long) = mediaItemRepository.getMediaItemById(id)
+    suspend fun getMediaItemById(id: Long): MediaItem? {
+        return mediaItemRepository.getMediaItemById(id)
+    }
 
-    suspend fun getByCollectionId(collectionId: Long) =
-        mediaItemRepository.getMediaItemsByCollectionId(collectionId)
+    suspend fun getByCollectionId(collectionId: Long): List<MediaItem> {
+        return mediaItemRepository.getMediaItemsByCollectionId(collectionId)
+    }
 }

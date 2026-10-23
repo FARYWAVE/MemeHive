@@ -232,7 +232,7 @@ class MediaSearchUseCaseTest {
         }
 
         override suspend fun insert(mediaItem: MediaItemEntity): Long = error("Unused")
-        override suspend fun update(mediaItem: MediaItemEntity): Unit = error("Unused")
+        override suspend fun update(mediaItem: MediaItemEntity): Int = error("Unused")
         override suspend fun delete(mediaItemId: Long): Unit = error("Unused")
         override suspend fun deleteByIds(mediaItemIds: Set<Long>): Unit = error("Unused")
         override fun getAll(): Flow<List<MediaItemDetails>> = error("Unused")

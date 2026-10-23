@@ -22,15 +22,17 @@ class ImageRepository(
     private val ioDispatcher: CoroutineDispatcher,
     private val storage: ImageStorage
 ) {
-    fun toModel(image: ImageEntity): Image = image.toModel(storage.resolve(image.name).toUri())
+    fun toModel(image: ImageEntity): Image {
+        return image.toModel(storage.resolve(image.name).toUri())
+    }
 
     suspend fun sharingUri(imageId: Long): Uri {
         val image = imageDao.getById(imageId) ?: throw IOException("Image no longer exists")
         return storage.sharingUri(image.name)
     }
 
-    suspend fun <T> withImageChanges(block: suspend (ImageChanges) -> T): T =
-        ImageChanges.track(
+    suspend fun <T> withImageChanges(block: suspend (ImageChanges) -> T): T {
+        return ImageChanges.track(
             ioDispatcher = ioDispatcher,
             isStored = imageDao::existsByName,
             onCleanupFailure = { file, error ->
@@ -38,6 +40,7 @@ class ImageRepository(
             },
             block = block,
         )
+    }
 
     suspend fun <T> withImageCleanup(
         block: suspend (cleanup: suspend (Set<Long?>) -> Unit) -> T,
@@ -68,20 +71,17 @@ class ImageRepository(
         return result
     }
 
-    suspend fun insertOrGet(uri: Uri): Image = withImageChanges { changes ->
-        insertOrGet(uri, changes)
-    }
-
     suspend fun insertOrGet(uri: Uri, changes: ImageChanges): Image {
-        val sha256 = uri.sha256(context, ioDispatcher)
-
-        val imageEntity = imageDao.getBySHA256(sha256)
-        if (imageEntity != null) return toModel(imageEntity)
-
         val file = storage.copy(
             uri = uri,
             onFileCreated = changes::recordCreated,
         )
+
+        val sha256 = file.toUri().sha256(context, ioDispatcher)
+
+        val imageEntity = imageDao.getBySHA256(sha256)
+        if (imageEntity != null) return toModel(imageEntity)
+
         val id = imageDao.insert(ImageEntity(0, file.name, sha256))
 
         return Image(id, file.toUri())

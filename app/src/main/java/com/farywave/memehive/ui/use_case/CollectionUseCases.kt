@@ -6,6 +6,7 @@ import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.ImageRepository
 import com.farywave.memehive.data.local.storage.ImageChanges
 import com.farywave.memehive.domain.model.Collection
+import kotlinx.coroutines.flow.Flow
 
 class CollectionUseCases(
     private val db: MemeHiveDatabase,
@@ -60,13 +61,17 @@ class CollectionUseCases(
         }
     }
 
-    fun getAllCollections() = collectionRepository.getAllCollections()
+    fun getAllCollections(): Flow<List<Collection>> {
+        return collectionRepository.getAllCollections()
+    }
 
-    suspend fun addItemsToCollection(mediaItemIds: Set<Long>, collectionId: Long) =
-        collectionRepository.insertCollectionEntries(mediaItemIds, collectionId)
+    suspend fun addItemsToCollection(mediaItemIds: Set<Long>, collectionId: Long): List<Long> {
+        return collectionRepository.insertCollectionEntries(mediaItemIds, collectionId)
+    }
 
-    suspend fun getCollectionIdsByMediaItem(mediaItemId: Long) =
-        collectionRepository.getCollectionIdsByMediaItem(mediaItemId)
+    suspend fun getCollectionIdsByMediaItem(mediaItemId: Long): Set<Long> {
+        return collectionRepository.getCollectionIdsByMediaItem(mediaItemId)
+    }
 
     suspend fun setCollectionCover(collectionId: Long, imageId: Long) {
         imageRepository.withImageCleanup { cleanup ->

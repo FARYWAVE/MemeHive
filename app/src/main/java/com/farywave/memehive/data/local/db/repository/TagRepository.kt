@@ -10,18 +10,26 @@ class TagRepository(
     private val tagDao: TagDao,
     private val mediaItemTagDao: MediaItemTagDao
 ) {
-    suspend fun getAll() = tagDao.getAll()
+    suspend fun getAll(): List<TagEntity> {
+        return tagDao.getAll()
+    }
 
-    suspend fun getByName(name: String) = tagDao.getByName(name)
+    suspend fun getByName(name: String): TagEntity? {
+        return tagDao.getByName(name)
+    }
 
     suspend fun insert(name: String, mediaItemId: Long? = null) {
         val tag = getByName(name)?.id ?: tagDao.insert(TagEntity(name = name))
         if (mediaItemId != null) mediaItemTagDao.insert(MediaItemTagEntity(mediaItemId, tag))
     }
 
-    suspend fun deleteByMediaItemId(mediaItemId: Long) = mediaItemTagDao.deleteByMediaItemId(mediaItemId)
+    suspend fun deleteByMediaItemId(mediaItemId: Long): Unit {
+        mediaItemTagDao.deleteByMediaItemId(mediaItemId)
+    }
 
-    suspend fun deleteOrphanedTags() = tagDao.deleteOrphanedTags()
+    suspend fun deleteOrphanedTags(): Unit {
+        tagDao.deleteOrphanedTags()
+    }
 
     suspend fun updateTagsForMediaItem(mediaItem: MediaItem) {
         deleteByMediaItemId(mediaItem.id)

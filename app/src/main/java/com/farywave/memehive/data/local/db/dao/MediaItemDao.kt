@@ -17,7 +17,7 @@ interface MediaItemDao {
     suspend fun insert(mediaItem: MediaItemEntity): Long
 
     @Update
-    suspend fun update(mediaItem: MediaItemEntity)
+    suspend fun update(mediaItem: MediaItemEntity): Int
 
     @Query("DELETE FROM media_items WHERE id = :mediaItemId")
     suspend fun delete(mediaItemId: Long)
@@ -82,5 +82,5 @@ interface MediaItemDao {
     suspend fun getImageId(mediaItemId: Long): Long?
 
     @Query("SELECT image_id FROM media_items WHERE id IN (:mediaItemIds)")
-    suspend fun getImageIds(mediaItemIds: Set<Long>): List<Long>
+    suspend fun getImageIds(mediaItemIds: Set<Long>): List<Long?>
 }

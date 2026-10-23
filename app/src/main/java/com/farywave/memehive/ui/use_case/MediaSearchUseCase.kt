@@ -22,17 +22,19 @@ class MediaSearchUseCase(
     operator fun invoke(
         collectionIds: Flow<Long?>,
         queries: Flow<String>,
-    ): Flow<List<MediaItem>> = collectionIds
-        .distinctUntilChanged()
-        .flatMapLatest { collectionId ->
-            combine(
-                mediaItemRepository.observeMediaItems(collectionId),
-                queries.map { it.trim() }.distinctUntilChanged(),
-            ) { items, query -> items to query }
-                .mapLatest { (items, query) -> search(items, query) }
-        }
-        .distinctUntilChanged()
-        .flowOn(dispatcher)
+    ): Flow<List<MediaItem>> {
+        return collectionIds
+            .distinctUntilChanged()
+            .flatMapLatest { collectionId ->
+                combine(
+                    mediaItemRepository.observeMediaItems(collectionId),
+                    queries.map { it.trim() }.distinctUntilChanged(),
+                ) { items, query -> items to query }
+                    .mapLatest { (items, query) -> search(items, query) }
+            }
+            .distinctUntilChanged()
+            .flowOn(dispatcher)
+    }
 
     private suspend fun search(items: List<MediaItem>, query: String): List<MediaItem> {
         if (query.isEmpty()) return items

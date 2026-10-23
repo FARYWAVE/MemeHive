@@ -14,23 +14,45 @@ class MediaItemRepository(
     private val mediaItemDao: MediaItemDao,
     private val resolveImage: (ImageEntity) -> Image,
 ) {
-    fun observeMediaItems(collectionId: Long?): Flow<List<MediaItem>> =
-        mediaItemDao.observeByCollection(collectionId)
+    fun observeMediaItems(collectionId: Long?): Flow<List<MediaItem>> {
+        return mediaItemDao.observeByCollection(collectionId)
             .map { items -> items.map { it.toMediaItem(it.image?.let(resolveImage)) } }
             .distinctUntilChanged()
+    }
 
-    suspend fun insertMediaItem(mediaItem: MediaItem) = mediaItemDao.insert(mediaItem.toEntity())
-    suspend fun getMediaItemById(id: Long) = mediaItemDao.get(id)?.let { it.toMediaItem(it.image?.let(resolveImage)) }
+    suspend fun insertMediaItem(mediaItem: MediaItem): Long {
+        return mediaItemDao.insert(mediaItem.toEntity())
+    }
 
-    suspend fun getMediaItemsByCollectionId(collectionId: Long) = mediaItemDao.getByCollection(collectionId).map { it.toMediaItem(it.image?.let(resolveImage)) }
+    suspend fun getMediaItemById(id: Long): MediaItem? {
+        return mediaItemDao.get(id)?.let { it.toMediaItem(it.image?.let(resolveImage)) }
+    }
 
-    suspend fun updateMediaItem(mediaItem: MediaItem) = mediaItemDao.update(mediaItem.toEntity())
+    suspend fun getMediaItemsByCollectionId(collectionId: Long): List<MediaItem> {
+        return mediaItemDao.getByCollection(collectionId)
+            .map { it.toMediaItem(it.image?.let(resolveImage)) }
+    }
 
-    suspend fun deleteMediaItem(mediaItem: MediaItem) = mediaItemDao.delete(mediaItem.id)
+    suspend fun updateMediaItem(mediaItem: MediaItem): Unit {
+        val affectedCount = mediaItemDao.update(mediaItem.toEntity())
+        if (affectedCount == 0) throw IllegalStateException("Failed to update media item: $mediaItem")
+    }
 
-    suspend fun deleteMediaItemsByIds(mediaItemIds: Set<Long>) = mediaItemDao.deleteByIds(mediaItemIds)
+    suspend fun deleteMediaItem(mediaItem: MediaItem): Unit {
+        mediaItemDao.delete(mediaItem.id)
+    }
 
-    suspend fun getMediaItemImageId(mediaItemId: Long) = mediaItemDao.getImageId(mediaItemId)
+    suspend fun deleteMediaItemsByIds(mediaItemIds: Set<Long>) {
+        for (chunk in mediaItemIds.chunked(1000)) mediaItemDao.deleteByIds(chunk.toSet())
+    }
 
-    suspend fun getMediaItemImageIds(mediaItemIds: Set<Long>) = mediaItemDao.getImageIds(mediaItemIds).toSet()
+    suspend fun getMediaItemImageId(mediaItemId: Long): Long? {
+        return mediaItemDao.getImageId(mediaItemId)
+    }
+
+    suspend fun getMediaItemImageIds(mediaItemIds: Set<Long>): Set<Long?> {
+        return mediaItemIds.chunked(1000)
+            .map { mediaItemDao.getImageIds(it.toSet()) }
+            .flatten().toSet()
+    }
 }

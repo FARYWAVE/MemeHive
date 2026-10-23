@@ -17,7 +17,7 @@ interface CollectionDao {
     suspend fun insert(collection: CollectionEntity): Long
 
     @Update
-    suspend fun update(collection: CollectionEntity)
+    suspend fun update(collection: CollectionEntity): Int
 
     @Query("DELETE FROM collections WHERE id = :collectionId")
     suspend fun delete(collectionId: Long)
@@ -51,7 +51,7 @@ interface CollectionDao {
     fun getAll(): Flow<List<CollectionDetails>>
 
     @Query("UPDATE collections SET cover_image_id = :imageId WHERE id = :collectionId")
-    suspend fun setCover(collectionId: Long, imageId: Long)
+    suspend fun setCover(collectionId: Long, imageId: Long): Int
 
     @Query("SELECT cover_image_id FROM collections WHERE id = :collectionId")
     suspend fun getCoverId(collectionId: Long): Long?

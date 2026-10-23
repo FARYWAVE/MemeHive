@@ -164,12 +164,13 @@ class CollectionTransferUseCases(
         }
     }
 
-    private suspend fun unzipCollection(uri: Uri, directory: File): TransferManifest =
-        withContext(ioDispatcher) {
+    private suspend fun unzipCollection(uri: Uri, directory: File): TransferManifest {
+        return withContext(ioDispatcher) {
             val input = context.contentResolver.openInputStream(uri)
                 ?: throw IOException("Could not open the collection archive.")
             CollectionArchiveReader.extract(input, directory)
         }
+    }
 
     private fun copyUriToFile(
         uri: Uri,
@@ -225,22 +226,24 @@ class CollectionTransferUseCases(
     private suspend fun <T> withTransferDirectory(
         prefix: String,
         block: suspend (File) -> T,
-    ): T = withContext(ioDispatcher) {
-        val directory = Files.createTempDirectory(
-            context.cacheDir.toPath(),
-            prefix,
-        ).toFile()
+    ): T {
+        return withContext(ioDispatcher) {
+            val directory = Files.createTempDirectory(
+                context.cacheDir.toPath(),
+                prefix,
+            ).toFile()
 
-        try {
-            block(directory)
-        } finally {
-            withContext(NonCancellable) {
-                try {
-                    if (!directory.deleteRecursively()) {
-                        Log.w("CollectionTransfer", "Could not delete $directory")
+            try {
+                block(directory)
+            } finally {
+                withContext(NonCancellable) {
+                    try {
+                        if (!directory.deleteRecursively()) {
+                            Log.w("CollectionTransfer", "Could not delete $directory")
+                        }
+                    } catch (error: Exception) {
+                        Log.w("CollectionTransfer", "Cleanup failed", error)
                     }
-                } catch (error: Exception) {
-                    Log.w("CollectionTransfer", "Cleanup failed", error)
                 }
             }
         }

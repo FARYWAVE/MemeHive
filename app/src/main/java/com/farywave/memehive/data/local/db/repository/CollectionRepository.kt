@@ -2,66 +2,73 @@ package com.farywave.memehive.data.local.db.repository
 
 import com.farywave.memehive.data.local.db.entity.ImageEntity
 import com.farywave.memehive.domain.model.Image
-import android.content.Context
-import androidx.room.Transaction
-import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.data.local.db.dao.CollectionDao
 import com.farywave.memehive.data.local.db.dao.CollectionEntryDao
 import com.farywave.memehive.data.local.db.entity.CollectionEntryEntity
 import com.farywave.memehive.data.local.db.mapper.toEntity
 import com.farywave.memehive.data.local.db.mapper.toModel
 import com.farywave.memehive.domain.model.Collection
-import com.farywave.memehive.domain.model.MediaItem
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlin.collections.emptyList
 
 class CollectionRepository(
     private val collectionDao: CollectionDao,
     private val resolveImage: (ImageEntity) -> Image,
     private val collectionEntryDao: CollectionEntryDao,
 ) {
-    suspend fun insertCollection(collection: Collection) =
-        collectionDao.insert(
+    suspend fun insertCollection(collection: Collection): Long {
+        return collectionDao.insert(
             collection.toEntity()
         )
+    }
 
-    suspend fun updateCollection(collection: Collection) =
-        collectionDao.update(
+    suspend fun updateCollection(collection: Collection) {
+        val affectedCount = collectionDao.update(
             collection.toEntity()
         )
+        if (affectedCount == 0) throw IllegalStateException("Failed to update collection: ${collection.id}")
+    }
 
     suspend fun deleteCollection(collection: Collection) {
         collectionEntryDao.deleteByCollection(collection.id)
         collectionDao.delete(collection.id)
     }
 
-    fun getAllCollections() = collectionDao.getAll()
+    fun getAllCollections(): Flow<List<Collection>> {
+        return collectionDao.getAll()
             .map { collections ->
                 collections.map { it.toModel(it.coverImage?.let(resolveImage)) }
             }
             .distinctUntilChanged()
+    }
 
-    suspend fun insertCollectionEntries(mediaItemIds: Set<Long>, collectionId: Long) =
-        collectionEntryDao.insert(
-            mediaItemIds.map { CollectionEntryEntity(collectionId, it)}
+    suspend fun insertCollectionEntries(mediaItemIds: Set<Long>, collectionId: Long): List<Long> {
+        return collectionEntryDao.insert(
+            mediaItemIds.map { CollectionEntryEntity(collectionId, it) }
         )
+    }
 
-    suspend fun getCollectionIdsByMediaItem(mediaItemId: Long) =
-        collectionEntryDao.getByMediaItem(mediaItemId).map { it.collectionId }.toSet()
+    suspend fun getCollectionIdsByMediaItem(mediaItemId: Long): Set<Long> {
+        return collectionEntryDao.getByMediaItem(mediaItemId).map { it.collectionId }.toSet()
+    }
+
     suspend fun deleteCollectionEntriesByItem(mediaItemId: Long) {
         collectionEntryDao.deleteByMediaItem(mediaItemId)
     }
 
-    suspend fun addItemToCollections(mediaItemId: Long, collectionIds: Set<Long>) =
-        collectionEntryDao.insert(
+    suspend fun addItemToCollections(mediaItemId: Long, collectionIds: Set<Long>): List<Long> {
+        return collectionEntryDao.insert(
             collectionIds.map { CollectionEntryEntity(it, mediaItemId) }
         )
+    }
 
-    suspend fun setCollectionCover(collectionId: Long, imageId: Long) = collectionDao.setCover(collectionId, imageId)
+    suspend fun setCollectionCover(collectionId: Long, imageId: Long) {
+        val affectedCount = collectionDao.setCover(collectionId, imageId)
+        if (affectedCount == 0) throw IllegalStateException("Failed to set collection cover: $collectionId")
+    }
 
-    suspend fun getCollectionCoverId(collectionId: Long) = collectionDao.getCoverId(collectionId)
+    suspend fun getCollectionCoverId(collectionId: Long): Long? {
+        return collectionDao.getCoverId(collectionId)
+    }
 }
