@@ -82,7 +82,8 @@ fun EditingScreen(
                 factory = EditingViewModelFactory(
                     mediaItemId,
                     it.mediaItemUseCases,
-                    it.collectionUseCases
+                    it.collectionUseCases,
+                    context.applicationContext.contentResolver
                 )
             )
         }
@@ -103,6 +104,14 @@ fun EditingScreen(
             "newCollectionName",
             null
         )
+    }
+
+    val error by viewModel.error.collectAsState()
+
+    LaunchedEffect(error?.id) {
+        val currentError = error ?: return@LaunchedEffect
+        //TODO add handling
+        viewModel.clearError(currentError.id)
     }
 
     LaunchedEffect(Unit) {

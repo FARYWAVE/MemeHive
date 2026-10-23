@@ -46,4 +46,14 @@
     <string name="collection_transfer_database_error">Не удалось загрузить или сохранить коллекцию. Повторите попытку.</string>
     <string name="all_collection_name">Все</string>
     <string name="image_copy_failed">Не удалось скопировать изображение. Возможно, оно больше недоступно.</string>
+    <string name="editing_save_error">Не удалось сохранить изменения. Повторите попытку.</string>
+    <string name="media_load_error">Не удалось загрузить медиа. Повторите попытку.</string>
+    <string name="collections_load_error">Не удалось загрузить коллекции. Повторите попытку.</string>
+    <string name="collection_create_error">Не удалось создать коллекцию. Повторите попытку.</string>
+    <string name="media_delete_error">Не удалось удалить выбранные медиа. Повторите попытку.</string>
+    <string name="media_duplicate_error">Не удалось скопировать все выбранные медиа. Некоторые элементы могли быть скопированы.</string>
+    <string name="collection_add_items_error">Не удалось добавить медиа в коллекцию. Повторите попытку.</string>
+    <string name="media_import_error">Не удалось импортировать все изображения. Некоторые изображения могли быть импортированы.</string>
+    <string name="collection_update_error">Не удалось обновить коллекцию. Повторите попытку.</string>
+    <string name="collection_delete_error">Не удалось удалить коллекцию. Повторите попытку.</string>
 </resources>

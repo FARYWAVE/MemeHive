@@ -22,8 +22,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -82,13 +80,19 @@ fun HiveScreen(
             )
         }
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    val error by viewModel.error.collectAsStateWithLifecycle()
+    LaunchedEffect(error?.id) {
+        val currentError = error ?: return@LaunchedEffect
+        // TODO: Display currentError.messageResId to the user before acknowledging it.
+        viewModel.clearError(currentError.id)
+    }
+
     val transferMessages by viewModel.transferMessages.collectAsStateWithLifecycle()
     val transferMessage = transferMessages.firstOrNull()
 
     LaunchedEffect(transferMessage) {
         transferMessage?.let { message ->
-            snackbarHostState.showSnackbar(context.getString(message.textRes))
+            // TODO: Display the collection transfer success message.
             viewModel.onTransferMessageShown(message.id)
         }
     }
@@ -172,7 +176,6 @@ fun HiveScreen(
     val focusManager = LocalFocusManager.current
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = Modifier
             .fillMaxSize()
             .background(LocalAppColors.current.backgroundPrimary)

@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,7 +38,7 @@ import com.farywave.memehive.domain.model.MediaItem
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
-fun PickerScreen(onItemClicked: (mediaItem: MediaItem) -> Unit) {
+fun PickerScreen(onItemClicked: (mediaItem: MediaItem, onFailure: () -> Unit) -> Unit) {
     val context = LocalContext.current
     val viewModel: PickerViewModel =
         (context.applicationContext as MemeHiveApplication).container.let {
@@ -45,6 +46,13 @@ fun PickerScreen(onItemClicked: (mediaItem: MediaItem) -> Unit) {
                 factory = PickerViewModelFactory(it.collectionUseCases, it.mediaSearchUseCase)
             )
         }
+
+    val error by viewModel.error.collectAsStateWithLifecycle()
+    LaunchedEffect(error?.id) {
+        val currentError = error ?: return@LaunchedEffect
+        // TODO: Display currentError.messageResId to the user before acknowledging it.
+        viewModel.clearError(currentError.id)
+    }
 
     val focusManager = LocalFocusManager.current
 
@@ -74,7 +82,7 @@ fun PickerScreen(onItemClicked: (mediaItem: MediaItem) -> Unit) {
                     context.getString(R.string.copied_to_clipboard),
                     Toast.LENGTH_SHORT
                 ).show()
-                onItemClicked(it)
+                onItemClicked(it, viewModel::reportCopyFailure)
             }
         )
     }

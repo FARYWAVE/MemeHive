@@ -10,7 +10,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import com.farywave.memehive.MemeHiveApplication
 import kotlinx.coroutines.CancellationException
@@ -35,16 +34,16 @@ class PickerActivity : ComponentActivity() {
                 )
 
                 val defaultLabel = stringResource(R.string.hive_item)
-                PickerScreen { item ->
+                PickerScreen { item, onFailure ->
                     val image = item.image ?: return@PickerScreen
                     val label = item.caption.ifEmpty { defaultLabel }
-                    copyToClipboard(label, image.id)
+                    copyToClipboard(label, image.id, onFailure)
                 }
             }
         }
     }
 
-    private fun copyToClipboard(label: String, imageId: Long) {
+    private fun copyToClipboard(label: String, imageId: Long, onFailure: () -> Unit) {
         if (copying) return
         copying = true
         lifecycleScope.launch {
@@ -61,7 +60,7 @@ class PickerActivity : ComponentActivity() {
                 throw error
             } catch (error: Exception) {
                 Log.w("PickerActivity", "Could not copy image", error)
-                Toast.makeText(this@PickerActivity, R.string.image_copy_failed, Toast.LENGTH_LONG).show()
+                onFailure()
             } finally {
                 copying = false
             }

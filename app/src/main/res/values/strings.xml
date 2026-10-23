@@ -53,4 +53,14 @@
     <string name="collection_transfer_database_error">Couldn\'t load or save the collection. Please try again.</string>
     <string name="all_collection_name">All</string>
     <string name="image_copy_failed">Could not copy the image. It may no longer be available.</string>
+    <string name="editing_save_error">Couldn\'t save changes. Please try again.</string>
+    <string name="media_load_error">Could not load media. Please try again.</string>
+    <string name="collections_load_error">Could not load collections. Please try again.</string>
+    <string name="collection_create_error">Could not create the collection. Please try again.</string>
+    <string name="media_delete_error">Could not delete the selected media. Please try again.</string>
+    <string name="media_duplicate_error">Could not duplicate all selected media. Some items may have been duplicated.</string>
+    <string name="collection_add_items_error">Could not add media to the collection. Please try again.</string>
+    <string name="media_import_error">Could not import all images. Some images may have been imported.</string>
+    <string name="collection_update_error">Could not update the collection. Please try again.</string>
+    <string name="collection_delete_error">Could not delete the collection. Please try again.</string>
 </resources>
