@@ -23,19 +23,19 @@ class TagRepository(
         if (mediaItemId != null) mediaItemTagDao.insert(MediaItemTagEntity(mediaItemId, tag))
     }
 
-    suspend fun deleteByMediaItemId(mediaItemId: Long): Unit {
-        mediaItemTagDao.deleteByMediaItemId(mediaItemId)
-    }
-
-    suspend fun deleteOrphanedTags(): Unit {
-        tagDao.deleteOrphanedTags()
-    }
-
     suspend fun updateTagsForMediaItem(mediaItem: MediaItem) {
         deleteByMediaItemId(mediaItem.id)
         mediaItem.tags.forEach { tag ->
             insert(tag, mediaItem.id)
         }
         deleteOrphanedTags()
+    }
+
+    suspend fun deleteByMediaItemId(mediaItemId: Long): Unit {
+        mediaItemTagDao.deleteByMediaItemId(mediaItemId)
+    }
+
+    suspend fun deleteOrphanedTags(): Unit {
+        tagDao.deleteOrphanedTags()
     }
 }

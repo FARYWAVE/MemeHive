@@ -9,12 +9,6 @@ import com.farywave.memehive.data.local.db.entity.ImageEntity
 
 @Dao
 interface ImageDao {
-    @Insert(onConflict = ABORT)
-    suspend fun insert(image: ImageEntity): Long
-
-    @Query("DELETE FROM images WHERE id = :imageId")
-    suspend fun delete(imageId: Long)
-
     @Query("SELECT * FROM images WHERE id = :imageId")
     suspend fun getById(imageId: Long): ImageEntity?
 
@@ -32,4 +26,10 @@ interface ImageDao {
         ) AS total_count
     """)
     suspend fun getUsageCount(imageId: Long): Int
+
+    @Insert(onConflict = ABORT)
+    suspend fun insert(image: ImageEntity): Long
+
+    @Query("DELETE FROM images WHERE id = :imageId")
+    suspend fun delete(imageId: Long)
 }

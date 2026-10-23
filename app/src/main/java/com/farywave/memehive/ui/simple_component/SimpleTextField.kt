@@ -36,10 +36,11 @@ fun     SimpleTextField(
 ) {
     val value = rememberTextFieldState()
 
+    var isFocused by remember { mutableStateOf(false) }
+
     LaunchedEffect(initialValue) {
         value.setTextAndPlaceCursorAtEnd(initialValue ?: "")
     }
-    var isFocused by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         snapshotFlow { value.text }

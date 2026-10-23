@@ -76,6 +76,7 @@ fun EditingScreen(
     mediaItemId: Long, onNavigate: (NavEvent) -> Unit
 ) {
     val context = LocalContext.current
+
     val viewModel: EditingViewModel =
         (context.applicationContext as MemeHiveApplication).container.let {
             viewModel(
@@ -91,14 +92,11 @@ fun EditingScreen(
     val collections by viewModel.collections.collectAsState()
     val mediaItemDraft by viewModel.mediaItemDraft.collectAsState()
 
-
-    BackHandler {
-        onNavigate(NavEvent.Back)
-    }
     var showSelectorSheet by remember { mutableStateOf(false) }
     var showPickerSheet by remember { mutableStateOf(false) }
 
     val screenState by viewModel.screenState.collectAsState()
+
     val newCollectionEvent = remember {
         savedStateHandle.getStateFlow<String?>(
             "newCollectionName",
@@ -107,6 +105,12 @@ fun EditingScreen(
     }
 
     val error by viewModel.error.collectAsState()
+
+    val focusManager = LocalFocusManager.current
+
+    BackHandler {
+        onNavigate(NavEvent.Back)
+    }
 
     LaunchedEffect(error?.id) {
         val currentError = error ?: return@LaunchedEffect
@@ -122,8 +126,6 @@ fun EditingScreen(
             }
         }
     }
-
-    val focusManager = LocalFocusManager.current
 
     Scaffold(
         modifier = Modifier

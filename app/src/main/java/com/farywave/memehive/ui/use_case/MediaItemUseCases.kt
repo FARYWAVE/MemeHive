@@ -20,6 +20,18 @@ class MediaItemUseCases(
     private val trigramRepository: TrigramRepository,
     private val imageRepository: ImageRepository,
 ) {
+    suspend fun getMediaItemById(id: Long): MediaItem? {
+        return mediaItemRepository.getMediaItemById(id)
+    }
+
+    suspend fun getByCollectionId(collectionId: Long): List<MediaItem> {
+        return mediaItemRepository.getMediaItemsByCollectionId(collectionId)
+    }
+
+    suspend fun getImageSharingUri(imageId: Long): Uri {
+        return imageRepository.sharingUri(imageId)
+    }
+
     suspend fun createMediaItem(
         mediaItem: MediaItem,
         collectionIdsToAdd: Set<Long> = emptySet()
@@ -110,17 +122,5 @@ class MediaItemUseCases(
                 cleanup(imageIds.minus(null))
             }
         }
-    }
-
-    suspend fun getImageSharingUri(imageId: Long): Uri {
-        return imageRepository.sharingUri(imageId)
-    }
-
-    suspend fun getMediaItemById(id: Long): MediaItem? {
-        return mediaItemRepository.getMediaItemById(id)
-    }
-
-    suspend fun getByCollectionId(collectionId: Long): List<MediaItem> {
-        return mediaItemRepository.getMediaItemsByCollectionId(collectionId)
     }
 }

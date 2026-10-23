@@ -13,6 +13,14 @@ class CollectionUseCases(
     private val collectionRepository: CollectionRepository,
     private val imageRepository: ImageRepository,
 ) {
+    fun getAllCollections(): Flow<List<Collection>> {
+        return collectionRepository.getAllCollections()
+    }
+
+    suspend fun getCollectionIdsByMediaItem(mediaItemId: Long): Set<Long> {
+        return collectionRepository.getCollectionIdsByMediaItem(mediaItemId)
+    }
+
     suspend fun createCollection(collection: Collection): Collection {
         return imageRepository.withImageChanges { changes ->
             createCollection(collection, changes)
@@ -28,6 +36,10 @@ class CollectionUseCases(
 
             collection.copy(id = id, cover = image)
         }
+    }
+
+    suspend fun addItemsToCollection(mediaItemIds: Set<Long>, collectionId: Long): List<Long> {
+        return collectionRepository.insertCollectionEntries(mediaItemIds, collectionId)
     }
 
     suspend fun updateCollection(collection: Collection): Collection {
@@ -51,34 +63,22 @@ class CollectionUseCases(
         }
     }
 
-    suspend fun deleteCollection(collection: Collection) {
-        imageRepository.withImageCleanup { cleanup ->
-            db.withTransaction {
-                val coverId = collectionRepository.getCollectionCoverId(collection.id)
-                collectionRepository.deleteCollection(collection)
-                cleanup(setOf(coverId))
-            }
-        }
-    }
-
-    fun getAllCollections(): Flow<List<Collection>> {
-        return collectionRepository.getAllCollections()
-    }
-
-    suspend fun addItemsToCollection(mediaItemIds: Set<Long>, collectionId: Long): List<Long> {
-        return collectionRepository.insertCollectionEntries(mediaItemIds, collectionId)
-    }
-
-    suspend fun getCollectionIdsByMediaItem(mediaItemId: Long): Set<Long> {
-        return collectionRepository.getCollectionIdsByMediaItem(mediaItemId)
-    }
-
     suspend fun setCollectionCover(collectionId: Long, imageId: Long) {
         imageRepository.withImageCleanup { cleanup ->
             db.withTransaction {
                 val oldCoverId = collectionRepository.getCollectionCoverId(collectionId)
                 collectionRepository.setCollectionCover(collectionId, imageId)
                 cleanup(setOf(oldCoverId))
+            }
+        }
+    }
+
+    suspend fun deleteCollection(collection: Collection) {
+        imageRepository.withImageCleanup { cleanup ->
+            db.withTransaction {
+                val coverId = collectionRepository.getCollectionCoverId(collection.id)
+                collectionRepository.deleteCollection(collection)
+                cleanup(setOf(coverId))
             }
         }
     }

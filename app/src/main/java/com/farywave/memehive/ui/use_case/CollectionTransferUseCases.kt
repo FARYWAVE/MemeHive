@@ -172,25 +172,6 @@ class CollectionTransferUseCases(
         }
     }
 
-    private fun copyUriToFile(
-        uri: Uri,
-        destination: File
-    ) {
-        val input = context.contentResolver.openInputStream(uri)
-            ?: throw IOException("Could not open an image for export.")
-        input.use {
-            destination.outputStream().use { output ->
-                it.copyTo(output)
-            }
-        }
-    }
-
-    private fun createDirectory(directory: File) {
-        if (!directory.mkdirs() && !directory.isDirectory) {
-            throw IOException("Could not create directory: $directory")
-        }
-    }
-
     private suspend fun zipDirectory(
         sourceDir: File,
         outputStream: OutputStream
@@ -220,6 +201,25 @@ class CollectionTransferUseCases(
 
                     zipOut.closeEntry()
                 }
+        }
+    }
+
+    private fun copyUriToFile(
+        uri: Uri,
+        destination: File
+    ) {
+        val input = context.contentResolver.openInputStream(uri)
+            ?: throw IOException("Could not open an image for export.")
+        input.use {
+            destination.outputStream().use { output ->
+                it.copyTo(output)
+            }
+        }
+    }
+
+    private fun createDirectory(directory: File) {
+        if (!directory.mkdirs() && !directory.isDirectory) {
+            throw IOException("Could not create directory: $directory")
         }
     }
 

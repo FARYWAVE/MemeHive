@@ -68,6 +68,7 @@ fun HiveScreen(
     onNavigate: (NavEvent) -> Unit
 ) {
     val context = LocalContext.current
+
     val viewModel: HiveViewModel =
         (context.applicationContext as MemeHiveApplication).container.let {
             viewModel(
@@ -81,21 +82,9 @@ fun HiveScreen(
         }
 
     val error by viewModel.error.collectAsStateWithLifecycle()
-    LaunchedEffect(error?.id) {
-        val currentError = error ?: return@LaunchedEffect
-        // TODO: Display currentError.messageResId to the user before acknowledging it.
-        viewModel.clearError(currentError.id)
-    }
-
     val transferMessages by viewModel.transferMessages.collectAsStateWithLifecycle()
-    val transferMessage = transferMessages.firstOrNull()
 
-    LaunchedEffect(transferMessage) {
-        transferMessage?.let { message ->
-            // TODO: Display the collection transfer success message.
-            viewModel.onTransferMessageShown(message.id)
-        }
-    }
+    val transferMessage = transferMessages.firstOrNull()
 
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -146,6 +135,20 @@ fun HiveScreen(
         }
     }
 
+    val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(error?.id) {
+        val currentError = error ?: return@LaunchedEffect
+        // TODO: Display currentError.messageResId to the user before acknowledging it.
+        viewModel.clearError(currentError.id)
+    }
+
+    LaunchedEffect(transferMessage) {
+        transferMessage?.let { message ->
+            // TODO: Display the collection transfer success message.
+            viewModel.onTransferMessageShown(message.id)
+        }
+    }
 
     LaunchedEffect(editedCollectionEvent) {
         editedCollectionEvent.collect { event ->
@@ -172,8 +175,6 @@ fun HiveScreen(
             }
         }
     }
-
-    val focusManager = LocalFocusManager.current
 
     Scaffold(
         modifier = Modifier

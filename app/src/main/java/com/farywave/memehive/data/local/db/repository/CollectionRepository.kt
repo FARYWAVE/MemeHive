@@ -17,9 +17,37 @@ class CollectionRepository(
     private val resolveImage: (ImageEntity) -> Image,
     private val collectionEntryDao: CollectionEntryDao,
 ) {
+    fun getAllCollections(): Flow<List<Collection>> {
+        return collectionDao.getAll()
+            .map { collections ->
+                collections.map { it.toModel(it.coverImage?.let(resolveImage)) }
+            }
+            .distinctUntilChanged()
+    }
+
+    suspend fun getCollectionCoverId(collectionId: Long): Long? {
+        return collectionDao.getCoverId(collectionId)
+    }
+
+    suspend fun getCollectionIdsByMediaItem(mediaItemId: Long): Set<Long> {
+        return collectionEntryDao.getByMediaItem(mediaItemId).map { it.collectionId }.toSet()
+    }
+
     suspend fun insertCollection(collection: Collection): Long {
         return collectionDao.insert(
             collection.toEntity()
+        )
+    }
+
+    suspend fun insertCollectionEntries(mediaItemIds: Set<Long>, collectionId: Long): List<Long> {
+        return collectionEntryDao.insert(
+            mediaItemIds.map { CollectionEntryEntity(collectionId, it) }
+        )
+    }
+
+    suspend fun addItemToCollections(mediaItemId: Long, collectionIds: Set<Long>): List<Long> {
+        return collectionEntryDao.insert(
+            collectionIds.map { CollectionEntryEntity(it, mediaItemId) }
         )
     }
 
@@ -30,45 +58,17 @@ class CollectionRepository(
         if (affectedCount == 0) throw IllegalStateException("Failed to update collection: ${collection.id}")
     }
 
-    suspend fun deleteCollection(collection: Collection) {
-        collectionEntryDao.deleteByCollection(collection.id)
-        collectionDao.delete(collection.id)
-    }
-
-    fun getAllCollections(): Flow<List<Collection>> {
-        return collectionDao.getAll()
-            .map { collections ->
-                collections.map { it.toModel(it.coverImage?.let(resolveImage)) }
-            }
-            .distinctUntilChanged()
-    }
-
-    suspend fun insertCollectionEntries(mediaItemIds: Set<Long>, collectionId: Long): List<Long> {
-        return collectionEntryDao.insert(
-            mediaItemIds.map { CollectionEntryEntity(collectionId, it) }
-        )
-    }
-
-    suspend fun getCollectionIdsByMediaItem(mediaItemId: Long): Set<Long> {
-        return collectionEntryDao.getByMediaItem(mediaItemId).map { it.collectionId }.toSet()
-    }
-
-    suspend fun deleteCollectionEntriesByItem(mediaItemId: Long) {
-        collectionEntryDao.deleteByMediaItem(mediaItemId)
-    }
-
-    suspend fun addItemToCollections(mediaItemId: Long, collectionIds: Set<Long>): List<Long> {
-        return collectionEntryDao.insert(
-            collectionIds.map { CollectionEntryEntity(it, mediaItemId) }
-        )
-    }
-
     suspend fun setCollectionCover(collectionId: Long, imageId: Long) {
         val affectedCount = collectionDao.setCover(collectionId, imageId)
         if (affectedCount == 0) throw IllegalStateException("Failed to set collection cover: $collectionId")
     }
 
-    suspend fun getCollectionCoverId(collectionId: Long): Long? {
-        return collectionDao.getCoverId(collectionId)
+    suspend fun deleteCollection(collection: Collection) {
+        collectionEntryDao.deleteByCollection(collection.id)
+        collectionDao.delete(collection.id)
+    }
+
+    suspend fun deleteCollectionEntriesByItem(mediaItemId: Long) {
+        collectionEntryDao.deleteByMediaItem(mediaItemId)
     }
 }

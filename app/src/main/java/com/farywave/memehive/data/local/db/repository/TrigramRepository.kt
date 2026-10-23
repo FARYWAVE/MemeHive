@@ -12,12 +12,12 @@ class TrigramRepository(
         )
     }
 
-    suspend fun deleteByMediaItemId(mediaItemId: Long): Unit {
-        trigramDao.deleteByMediaItemId(mediaItemId)
-    }
-
     suspend fun updateTrigramsForMediaItem(mediaItemId: Long, trigrams: Set<String>) {
         deleteByMediaItemId(mediaItemId)
         insertAll(trigrams, mediaItemId)
+    }
+
+    suspend fun deleteByMediaItemId(mediaItemId: Long): Unit {
+        trigramDao.deleteByMediaItemId(mediaItemId)
     }
 }

@@ -59,6 +59,17 @@ fun AboutApp(onDismissRequest: () -> Unit) {
     }
 }
 
+@Composable
+private fun DirectorySize(directory: File) {
+    val size by produceState<Long?>(initialValue = null, key1 = directory) {
+        value = DeviceTools.dirSize(directory)
+    }
+    Text(
+        text = size?.let { ModelTools.formatBytes(it) } ?: "…",
+        style = MaterialTheme.typography.bodyMedium,
+        color = LocalAppColors.current.contentPrimary
+    )
+}
 
 enum class AboutAppEntry(@StringRes val title: Int, val content: @Composable () -> Unit) {
     VERSION(title = R.string.about_app_version, content = {
@@ -109,18 +120,6 @@ enum class AboutAppEntry(@StringRes val title: Int, val content: @Composable () 
             )
         }
     })
-}
-
-@Composable
-private fun DirectorySize(directory: File) {
-    val size by produceState<Long?>(initialValue = null, key1 = directory) {
-        value = DeviceTools.dirSize(directory)
-    }
-    Text(
-        text = size?.let { ModelTools.formatBytes(it) } ?: "…",
-        style = MaterialTheme.typography.bodyMedium,
-        color = LocalAppColors.current.contentPrimary
-    )
 }
 
 enum class AboutAppAction(@StringRes override val text: Int, override val type: ActionType) :

@@ -36,18 +36,9 @@ class HiveViewModel(
     private val _error = MutableStateFlow<UiError?>(null)
     val error = _error.asStateFlow()
 
-    fun clearError(id: String) {
-        _error.update { current -> current?.takeUnless { it.id == id } }
-    }
-
-    private fun reportError(@StringRes message: Int, failure: Throwable) {
-        if (failure is CancellationException) throw failure
-        Log.w("HiveViewModel", "Screen operation failed", failure)
-        _error.value = UiError(message)
-    }
-
     private val _transferMessages = MutableStateFlow<List<CollectionTransferMessage>>(emptyList())
     val transferMessages = _transferMessages.asStateFlow()
+
     private var nextTransferMessageId = 0L
 
     private val _collections = MutableStateFlow<List<Collection>>(emptyList())
@@ -78,20 +69,6 @@ class HiveViewModel(
         loadCollections()
     }
 
-    private fun loadCollections() {
-        viewModelScope.launch {
-            collectionUseCases.getAllCollections()
-                .catch { reportError(R.string.collections_load_error, it) }
-                .collect { collections ->
-                    _collections.value = collections
-                    val selectedId = _selectedCollectionId.value
-                    if (selectedId != null && collections.none { it.id == selectedId }) {
-                        onCollectionSelected(null)
-                    }
-                }
-        }
-    }
-
     fun onSearchQueryChanged(query: String) {
         if (_searchQuery.value == query) return
         disableMassEditingMode()
@@ -104,60 +81,23 @@ class HiveViewModel(
         _selectedCollectionId.value = collectionId
     }
 
-    fun disableMassEditingMode() {
-        _isMassEditingMode.value = false
-        _selectedMediaItemIds.value = emptySet()
-    }
-
     fun enableMassEditingMode() {
         _isMassEditingMode.value = true
     }
 
-    fun toggleItemSelection(itemId: Long) {
-        if (itemId in _selectedMediaItemIds.value) _selectedMediaItemIds.value -= itemId
-        else _selectedMediaItemIds.value += itemId
-        if (_selectedMediaItemIds.value.isEmpty()) disableMassEditingMode()
+    fun disableMassEditingMode() {
+        _isMassEditingMode.value = false
+        _selectedMediaItemIds.value = emptySet()
     }
 
     fun selectItem(itemId: Long) {
         _selectedMediaItemIds.value += itemId
     }
 
-    fun createCollection(name: String, cover: Uri?) {
-        launchWithError(R.string.collection_create_error) {
-            collectionUseCases.createCollection(
-                Collection(
-                    id = 0,
-                    name = name,
-                    cover = cover?.let { Image(uri = it) },
-                    mediaItemCount = 0
-                )
-            )
-        }
-    }
-
-    fun deleteSelectedMediaItems() {
-        val selectedIds = _selectedMediaItemIds.value
-        launchWithError(R.string.media_delete_error) {
-            mediaItemUseCases.deleteMediaItemsByIds(selectedIds)
-        }
-    }
-
-    fun duplicateSelectedMediaItems() {
-        val selected = mediaItems.value.filter { it.id in _selectedMediaItemIds.value }
-
-        launchWithError(R.string.media_duplicate_error) {
-            selected.forEach {
-                mediaItemUseCases.createMediaItem(it.copy(id = 0))
-            }
-        }
-    }
-
-    fun addSelectedMediaItemsToCollection(collection: Collection) {
-        val selectedIds = _selectedMediaItemIds.value
-        launchWithError(R.string.collection_add_items_error) {
-            collectionUseCases.addItemsToCollection(selectedIds, collection.id)
-        }
+    fun toggleItemSelection(itemId: Long) {
+        if (itemId in _selectedMediaItemIds.value) _selectedMediaItemIds.value -= itemId
+        else _selectedMediaItemIds.value += itemId
+        if (_selectedMediaItemIds.value.isEmpty()) disableMassEditingMode()
     }
 
     fun onMassImport(uris: List<Uri>) {
@@ -180,6 +120,43 @@ class HiveViewModel(
         }
     }
 
+    fun duplicateSelectedMediaItems() {
+        val selected = mediaItems.value.filter { it.id in _selectedMediaItemIds.value }
+
+        launchWithError(R.string.media_duplicate_error) {
+            selected.forEach {
+                mediaItemUseCases.createMediaItem(it.copy(id = 0))
+            }
+        }
+    }
+
+    fun addSelectedMediaItemsToCollection(collection: Collection) {
+        val selectedIds = _selectedMediaItemIds.value
+        launchWithError(R.string.collection_add_items_error) {
+            collectionUseCases.addItemsToCollection(selectedIds, collection.id)
+        }
+    }
+
+    fun deleteSelectedMediaItems() {
+        val selectedIds = _selectedMediaItemIds.value
+        launchWithError(R.string.media_delete_error) {
+            mediaItemUseCases.deleteMediaItemsByIds(selectedIds)
+        }
+    }
+
+    fun createCollection(name: String, cover: Uri?) {
+        launchWithError(R.string.collection_create_error) {
+            collectionUseCases.createCollection(
+                Collection(
+                    id = 0,
+                    name = name,
+                    cover = cover?.let { Image(uri = it) },
+                    mediaItemCount = 0
+                )
+            )
+        }
+    }
+
     fun updateCollection(collectionId: Long, newName: String?, newCover: Uri?) {
         launchWithError(R.string.collection_update_error) {
             val collection = collections.value.find { it.id == collectionId } ?: return@launchWithError
@@ -199,20 +176,38 @@ class HiveViewModel(
         }
     }
 
-    fun exportCollection(collection: Collection, uri: Uri) {
-        launchCollectionTransfer(R.string.toast_collection_exported) {
-            collectionTransferUseCases.exportCollection(collection, uri)
-        }
-    }
-
     fun importCollection(uri: Uri) {
         launchCollectionTransfer(R.string.import_successful) {
             collectionTransferUseCases.importCollection(uri)
         }
     }
 
+    fun exportCollection(collection: Collection, uri: Uri) {
+        launchCollectionTransfer(R.string.toast_collection_exported) {
+            collectionTransferUseCases.exportCollection(collection, uri)
+        }
+    }
+
     fun onTransferMessageShown(id: Long) {
         _transferMessages.update { messages -> messages.filterNot { it.id == id } }
+    }
+
+    fun clearError(id: String) {
+        _error.update { current -> current?.takeUnless { it.id == id } }
+    }
+
+    private fun loadCollections() {
+        viewModelScope.launch {
+            collectionUseCases.getAllCollections()
+                .catch { reportError(R.string.collections_load_error, it) }
+                .collect { collections ->
+                    _collections.value = collections
+                    val selectedId = _selectedCollectionId.value
+                    if (selectedId != null && collections.none { it.id == selectedId }) {
+                        onCollectionSelected(null)
+                    }
+                }
+        }
     }
 
     private fun launchCollectionTransfer(
@@ -236,6 +231,11 @@ class HiveViewModel(
         }
     }
 
+    private fun addTransferMessage(@StringRes message: Int) {
+        val notification = CollectionTransferMessage(nextTransferMessageId++, message)
+        _transferMessages.update { it + notification }
+    }
+
     private fun reportTransferFailure(@StringRes message: Int, error: Exception) {
         reportError(message, error)
     }
@@ -252,9 +252,10 @@ class HiveViewModel(
         }
     }
 
-    private fun addTransferMessage(@StringRes message: Int) {
-        val notification = CollectionTransferMessage(nextTransferMessageId++, message)
-        _transferMessages.update { it + notification }
+    private fun reportError(@StringRes message: Int, failure: Throwable) {
+        if (failure is CancellationException) throw failure
+        Log.w("HiveViewModel", "Screen operation failed", failure)
+        _error.value = UiError(message)
     }
 }
 

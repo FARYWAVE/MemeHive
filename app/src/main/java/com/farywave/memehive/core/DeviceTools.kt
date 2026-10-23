@@ -23,6 +23,15 @@ import java.io.IOException
 import java.io.InputStream
 
 object DeviceTools {
+    fun getAppVersion(context: Context): String {
+        return try {
+            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            "${pInfo.versionName}"
+        } catch (e: Exception) {
+            "unknown"
+        }
+    }
+
     suspend fun getFileName(
         context: Context,
         uri: Uri,
@@ -34,15 +43,6 @@ object DeviceTools {
             if (it.moveToFirst() && index != -1) {
                 it.getString(index)
             } else null
-        }
-    }
-
-    fun getAppVersion(context: Context): String {
-        return try {
-            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            "${pInfo.versionName}"
-        } catch (e: Exception) {
-            "unknown"
         }
     }
 
@@ -65,7 +65,6 @@ object DeviceTools {
             e.printStackTrace()
         }
     }
-
 
     @Composable
     fun requestMedia(onGranted: (uri: Uri?) -> Unit) = rememberLauncherForActivityResult(

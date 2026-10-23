@@ -11,16 +11,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CollectionEntryDao {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(collectionEntryEntity: CollectionEntryEntity): Long
-
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(collectionEntryEntities: List<CollectionEntryEntity>): List<Long>
-
-
-    @Query("DELETE FROM collection_entries WHERE collection_id = :collectionId AND media_item_id = :mediaItemId")
-    suspend fun delete(collectionId: Long, mediaItemId: Long)
-
     @Query("""
         SELECT * FROM collection_entries
         WHERE collection_id = :collectionId
@@ -33,17 +23,26 @@ interface CollectionEntryDao {
     """)
     suspend fun getIdsByCollection(collectionId: Long): List<Long>
 
-    @Query("""
-        DELETE FROM collection_entries
-        WHERE collection_id = :collectionId
-    """)
-    suspend fun deleteByCollection(collectionId: Long)
-
     @Query("SELECT COUNT(*) FROM collection_entries WHERE collection_id = :collectionId")
     fun getEntryCount(collectionId: Long): Flow<Int>
 
     @Query("SELECT * FROM collection_entries WHERE media_item_id = :mediaItemId")
     suspend fun getByMediaItem(mediaItemId: Long): List<CollectionEntryEntity>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(collectionEntryEntity: CollectionEntryEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(collectionEntryEntities: List<CollectionEntryEntity>): List<Long>
+
+    @Query("DELETE FROM collection_entries WHERE collection_id = :collectionId AND media_item_id = :mediaItemId")
+    suspend fun delete(collectionId: Long, mediaItemId: Long)
+
+    @Query("""
+        DELETE FROM collection_entries
+        WHERE collection_id = :collectionId
+    """)
+    suspend fun deleteByCollection(collectionId: Long)
 
     @Query("DELETE FROM collection_entries WHERE media_item_id = :mediaItemId")
     suspend fun deleteByMediaItem(mediaItemId: Long)

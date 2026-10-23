@@ -40,6 +40,7 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 @Composable
 fun PickerScreen(onItemClicked: (mediaItem: MediaItem, onFailure: () -> Unit) -> Unit) {
     val context = LocalContext.current
+
     val viewModel: PickerViewModel =
         (context.applicationContext as MemeHiveApplication).container.let {
             viewModel(
@@ -48,13 +49,14 @@ fun PickerScreen(onItemClicked: (mediaItem: MediaItem, onFailure: () -> Unit) ->
         }
 
     val error by viewModel.error.collectAsStateWithLifecycle()
+
+    val focusManager = LocalFocusManager.current
+
     LaunchedEffect(error?.id) {
         val currentError = error ?: return@LaunchedEffect
         // TODO: Display currentError.messageResId to the user before acknowledging it.
         viewModel.clearError(currentError.id)
     }
-
-    val focusManager = LocalFocusManager.current
 
     Scaffold(
         modifier = Modifier

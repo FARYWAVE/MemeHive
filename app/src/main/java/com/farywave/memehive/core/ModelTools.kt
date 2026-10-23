@@ -22,9 +22,8 @@ object ModelTools {
     }
 
     fun encode(arg: String?) = Uri.encode(arg ?: "")
-    fun decode(arg: String?) = Uri.decode(arg ?: "")
 
-    fun quickLog(message: String) = Log.d("MH_DEBUG", message)
+    fun decode(arg: String?) = Uri.decode(arg ?: "")
 
     fun generateTrigrams(text: String): Set<String> {
         val normalized = text.lowercase()
@@ -37,4 +36,6 @@ object ModelTools {
 
         return result
     }
+
+    fun quickLog(message: String) = Log.d("MH_DEBUG", message)
 }

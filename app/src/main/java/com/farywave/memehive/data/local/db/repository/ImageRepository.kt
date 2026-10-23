@@ -31,6 +31,22 @@ class ImageRepository(
         return storage.sharingUri(image.name)
     }
 
+    suspend fun insertOrGet(uri: Uri, changes: ImageChanges): Image {
+        val file = storage.copy(
+            uri = uri,
+            onFileCreated = changes::recordCreated,
+        )
+
+        val sha256 = file.toUri().sha256(context, ioDispatcher)
+
+        val imageEntity = imageDao.getBySHA256(sha256)
+        if (imageEntity != null) return toModel(imageEntity)
+
+        val id = imageDao.insert(ImageEntity(0, file.name, sha256))
+
+        return Image(id, file.toUri())
+    }
+
     suspend fun <T> withImageChanges(block: suspend (ImageChanges) -> T): T {
         return ImageChanges.track(
             ioDispatcher = ioDispatcher,
@@ -69,21 +85,5 @@ class ImageRepository(
         }
 
         return result
-    }
-
-    suspend fun insertOrGet(uri: Uri, changes: ImageChanges): Image {
-        val file = storage.copy(
-            uri = uri,
-            onFileCreated = changes::recordCreated,
-        )
-
-        val sha256 = file.toUri().sha256(context, ioDispatcher)
-
-        val imageEntity = imageDao.getBySHA256(sha256)
-        if (imageEntity != null) return toModel(imageEntity)
-
-        val id = imageDao.insert(ImageEntity(0, file.name, sha256))
-
-        return Image(id, file.toUri())
     }
 }

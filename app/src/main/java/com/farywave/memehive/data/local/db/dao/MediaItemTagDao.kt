@@ -9,12 +9,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MediaItemTagDao {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(mediaItemTagEntity: MediaItemTagEntity): Long
-
-    @Query("DELETE FROM media_item_tags WHERE tag_id = :tagId AND media_item_id = :mediaItemId")
-    suspend fun delete(tagId: Long, mediaItemId: Long)
-
     @Query(
         """
         SELECT * FROM media_item_tags 
@@ -22,6 +16,12 @@ interface MediaItemTagDao {
     """
     )
     fun getByTag(tagId: Long): Flow<List<MediaItemTagEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(mediaItemTagEntity: MediaItemTagEntity): Long
+
+    @Query("DELETE FROM media_item_tags WHERE tag_id = :tagId AND media_item_id = :mediaItemId")
+    suspend fun delete(tagId: Long, mediaItemId: Long)
 
     @Query(
         """

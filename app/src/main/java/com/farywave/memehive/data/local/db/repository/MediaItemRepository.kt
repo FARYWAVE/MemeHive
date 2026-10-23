@@ -20,10 +20,6 @@ class MediaItemRepository(
             .distinctUntilChanged()
     }
 
-    suspend fun insertMediaItem(mediaItem: MediaItem): Long {
-        return mediaItemDao.insert(mediaItem.toEntity())
-    }
-
     suspend fun getMediaItemById(id: Long): MediaItem? {
         return mediaItemDao.get(id)?.let { it.toMediaItem(it.image?.let(resolveImage)) }
     }
@@ -31,6 +27,20 @@ class MediaItemRepository(
     suspend fun getMediaItemsByCollectionId(collectionId: Long): List<MediaItem> {
         return mediaItemDao.getByCollection(collectionId)
             .map { it.toMediaItem(it.image?.let(resolveImage)) }
+    }
+
+    suspend fun getMediaItemImageId(mediaItemId: Long): Long? {
+        return mediaItemDao.getImageId(mediaItemId)
+    }
+
+    suspend fun getMediaItemImageIds(mediaItemIds: Set<Long>): Set<Long?> {
+        return mediaItemIds.chunked(1000)
+            .map { mediaItemDao.getImageIds(it.toSet()) }
+            .flatten().toSet()
+    }
+
+    suspend fun insertMediaItem(mediaItem: MediaItem): Long {
+        return mediaItemDao.insert(mediaItem.toEntity())
     }
 
     suspend fun updateMediaItem(mediaItem: MediaItem): Unit {
@@ -44,15 +54,5 @@ class MediaItemRepository(
 
     suspend fun deleteMediaItemsByIds(mediaItemIds: Set<Long>) {
         for (chunk in mediaItemIds.chunked(1000)) mediaItemDao.deleteByIds(chunk.toSet())
-    }
-
-    suspend fun getMediaItemImageId(mediaItemId: Long): Long? {
-        return mediaItemDao.getImageId(mediaItemId)
-    }
-
-    suspend fun getMediaItemImageIds(mediaItemIds: Set<Long>): Set<Long?> {
-        return mediaItemIds.chunked(1000)
-            .map { mediaItemDao.getImageIds(it.toSet()) }
-            .flatten().toSet()
     }
 }

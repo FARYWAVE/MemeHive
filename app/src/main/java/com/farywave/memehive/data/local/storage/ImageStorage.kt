@@ -57,12 +57,6 @@ class ImageStorage(
             return File(directory, name)
         }
 
-        suspend fun deleteFile(file: File, ioDispatcher: CoroutineDispatcher) {
-            withContext(ioDispatcher) {
-                if (!file.delete() && file.exists()) throw IOException("Could not delete image: $file")
-            }
-        }
-
         internal suspend fun copyImageToDirectory(
             directory: File,
             extension: String,
@@ -104,6 +98,12 @@ class ImageStorage(
                     }
                 }
                 throw error
+            }
+        }
+
+        suspend fun deleteFile(file: File, ioDispatcher: CoroutineDispatcher) {
+            withContext(ioDispatcher) {
+                if (!file.delete() && file.exists()) throw IOException("Could not delete image: $file")
             }
         }
     }

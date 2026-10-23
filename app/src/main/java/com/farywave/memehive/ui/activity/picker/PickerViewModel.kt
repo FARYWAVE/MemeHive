@@ -26,16 +26,6 @@ class PickerViewModel(
     private val _error = MutableStateFlow<UiError?>(null)
     val error = _error.asStateFlow()
 
-    fun clearError(id: String) {
-        _error.update { current -> current?.takeUnless { it.id == id } }
-    }
-
-    private fun reportError(@StringRes message: Int, failure: Throwable) {
-        if (failure is CancellationException) throw failure
-        Log.w("PickerViewModel", "Screen operation failed", failure)
-        _error.value = UiError(message)
-    }
-
     private val _collections = MutableStateFlow<List<Collection>>(emptyList())
     val collections = _collections.asStateFlow()
 
@@ -54,6 +44,22 @@ class PickerViewModel(
         loadCollections()
     }
 
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun onCollectionSelected(collectionId: Long?) {
+        _selectedCollectionId.value = collectionId
+    }
+
+    fun reportCopyFailure() {
+        _error.value = UiError(R.string.image_copy_failed)
+    }
+
+    fun clearError(id: String) {
+        _error.update { current -> current?.takeUnless { it.id == id } }
+    }
+
     private fun loadCollections() {
         viewModelScope.launch {
             collectionUseCases.getAllCollections()
@@ -68,15 +74,9 @@ class PickerViewModel(
         }
     }
 
-    fun reportCopyFailure() {
-        _error.value = UiError(R.string.image_copy_failed)
-    }
-
-    fun onSearchQueryChanged(query: String) {
-        _searchQuery.value = query
-    }
-
-    fun onCollectionSelected(collectionId: Long?) {
-        _selectedCollectionId.value = collectionId
+    private fun reportError(@StringRes message: Int, failure: Throwable) {
+        if (failure is CancellationException) throw failure
+        Log.w("PickerViewModel", "Screen operation failed", failure)
+        _error.value = UiError(message)
     }
 }

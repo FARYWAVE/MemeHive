@@ -23,8 +23,8 @@ import com.farywave.memehive.data.local.db.entity.*
 abstract class MemeHiveDatabase : RoomDatabase() {
 
     abstract fun mediaItemDao(): MediaItemDao
-    abstract fun mediaItemTagDao(): MediaItemTagDao
     abstract fun tagDao(): TagDao
+    abstract fun mediaItemTagDao(): MediaItemTagDao
     abstract fun mediaItemTrigramDao(): MediaItemTrigramDao
 
     abstract fun collectionDao(): CollectionDao
