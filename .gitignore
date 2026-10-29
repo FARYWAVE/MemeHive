@@ -19,3 +19,6 @@ local.properties
 /gradle/gradle-daemon-jvm.properties
 /docs/navigation.md
 /app/src/androidTest/java/com/farywave/memehive/data/local/db/README.md
+
+# Kotlin compiler session files
+/.kotlin/

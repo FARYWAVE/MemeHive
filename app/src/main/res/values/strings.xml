@@ -1,79 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <string name="action_about">About</string>
+    <string name="action_add_to_collection">Add to collection</string>
+    <string name="action_back_to_library">Back to library</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_copy_image">Copy image</string>
+    <string name="action_create">Create</string>
+    <string name="action_create_collection">New collection</string>
+    <string name="action_create_media">New media</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_discard">Discard</string>
+    <string name="action_duplicate">Duplicate</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_edit_collection">Edit collection</string>
+    <string name="action_enable_picker">Enable quick picker</string>
+    <string name="action_export">Export</string>
+    <string name="action_import_collection">Import collection</string>
+    <string name="action_import_images">Import images</string>
+    <string name="action_remove_image">Remove image</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_save">Save</string>
+    <string name="action_set_as_cover">Set as cover</string>
+    <string name="action_settings">Settings</string>
+
     <string name="app_name" translatable="false">MemeHive</string>
     <string name="app_name_p1" translatable="false">Meme</string>
     <string name="app_name_p2" translatable="false">Hive</string>
-    <string name="media_search_hint">Search Media</string>
-    <string name="editing_caption_hint">Caption</string>
-    <string name="editing_description_hint">Description</string>
-    <string name="editing_tags_hint">Tags</string>
-    <string name="action_duplicate">Duplicate</string>
-    <string name="action_add_to_collection">Add to Collection</string>
-    <string name="action_delete">Delete</string>
-    <string name="action_import_collection">Import Collection</string>
-    <string name="action_app_info">About App</string>
-    <string name="action_create_media_item">New Media</string>
-    <string name="action_create_collection">New Collection</string>
-    <string name="action_mass_import">Mass Import</string>
-    <string name="header_collections">Collections</string>
-    <string name="collection_search_hint">Search Collections</string>
-    <string name="collection_items_count">Items</string>
-    <string name="new_collection_name_hint">Name</string>
-    <string name="button_cancel">Cancel</string>
-    <string name="button_create">Create</string>
-    <string name="about_app_version">Version</string>
-    <string name="about_app_source_code">Source Code</string>
-    <string name="about_app_created_by">Developer</string>
-    <string name="developer" translatable="false">FARYWAVE</string>
-    <string name="link_source_code" translatable="false">https://github.com/FARYWAVE/MemeHive</string>
+
+    <string name="error_collection_add_items">Could not add the items to the collection. Try again.</string>
+    <string name="error_collection_archive">This collection archive is invalid or has missing images.</string>
+    <string name="error_collection_cover">Could not update the collection cover. Try again.</string>
+    <string name="error_collection_create">Could not create the collection. Try again.</string>
+    <string name="error_collection_delete">Could not delete the collection. Try again.</string>
+    <string name="error_collection_name_required">Enter a collection name.</string>
+    <string name="error_collection_transfer">Could not import or export the collection. Try again.</string>
+    <string name="error_collection_transfer_database">Could not load or save the collection. Try again.</string>
+    <string name="error_collection_transfer_io">Could not read or save the collection files. Check file access and available storage.</string>
+    <string name="error_collection_transfer_permission">Access to the selected file was denied. Select it again and retry.</string>
+    <string name="error_collection_update">Could not save the collection. Try again.</string>
+    <string name="error_collections_load">Could not load collections.</string>
+    <string name="error_image_copy">Could not copy the image. It may no longer be available.</string>
+    <string name="error_image_required">Choose and save an image before setting a cover.</string>
+    <string name="error_image_unavailable">This image cannot be read. Select it again or choose another image.</string>
+    <string name="error_library_load">Could not load your library.</string>
+    <string name="error_link_open">Could not open the link. Check that a browser is installed.</string>
+    <string name="error_media_delete">Could not delete the selected media. Try again.</string>
+    <string name="error_media_duplicate">Could not duplicate this item. Try again.</string>
+    <string name="error_media_duplicate_partial">Could not duplicate all selected items. Some duplicates may have been created.</string>
+    <string name="error_media_import_partial">Import was incomplete. Some images may have been saved without being added to the selected collection.</string>
+    <string name="error_media_load">Could not load this item.</string>
+    <string name="error_media_missing">This item no longer exists. Return to your library.</string>
+    <string name="error_media_save">Could not save changes. Try again.</string>
+    <string name="error_notification_enable">Could not enable the quick picker. Try again.</string>
+    <string name="error_notification_permission">Notifications are blocked. Allow them in settings to enable the quick picker.</string>
+    <string name="error_picker_open">Could not open the file picker. Try again.</string>
+    <string name="error_settings_open">Could not open notification settings.</string>
+
+    <string name="hint_collection_name">Name</string>
+    <string name="hint_collection_search">Search collections</string>
+    <string name="hint_media_caption">Caption</string>
+    <string name="hint_media_description">Description</string>
+    <string name="hint_media_search">Search media</string>
+    <string name="hint_media_tags">Tags</string>
+
+    <string name="label_all_collections">All</string>
+    <string name="label_app_version">Version</string>
+    <string name="label_cache">Cache</string>
+    <string name="label_developer">Developer</string>
+    <string name="label_developer_name" translatable="false">FARYWAVE</string>
+    <string name="label_github" translatable="false">GitHub</string>
+    <string name="label_loading">Loading…</string>
+    <string name="label_media_item">Media item</string>
+    <string name="label_no_image">No image</string>
+    <string name="label_source_code">Source code</string>
+    <string name="label_storage">Storage</string>
+    <string name="label_unavailable">Unavailable</string>
+
     <string name="link_developer" translatable="false">https://github.com/FARYWAVE</string>
-    <string name="git_hub" translatable="false">GitHub</string>
-    <string name="about_app_storage">Storage</string>
-    <string name="about_app_cache">Cache</string>
-    <string name="megabyte">Mb</string>
-    <string name="kilobyte">Kb</string>
-    <string name="gigabyte">Gb</string>
-    <string name="__byte">B</string>
-    <string name="action_rename">Rename</string>
-    <string name="action_edit_collection">Edit Collection</string>
-    <string name="action_set_cover">Set Cover</string>
-    <string name="action_edit">Edit</string>
-    <string name="hive_item" translatable="false">Hive Item</string>
-    <string name="no_notifications_perm_error">Please Grant Permission to send Notifications to MemeHive</string>
-    <string name="action_enable_picker">Enable Picker</string>
-    <string name="picket_notification_text">Tap to open Hive</string>
-    <string name="copied_to_clipboard">Copied To Clipboard</string>
-    <string name="action_export">Export</string>
-    <string name="action_set_as_cover">Set as Cover</string>
-    <string name="toast_collection_exported">Export Successful</string>
-    <string name="import_error">Couldn\'t unzip Collection</string>
-    <string name="import_successful">Successfully imported</string>
-    <string name="import_invalid_archive">This file is not a valid collection archive, or some images are missing.</string>
-    <string name="collection_transfer_io_error">Couldn\'t read or save the collection files. Check that the files are available and there is enough storage space.</string>
-    <string name="collection_transfer_permission_error">MemeHive doesn\'t have permission to access the selected file. Select it again and retry.</string>
-    <string name="collection_transfer_database_error">Couldn\'t load or save the collection. Please try again.</string>
-    <string name="all_collection_name">All</string>
-    <string name="image_copy_failed">Could not copy the image. It may no longer be available.</string>
-    <string name="editing_save_error">Couldn\'t save changes. Please try again.</string>
-    <string name="media_load_error">Could not load media. Please try again.</string>
-    <string name="collections_load_error">Could not load collections. Please try again.</string>
-    <string name="collection_create_error">Could not create the collection. Please try again.</string>
-    <string name="media_delete_error">Could not delete the selected media. Please try again.</string>
-    <string name="media_duplicate_error">Could not duplicate all selected media. Some items may have been duplicated.</string>
-    <string name="collection_add_items_error">Could not add media to the collection. Please try again.</string>
-    <string name="media_import_error">Could not import all images. Some images may have been imported.</string>
-    <string name="collection_update_error">Could not update the collection. Please try again.</string>
-    <string name="collection_delete_error">Could not delete the collection. Please try again.</string>
-    <string name="collection_name_required">Enter a collection name.</string>
-    <string name="collection_remove_cover">Remove cover</string>
-    <string name="discard_changes_title">Discard changes?</string>
-    <string name="discard_changes_message">Your unsaved changes will be lost.</string>
-    <string name="discard_changes_confirm">Discard</string>
-    <string name="remove_image">Remove image</string>
-    <string name="browse_retry">Could not load library. Tap to retry.</string>
-    <string name="media_search_empty_title">Nothing popped up</string>
-    <string name="media_search_empty_message">Try a different word or a shorter search.</string>
-    <string name="media_library_empty_title">Your meme collection starts here</string>
-    <string name="media_library_empty_message">Add your first meme and make yourself at home.</string>
-    <string name="copy_to_clipboard">Copy to clipboard</string>
-    <string name="action_save">Save</string>
+    <string name="link_source_code" translatable="false">https://github.com/FARYWAVE/MemeHive</string>
+
+    <string name="message_library_empty">Add your first meme and make yourself at home.</string>
+    <string name="message_search_empty">Try a different word or a shorter search.</string>
+    <string name="message_unsaved_changes">Save your changes before leaving, or discard them.</string>
+
+    <string name="notification_picker_description">Open the quick image picker from your notifications.</string>
+    <string name="notification_picker_message">Tap to choose an image to copy.</string>
+    <string name="notification_picker_title">Quick picker</string>
+
+    <string name="success_collection_cover">Collection cover updated.</string>
+    <string name="success_collection_exported">Collection exported.</string>
+    <string name="success_collection_imported">Collection imported.</string>
+    <string name="success_collection_items_added">Items added to the collection.</string>
+    <string name="success_image_copied">Image copied to clipboard.</string>
+    <string name="success_media_duplicated">Media duplicated.</string>
+    <string name="success_media_imported">Images imported.</string>
+    <string name="success_picker_enabled">Quick picker enabled. Open it from your notifications.</string>
+
+    <string name="title_collections">Collections</string>
+    <string name="title_library_empty">Your meme collection starts here</string>
+    <string name="title_search_empty">Nothing popped up</string>
+    <string name="title_unsaved_changes">Save changes?</string>
+
+    <string name="unit_bytes">B</string>
+    <string name="unit_gibibytes">GiB</string>
+    <string name="unit_kibibytes">KiB</string>
+    <string name="unit_mebibytes">MiB</string>
+
+    <plurals name="collection_item_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
 </resources>

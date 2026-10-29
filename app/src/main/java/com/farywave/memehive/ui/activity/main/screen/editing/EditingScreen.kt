@@ -30,8 +30,7 @@ import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -58,15 +57,16 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.model.MediaItemDraft
-import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
-import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorDialog
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.ui.activity.main.dialog.DiscardEditingConfirmation
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorDialog
 import com.farywave.memehive.ui.component.CollectionPickerSheet
 import com.farywave.memehive.ui.component.CollectionSelectorSheet
+import com.farywave.memehive.ui.component.ErrorNotice
 import com.farywave.memehive.ui.component.ImagePicker
+import com.farywave.memehive.ui.model.MediaItemDraft
 import com.farywave.memehive.ui.simple_component.SimpleActionMenu
 import com.farywave.memehive.ui.simple_component.SimpleIconButton
 import com.farywave.memehive.ui.simple_component.SimpleTextField
@@ -78,6 +78,9 @@ fun EditingScreen(
     state: EditingUiState,
     onBack: () -> Unit,
     onSave: () -> Unit,
+    onSaveAndClose: () -> Unit,
+    onRetryLoading: () -> Unit,
+    onRetryCollections: () -> Unit,
     onDiscard: () -> Unit,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
@@ -92,7 +95,7 @@ fun EditingScreen(
     onRemoveTag: (Int) -> Unit,
     onUpdateTag: (Int, String) -> Unit,
     onAddTag: (String) -> Unit,
-    onCopyImage: (Image, onFailure: () -> Unit) -> Unit,
+    onCopyImage: (Image) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     var collectionSheet by rememberSaveable { mutableStateOf<String?>(null) }
@@ -100,9 +103,9 @@ fun EditingScreen(
     var showExitConfirmation by rememberSaveable { mutableStateOf(false) }
     val requestClose: () -> Unit = {
         if (!state.isSaving) {
-            val hasChanges = state.screenState == ScreenState.EDITING ||
+            val hasChanges = !state.isLoading && state.loadError == null && (state.screenState == ScreenState.EDITING ||
                     (state.screenState == ScreenState.CREATION &&
-                            !state.mediaItemDraft.hasSameContentAs(MediaItemDraft()))
+                            !state.mediaItemDraft.hasSameContentAs(MediaItemDraft())))
             if (hasChanges) showExitConfirmation = true else onBack()
         }
     }
@@ -144,14 +147,14 @@ fun EditingScreen(
 
                 Spacer(Modifier.weight(1f))
 
-                if (state.screenState in listOf(ScreenState.EDITING, ScreenState.CREATION)) {
+                if (!state.isLoading && state.loadError == null && state.screenState in listOf(ScreenState.EDITING, ScreenState.CREATION)) {
                     SimpleIconButton(
                         modifier = Modifier
                             .padding(7.dp)
                             .size(30.dp),
                         icon = painterResource(R.drawable.ic_check),
                     ) {
-                        if (!state.isSaving) onSave()
+                        if (!state.isSaving) { focusManager.clearFocus(); onSave() }
                     }
 
                     SimpleIconButton(
@@ -166,9 +169,11 @@ fun EditingScreen(
 
                 SimpleActionMenu<MoreActions>(
                     options = enumEntries<MoreActions>().filter { option ->
+                        if (state.isSaving || state.isLoading || state.loadError != null) return@filter false
                         when (option) {
-                            MoreActions.COPY_TO_CLIPBOARD -> state.mediaItemDraft.image != null
-                            MoreActions.DUPLICATE, MoreActions.SET_AS_COVER -> state.screenState == ScreenState.SAVED
+                            MoreActions.COPY_TO_CLIPBOARD -> (state.mediaItemDraft.image?.id ?: 0L) != 0L
+                            MoreActions.DUPLICATE -> state.screenState == ScreenState.SAVED
+                            MoreActions.SET_AS_COVER -> state.screenState == ScreenState.SAVED && state.mediaItemDraft.image != null
                             MoreActions.DELETE -> state.screenState in listOf(
                                 ScreenState.EDITING,
                                 ScreenState.SAVED
@@ -180,9 +185,7 @@ fun EditingScreen(
                     onSelected = { action ->
                         when (action) {
                             MoreActions.COPY_TO_CLIPBOARD -> state.mediaItemDraft.image?.let {
-                                onCopyImage(
-                                    it
-                                ) {}
+                                onCopyImage(it)
                             }
 
                             MoreActions.ADD_TO_COLLECTION -> collectionSheet = "selector"
@@ -211,6 +214,17 @@ fun EditingScreen(
                 .imePadding()
                 .background(LocalAppColors.current.backgroundPrimary),
         ) {
+            if (state.isLoading) {
+                CircularProgressIndicator(Modifier.align(Alignment.Center))
+                return@Box
+            }
+            state.loadError?.let {
+                Box(Modifier.padding(16.dp)) {
+                    if (it == R.string.error_media_missing) ErrorNotice(it, onBack, R.string.action_back_to_library)
+                    else ErrorNotice(it, onRetryLoading)
+                }
+                return@Box
+            }
             val textMeasurer = rememberTextMeasurer()
             val size = textMeasurer.measure(
                 text = AnnotatedString("Ambatukam"),
@@ -227,25 +241,30 @@ fun EditingScreen(
                     .fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                if (state.collectionsFailed) item {
+                    ErrorNotice(R.string.error_collections_load, onRetryCollections)
+                }
                 item {
                     ImagePicker(
                         initialSrc = state.mediaItemDraft.image?.uri,
-                        shape = roundedShape
+                        shape = roundedShape,
+                        enabled = !state.isSaving,
                     ) { uri ->
                         onImageChanged(uri)
                     }
                 }
                 item {
                     SimpleTextField(
+                        enabled = !state.isSaving,
                         modifier = Modifier
                             .fillMaxWidth()
                             .wrapContentHeight()
                             .background(
                                 LocalAppColors.current.backgroundSecondary,
-                                shape = roundedShape
+                                shape = roundedShape,
                             )
                             .padding(horizontal = 10.dp, vertical = 7.dp),
-                        hint = stringResource(R.string.editing_caption_hint),
+                        hint = stringResource(R.string.hint_media_caption),
                         initialValue = state.mediaItemDraft.caption,
                         onValueChange = { onCaptionChanged(it) },
                         callbackDelay = 0L
@@ -254,15 +273,16 @@ fun EditingScreen(
 
                 item {
                     SimpleTextField(
+                        enabled = !state.isSaving,
                         modifier = Modifier
                             .fillMaxWidth()
                             .wrapContentHeight()
                             .background(
                                 LocalAppColors.current.backgroundSecondary,
-                                shape = roundedShape
+                                shape = roundedShape,
                             )
                             .padding(horizontal = 10.dp, vertical = 7.dp),
-                        hint = stringResource(R.string.editing_description_hint),
+                        hint = stringResource(R.string.hint_media_description),
                         numberOfLines = 3,
                         initialValue = state.mediaItemDraft.description,
                         onValueChange = { onDescriptionChanged(it) },
@@ -272,7 +292,7 @@ fun EditingScreen(
                 item {
                     Text(
                         modifier = Modifier.padding(bottom = 5.dp, start = 10.dp),
-                        text = stringResource(R.string.editing_tags_hint),
+                        text = stringResource(R.string.hint_media_tags),
                         style = MaterialTheme.typography.bodyMedium,
                         color = LocalAppColors.current.contentSecondary
                     )
@@ -288,6 +308,7 @@ fun EditingScreen(
                             key(tag.key) {
                                 TagChip(
                                     tag = tag.text,
+                            enabled = !state.isSaving,
                                     onFocusLost = { newText ->
                                         if (newText.isEmpty()) onRemoveTag(tag.key)
                                         else onUpdateTag(tag.key, newText)
@@ -296,7 +317,7 @@ fun EditingScreen(
                             }
                         }
 
-                        NewTagChip { newText ->
+                        NewTagChip(enabled = !state.isSaving) { newText ->
                             if (newText.isNotEmpty()) {
                                 onAddTag(newText)
                             }
@@ -318,7 +339,7 @@ fun EditingScreen(
                 show = collectionSheet == "cover",
                 collections = state.collections,
                 onDismiss = { collectionSheet = null },
-                onCollectionSelected = { onSetAsCover(it) },
+                onCollectionSelected = { collectionSheet = null; onSetAsCover(it) },
                 onNewCollectionClicked = { onCreateCollection() }
             )
         }
@@ -327,8 +348,8 @@ fun EditingScreen(
         DiscardEditingConfirmation(
             onSave = {
                 showExitConfirmation = false
-                onSave()
-                onBack()
+                focusManager.clearFocus()
+                onSaveAndClose()
             },
             onDiscard = {
                 showExitConfirmation = false
@@ -347,7 +368,7 @@ fun EditingScreen(
 }
 
 @Composable
-private fun TagChip(tag: String, onFocusLost: (tag: String) -> Unit) {
+private fun TagChip(tag: String, enabled: Boolean = true, onFocusLost: (tag: String) -> Unit) {
     val value = rememberTextFieldState(tag)
     val focusManager = LocalFocusManager.current
 
@@ -358,6 +379,7 @@ private fun TagChip(tag: String, onFocusLost: (tag: String) -> Unit) {
             .background(LocalAppColors.current.accentPrimary, shape = MaterialTheme.shapes.large)
     ) {
         BasicTextField(
+            enabled = enabled,
             state = value,
             modifier = Modifier
                 .width(IntrinsicSize.Min)
@@ -383,7 +405,7 @@ private fun TagChip(tag: String, onFocusLost: (tag: String) -> Unit) {
 
 
 @Composable
-private fun NewTagChip(onFocusLost: (tag: String) -> Unit) {
+private fun NewTagChip(enabled: Boolean = true, onFocusLost: (tag: String) -> Unit) {
     val value = rememberTextFieldState()
     var isFocused by remember { mutableStateOf(false) }
 
@@ -412,6 +434,7 @@ private fun NewTagChip(onFocusLost: (tag: String) -> Unit) {
             color = LocalAppColors.current.contentPrimary,
         )
         BasicTextField(
+            enabled = enabled,
             state = value,
             modifier = Modifier
                 .width(IntrinsicSize.Min)

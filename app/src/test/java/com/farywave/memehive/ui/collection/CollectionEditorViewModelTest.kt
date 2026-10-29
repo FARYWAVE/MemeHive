@@ -32,7 +32,7 @@ class CollectionEditorViewModelTest {
         editor.submit(CollectionDraft("   ", "content://cover"))
         runCurrent()
         assertEquals(0, calls)
-        assertEquals(R.string.collection_name_required, editor.state.value?.errorResId)
+        assertEquals(R.string.error_collection_name_required, editor.state.value?.errorResId)
         assertEquals("content://cover", editor.state.value?.initialDraft?.coverUri)
         assertFalse(editor.state.value!!.isSaving)
     }
@@ -80,7 +80,7 @@ class CollectionEditorViewModelTest {
         runCurrent()
         assertEquals(draft, editor.state.value?.initialDraft)
         assertEquals(session, editor.state.value?.sessionId)
-        assertEquals(R.string.collection_create_error, editor.state.value?.errorResId)
+        assertEquals(R.string.error_collection_create, editor.state.value?.errorResId)
         assertFalse(editor.state.value!!.isSaving)
         editor.submit(draft)
         runCurrent()
@@ -94,7 +94,7 @@ class CollectionEditorViewModelTest {
         editor.submit(CollectionDraft("After"))
         runCurrent()
         assertEquals(42L, editor.state.value?.collectionId)
-        assertEquals(R.string.collection_update_error, editor.state.value?.errorResId)
+        assertEquals(R.string.error_collection_update, editor.state.value?.errorResId)
     }
 
     @Test fun `cancel then reopen starts a new empty session without writing`() = runTest(dispatcher) {

@@ -19,12 +19,12 @@ fun EmptySearchResultMessage(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = stringResource(R.string.media_search_empty_title),
+            text = stringResource(R.string.title_search_empty),
             style = MaterialTheme.typography.bodyMedium,
             color = LocalAppColors.current.contentPrimary,
         )
         Text(
-            text = stringResource(R.string.media_search_empty_message),
+            text = stringResource(R.string.message_search_empty),
             style = MaterialTheme.typography.labelMedium,
             color = LocalAppColors.current.contentSecondary,
         )

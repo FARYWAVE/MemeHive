@@ -19,11 +19,13 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -61,7 +63,7 @@ fun CollectionPickerSheet(
             item { Heading { onNewCollectionClicked() } }
 
             item {
-                SearchBar(hint = stringResource(R.string.collection_search_hint)) {
+                SearchBar(hint = stringResource(R.string.hint_collection_search)) {
                     searchQuery.value = it
                 }
             }
@@ -85,7 +87,7 @@ private fun Heading(onNewCollectionClicked: () -> Unit) {
             .wrapContentHeight(), verticalAlignment = Alignment.Bottom
     ) {
         Text(
-            text = stringResource(R.string.header_collections),
+            text = stringResource(R.string.title_collections),
             style = MaterialTheme.typography.titleMedium,
             color = LocalAppColors.current.contentPrimary
         )
@@ -111,17 +113,19 @@ private fun CollectionItem(collection: Collection, onClicked: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        if (collection.cover != null) AsyncImage(
+        var loadFailed by remember(collection.cover?.uri) { mutableStateOf(false) }
+        if (collection.cover != null && !loadFailed) AsyncImage(
             modifier = Modifier
                 .size(40.dp)
                 .clip(MaterialTheme.shapes.small),
             contentScale = ContentScale.Crop,
             model = collection.cover.uri,
+            onError = { loadFailed = true },
             contentDescription = null
         ) else Icon(
             modifier = Modifier.size(40.dp),
-            painter = painterResource(id = R.drawable.ic_no_image),
-            contentDescription = null,
+            painter = painterResource(id = if (loadFailed) R.drawable.ic_error else R.drawable.ic_no_image),
+            contentDescription = stringResource(if (loadFailed) R.string.error_image_unavailable else R.string.label_no_image),
             tint = LocalAppColors.current.contentSecondary
         )
         Text(
@@ -130,9 +134,8 @@ private fun CollectionItem(collection: Collection, onClicked: () -> Unit) {
             color = LocalAppColors.current.contentPrimary
         )
         Spacer(modifier = Modifier.weight(1f))
-        val itemCountText = stringResource(R.string.collection_items_count)
         Text(
-            text = "${collection.mediaItemCount} $itemCountText",
+            text = pluralStringResource(R.plurals.collection_item_count, collection.mediaItemCount, collection.mediaItemCount),
             style = MaterialTheme.typography.bodyMedium,
             color = LocalAppColors.current.contentSecondary
         )

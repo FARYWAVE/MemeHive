@@ -19,17 +19,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
-fun NullableImage(modifier: Modifier, shape: RoundedCornerShape, src: Uri?) {
-    var loadFailed by remember(src) { mutableStateOf(false) }
+fun NullableImage(modifier: Modifier, shape: RoundedCornerShape, src: Uri?, retryKey: Int = 0, onLoadFailed: () -> Unit = {}) {
+    var loadFailed by remember(src, retryKey) { mutableStateOf(false) }
 
     if (src != null && !loadFailed) AsyncImage(
         model = src,
+        onError = { loadFailed = true; onLoadFailed() },
         contentDescription = null,
         modifier = modifier
             .fillMaxWidth()
@@ -51,9 +53,9 @@ fun NullableImage(modifier: Modifier, shape: RoundedCornerShape, src: Uri?) {
     ) {
         Icon(
             modifier = Modifier.size(40.dp),
-            painter = painterResource(id = R.drawable.ic_no_image),
+            painter = painterResource(id = if (loadFailed) R.drawable.ic_error else R.drawable.ic_no_image),
             tint = LocalAppColors.current.contentSecondary,
-            contentDescription = null
+            contentDescription = stringResource(if (loadFailed) R.string.error_image_unavailable else R.string.label_no_image)
         )
     }
 }

@@ -12,13 +12,16 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ripple
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.farywave.memehive.R
@@ -34,8 +37,13 @@ fun ImagePicker(
     enabled: Boolean = true,
     onImageSelected: (Uri?) -> Unit
 ) {
+    var selectionVersion by remember { mutableIntStateOf(0) }
+    val feedback = LocalAppFeedback.current
     val launcher = DeviceTools.requestMedia { uri ->
-        if (enabled && uri != null) onImageSelected(uri)
+        if (enabled && uri != null) {
+            selectionVersion++
+            onImageSelected(uri)
+        }
     }
     val interactionSource = remember { MutableInteractionSource() }
 
@@ -47,7 +55,7 @@ fun ImagePicker(
             Modifier
                 .fillMaxWidth()
                 .clickable(enabled = enabled, onClick = {
-                    launcher.launch("image/*")
+                    feedback.attempt(R.string.error_picker_open) { launcher.launch("image/*") }
                 })
                 .constrainAs(image) {
                     top.linkTo(parent.top)
@@ -56,7 +64,9 @@ fun ImagePicker(
                     end.linkTo(parent.end)
                 },
             shape,
-            initialSrc
+            initialSrc,
+            retryKey = selectionVersion,
+            onLoadFailed = { feedback.show(R.string.error_image_unavailable) },
         )
 
         if (initialSrc != null) Box(
@@ -84,7 +94,7 @@ fun ImagePicker(
             Icon(
                 modifier = Modifier.size(20.dp).padding(2.dp),
                 painter = painterResource(id = R.drawable.ic_cross),
-                contentDescription = stringResource(R.string.remove_image),
+                contentDescription = stringResource(R.string.action_remove_image),
                 tint = LocalAppColors.current.contentPrimary
             )
         }

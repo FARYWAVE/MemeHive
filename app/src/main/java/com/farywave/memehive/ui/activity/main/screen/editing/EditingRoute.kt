@@ -1,7 +1,6 @@
 package com.farywave.memehive.ui.activity.main.screen.editing
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -14,16 +13,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorViewModel
+import com.farywave.memehive.ui.component.LocalAppFeedback
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
 
 @Composable
 fun EditingRoute(
     initialUri: Uri?,
-    onCopyImage: (Image, onFailure: () -> Unit) -> Unit,
+    onCopyImage: (Image) -> Unit,
     mediaItemId: Long,
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
+    val feedback = LocalAppFeedback.current
 
     val viewModel: EditingViewModel =
         (context.applicationContext as MemeHiveApplication).container.let {
@@ -31,8 +33,7 @@ fun EditingRoute(
                 factory = EditingViewModelFactory(
                     mediaItemId,
                     it.mediaItemUseCases,
-                    it.collectionUseCases,
-                    context.applicationContext.contentResolver
+                    it.collectionUseCases
                 )
             )
         }
@@ -50,7 +51,7 @@ fun EditingRoute(
 
     LaunchedEffect(error?.id) {
         val currentError = error ?: return@LaunchedEffect
-        Toast.makeText(context, currentError.messageResId, Toast.LENGTH_LONG).show()
+        feedback.show(currentError.messageResId)
         viewModel.clearError(currentError.id)
     }
 
@@ -61,10 +62,14 @@ fun EditingRoute(
     )
     val collectionEditorState by collectionEditor.state.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val loadError by viewModel.loadError.collectAsStateWithLifecycle()
+    val collectionsFailed by viewModel.collectionsFailed.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(viewModel, lifecycle, onClose) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            viewModel.isDeleted.filter { it }.collect { onClose() }
+            combine(viewModel.isDeleted, viewModel.closeRequested) { deleted, saved -> deleted || saved }
+                .filter { it }.collect { onClose() }
         }
     }
 
@@ -75,9 +80,15 @@ fun EditingRoute(
             screenState = screenState,
             collectionEditor = collectionEditorState,
             isSaving = isSaving,
+            isLoading = isLoading,
+            loadError = loadError,
+            collectionsFailed = collectionsFailed,
         ),
         onBack = onClose,
-        onSave = viewModel::saveCurrentItem,
+        onSave = { viewModel.saveCurrentItem() },
+        onSaveAndClose = { viewModel.saveCurrentItem(closeAfterSave = true) },
+        onRetryLoading = viewModel::retryLoading,
+        onRetryCollections = viewModel::loadCollections,
         onDiscard = viewModel::discardChanges,
         onDuplicate = viewModel::duplicateCurrentItem,
         onDelete = viewModel::deleteCurrentItem,

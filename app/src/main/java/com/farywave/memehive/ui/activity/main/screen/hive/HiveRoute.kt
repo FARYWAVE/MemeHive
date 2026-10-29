@@ -1,6 +1,5 @@
 package com.farywave.memehive.ui.activity.main.screen.hive
 
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -13,10 +12,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.MemeHiveApplication
+import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.domain.model.Collection
-import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorViewModel
+import com.farywave.memehive.ui.component.LocalAppFeedback
 
 
 @Composable
@@ -25,6 +25,7 @@ fun HiveRoute(
     onOpenMedia: (Long?) -> Unit,
 ) {
     val context = LocalContext.current
+    val feedback = LocalAppFeedback.current
 
     val viewModel: HiveViewModel =
         (context.applicationContext as MemeHiveApplication).container.let {
@@ -53,13 +54,13 @@ fun HiveRoute(
 
     LaunchedEffect(error?.id) {
         val currentError = error ?: return@LaunchedEffect
-        Toast.makeText(context, currentError.messageResId, Toast.LENGTH_LONG).show()
+        feedback.show(currentError.messageResId)
         viewModel.clearError(currentError.id)
     }
 
     LaunchedEffect(transferMessage) {
         transferMessage?.let { message ->
-            Toast.makeText(context, message.textRes, Toast.LENGTH_SHORT).show()
+            feedback.show(message.textRes)
             viewModel.onTransferMessageShown(message.id)
         }
     }
@@ -109,11 +110,11 @@ fun HiveRoute(
         onSubmitCollection = collectionEditor::submit,
         onDismissCollection = collectionEditor::dismiss,
         onEnableNotification = onEnableNotification,
-        onMassImport = { massImportLauncher.launch("image/*") },
-        onCollectionImport = { importLauncher.launch(arrayOf("application/zip")) },
+        onMassImport = { feedback.attempt(R.string.error_picker_open) { massImportLauncher.launch("image/*") } },
+        onCollectionImport = { feedback.attempt(R.string.error_picker_open) { importLauncher.launch(arrayOf("application/zip")) } },
         onExportCollection = { collection ->
             collectionToExport = collection
-            exportLauncher.launch("${collection.name}.zip")
+            feedback.attempt(R.string.error_picker_open) { exportLauncher.launch("${collection.name}.zip") }
         },
         onDeleteCollection = viewModel::deleteCollection,
         onRetryLoading = viewModel::retryLoading,
@@ -127,15 +128,12 @@ fun HiveRoute(
         onCancelMediaSelection = viewModel::disableMassEditingMode,
         onDeleteSelectedMedia = {
             viewModel.deleteSelectedMediaItems()
-            viewModel.disableMassEditingMode()
         },
         onDuplicateSelectedMedia = {
             viewModel.duplicateSelectedMediaItems()
-            viewModel.disableMassEditingMode()
         },
         onAddSelectedMediaToCollection = { collection ->
             viewModel.addSelectedMediaItemsToCollection(collection)
-            viewModel.disableMassEditingMode()
         },
     )
 }

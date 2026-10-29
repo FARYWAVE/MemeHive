@@ -9,7 +9,7 @@ enum class CreateActions(
     override val highlighted: Boolean = false
 ) : ActionMenuOptions {
     CREATE_COLLECTION(R.string.action_create_collection),
-    CREATE_MEDIA_ITEM(R.string.action_create_media_item)
+    CREATE_MEDIA_ITEM(R.string.action_create_media)
 }
 
 enum class MoreActions(
@@ -18,8 +18,8 @@ enum class MoreActions(
 ) : ActionMenuOptions {
     ENABLE_PICKER(R.string.action_enable_picker),
     IMPORT_COLLECTION(R.string.action_import_collection),
-    MASS_IMPORT(R.string.action_mass_import),
-    VIEW_APP_INFO(R.string.action_app_info),
+    MASS_IMPORT(R.string.action_import_images),
+    VIEW_APP_INFO(R.string.action_about),
 }
 
 enum class MassEditActions(

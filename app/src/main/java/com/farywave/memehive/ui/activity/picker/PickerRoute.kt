@@ -1,6 +1,5 @@
 package com.farywave.memehive.ui.activity.picker
 
-import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -9,10 +8,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.domain.model.MediaItem
+import com.farywave.memehive.ui.component.LocalAppFeedback
 
 @Composable
-fun PickerRoute(onItemClicked: (MediaItem, onFailure: () -> Unit) -> Unit) {
+fun PickerRoute(onItemClicked: (MediaItem) -> Unit) {
     val context = LocalContext.current
+    val feedback = LocalAppFeedback.current
 
     val viewModel: PickerViewModel =
         (context.applicationContext as MemeHiveApplication).container.let {
@@ -25,7 +26,7 @@ fun PickerRoute(onItemClicked: (MediaItem, onFailure: () -> Unit) -> Unit) {
 
     LaunchedEffect(error?.id) {
         val currentError = error ?: return@LaunchedEffect
-        Toast.makeText(context, currentError.messageResId, Toast.LENGTH_LONG).show()
+        feedback.show(currentError.messageResId)
         viewModel.clearError(currentError.id)
     }
 
@@ -49,7 +50,7 @@ fun PickerRoute(onItemClicked: (MediaItem, onFailure: () -> Unit) -> Unit) {
         onSearchQueryChanged = viewModel::onSearchQueryChanged,
         onCollectionSelected = viewModel::onCollectionSelected,
         onItemClicked = { item ->
-            onItemClicked(item, viewModel::reportCopyFailure)
+            onItemClicked(item)
         },
     )
 }

@@ -53,7 +53,7 @@ class CollectionEditorViewModel(
         if (editor.isSaving) return
         val submitted = draft.copy(name = draft.name.trim())
         if (submitted.name.isEmpty()) {
-            setState(editor.copy(initialDraft = draft, errorResId = R.string.collection_name_required))
+            setState(editor.copy(initialDraft = draft, errorResId = R.string.error_collection_name_required))
             return
         }
 
@@ -70,8 +70,8 @@ class CollectionEditorViewModel(
                 setState(
                     editor.copy(
                         initialDraft = draft,
-                        errorResId = if (editor.collectionId == null) R.string.collection_create_error
-                        else R.string.collection_update_error,
+                        errorResId = if (editor.collectionId == null) R.string.error_collection_create
+                        else R.string.error_collection_update,
                     )
                 )
             }

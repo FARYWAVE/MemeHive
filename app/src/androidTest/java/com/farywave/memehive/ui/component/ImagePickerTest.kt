@@ -22,7 +22,7 @@ import org.junit.Test
 class ImagePickerTest {
     @get:Rule val compose = createComposeRule()
     private val removeLabel get() = InstrumentationRegistry.getInstrumentation()
-        .targetContext.getString(R.string.remove_image)
+        .targetContext.getString(R.string.action_remove_image)
 
     @Test fun removeButtonDoesNotInheritOuterWidthAndClearsTheImage() {
         val image = mutableStateOf<Uri?>(Uri.parse("content://test/image"))

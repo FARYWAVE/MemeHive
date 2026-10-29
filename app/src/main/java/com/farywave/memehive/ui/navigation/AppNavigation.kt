@@ -12,7 +12,7 @@ import com.farywave.memehive.ui.activity.main.screen.editing.EditingRoute
 import com.farywave.memehive.ui.activity.main.screen.hive.HiveRoute
 
 @Composable
-fun AppNavigation(initialUri: Uri?, onEnableNotification: (Boolean) -> Unit, onCopyImage: (Image, onFailure: () -> Unit) -> Unit) {
+fun AppNavigation(initialUri: Uri?, onEnableNotification: (Boolean) -> Unit, onCopyImage: (Image) -> Unit) {
     val controller = rememberNavController()
     NavHost(
         navController = controller,
@@ -37,10 +37,9 @@ fun AppNavigation(initialUri: Uri?, onEnableNotification: (Boolean) -> Unit, onC
                 onCopyImage = onCopyImage,
                 mediaItemId = destination.mediaItemId ?: 0L,
                 onClose = {
-                    if (controller.currentBackStackEntry == entry) controller.popBackStack()
-                    else if (controller.currentBackStackEntry == null) controller.navigate(
-                        HiveDestination
-                    )
+                    if (controller.currentBackStackEntry == entry && !controller.popBackStack()) {
+                        controller.navigate(HiveDestination) { launchSingleTop = true }
+                    }
                 },
             )
         }

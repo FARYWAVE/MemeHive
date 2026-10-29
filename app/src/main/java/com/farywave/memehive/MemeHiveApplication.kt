@@ -19,10 +19,10 @@ class MemeHiveApplication : Application() {
 
         val channel = NotificationChannel(
             PICKER_CHANNEL_ID,
-            "Picker",
+            getString(R.string.notification_picker_title),
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Picker access notification"
+            description = getString(R.string.notification_picker_description)
         }
 
         val manager = getSystemService(NotificationManager::class.java)

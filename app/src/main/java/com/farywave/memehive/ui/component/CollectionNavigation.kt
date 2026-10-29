@@ -97,7 +97,7 @@ private fun CollectionNavigationItem(
     val chip: @Composable (onLongClick: (() -> Unit)?) -> Unit = { onLongClick ->
         CollectionChip(
             modifier = Modifier.fillMaxWidth(),
-            text = collection?.name ?: stringResource(R.string.all_collection_name),
+            text = collection?.name ?: stringResource(R.string.label_all_collections),
             isSelected = collection?.id == selectedCollectionId,
             onClick = { onCollectionSelected(collection?.id) },
             onLongClick = onLongClick

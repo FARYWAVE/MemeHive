@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.farywave.memehive.R
 import com.farywave.memehive.domain.model.Collection
-import com.farywave.memehive.ui.model.UiError
+import com.farywave.memehive.ui.model.UiMessageQueue
 import com.farywave.memehive.ui.use_case.CollectionUseCases
 import com.farywave.memehive.ui.use_case.MediaSearchState
 import com.farywave.memehive.ui.use_case.MediaSearchUseCase
@@ -16,9 +16,9 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -29,8 +29,8 @@ class PickerViewModel(
     private val collectionUseCases: CollectionUseCases,
     private val mediaSearchUseCase: MediaSearchUseCase
 ) : ViewModel() {
-    private val _error = MutableStateFlow<UiError?>(null)
-    val error = _error.asStateFlow()
+    private val messages = UiMessageQueue()
+    val error = messages.current
 
     private val _collections = MutableStateFlow<List<Collection>>(emptyList())
     val collections = _collections.asStateFlow()
@@ -72,12 +72,8 @@ class PickerViewModel(
         _selectedCollectionId.value = collectionId
     }
 
-    fun reportCopyFailure() {
-        _error.value = UiError(R.string.image_copy_failed)
-    }
-
     fun clearError(id: String) {
-        _error.update { current -> current?.takeUnless { it.id == id } }
+        messages.dismiss(id)
     }
 
     private fun loadCollections() {
@@ -87,7 +83,7 @@ class PickerViewModel(
                     .catch {
                         _collectionsLoading.value = false
                         _collectionsFailed.value = true
-                        reportError(R.string.collections_load_error, it)
+                        reportError(R.string.error_collections_load, it)
                     }
             }
                 .collect { collections ->
@@ -105,6 +101,6 @@ class PickerViewModel(
     private fun reportError(@StringRes message: Int, failure: Throwable) {
         if (failure is CancellationException) throw failure
         Log.w("PickerViewModel", "Screen operation failed", failure)
-        _error.value = UiError(message)
+        messages.show(message)
     }
 }

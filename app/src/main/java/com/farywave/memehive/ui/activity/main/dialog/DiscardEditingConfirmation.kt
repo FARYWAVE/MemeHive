@@ -1,7 +1,6 @@
 package com.farywave.memehive.ui.activity.main.dialog
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,7 +15,7 @@ import kotlin.enums.enumEntries
 @Composable
 fun DiscardEditingConfirmation(onSave: () -> Unit, onDiscard: () -> Unit, onDismissRequest: () -> Unit) {
     SimpleDialog(
-        title = stringResource(R.string.discard_changes_title),
+        title = stringResource(R.string.title_unsaved_changes),
         actions = enumEntries<DiscardEditingAction>().toTypedArray(),
         onDismissRequest = onDismissRequest,
         onAction = { action ->
@@ -27,7 +26,7 @@ fun DiscardEditingConfirmation(onSave: () -> Unit, onDiscard: () -> Unit, onDism
         }
     ) {
         Text(
-            text = stringResource(R.string.discard_changes_message),
+            text = stringResource(R.string.message_unsaved_changes),
             style = MaterialTheme.typography.bodyMedium,
             color = LocalAppColors.current.contentPrimary
         )
@@ -37,5 +36,5 @@ fun DiscardEditingConfirmation(onSave: () -> Unit, onDiscard: () -> Unit, onDism
 enum class DiscardEditingAction(@StringRes override val text: Int, override val type: ActionType) :
     SimpleDialogAction {
     SAVE(R.string.action_save, ActionType.NORMAL),
-    DISCARD(R.string.discard_changes_confirm, ActionType.WARNING),
+    DISCARD(R.string.action_discard, ActionType.WARNING),
 }

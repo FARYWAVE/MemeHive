@@ -11,26 +11,26 @@ import com.farywave.memehive.core.collection_transfer.InvalidCollectionArchiveEx
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.domain.model.MediaItem
-import com.farywave.memehive.ui.model.UiError
+import com.farywave.memehive.ui.model.UiMessageQueue
 import com.farywave.memehive.ui.use_case.CollectionTransferUseCases
 import com.farywave.memehive.ui.use_case.CollectionUseCases
 import com.farywave.memehive.ui.use_case.MediaItemUseCases
 import com.farywave.memehive.ui.use_case.MediaSearchState
 import com.farywave.memehive.ui.use_case.MediaSearchUseCase
+import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class HiveViewModel(
@@ -39,8 +39,8 @@ class HiveViewModel(
     private val mediaSearchUseCase: MediaSearchUseCase,
     private val collectionTransferUseCases: CollectionTransferUseCases
 ) : ViewModel() {
-    private val _error = MutableStateFlow<UiError?>(null)
-    val error = _error.asStateFlow()
+    private val messages = UiMessageQueue()
+    val error = messages.current
 
     private val _transferMessages = MutableStateFlow<List<CollectionTransferMessage>>(emptyList())
     val transferMessages = _transferMessages.asStateFlow()
@@ -123,8 +123,9 @@ class HiveViewModel(
     }
 
     fun onMassImport(uris: List<Uri>) {
+        if (uris.isEmpty()) return
         val collectionId = _selectedCollectionId.value
-        launchWithError(R.string.media_import_error) {
+        launchWithError(R.string.error_media_import_partial) {
             val mediaItems = uris.map {
                 mediaItemUseCases.createMediaItem(
                     MediaItem(
@@ -139,47 +140,50 @@ class HiveViewModel(
                     it
                 )
             }
+            addTransferMessage(R.string.success_media_imported)
         }
     }
 
     fun duplicateSelectedMediaItems() {
         val selected = mediaState.value.items.filter { it.id in _selectedMediaItemIds.value }
 
-        launchWithError(R.string.media_duplicate_error) {
+        launchWithError(R.string.error_media_duplicate_partial, onSuccess = ::disableMassEditingMode) {
             selected.forEach {
                 mediaItemUseCases.createMediaItem(it.copy(id = 0))
             }
+            addTransferMessage(R.string.success_media_duplicated)
         }
     }
 
     fun addSelectedMediaItemsToCollection(collection: Collection) {
         val selectedIds = _selectedMediaItemIds.value
-        launchWithError(R.string.collection_add_items_error) {
+        launchWithError(R.string.error_collection_add_items, onSuccess = ::disableMassEditingMode) {
             collectionUseCases.addItemsToCollection(selectedIds, collection.id)
+            addTransferMessage(R.string.success_collection_items_added)
         }
     }
 
     fun deleteSelectedMediaItems() {
         val selectedIds = _selectedMediaItemIds.value
-        launchWithError(R.string.media_delete_error) {
+        launchWithError(R.string.error_media_delete, onSuccess = ::disableMassEditingMode) {
             mediaItemUseCases.deleteMediaItemsByIds(selectedIds)
         }
     }
 
     fun deleteCollection(collection: Collection) {
-        launchWithError(R.string.collection_delete_error) {
+        launchWithError(R.string.error_collection_delete) {
             collectionUseCases.deleteCollection(collection)
         }
     }
 
     fun importCollection(uri: Uri) {
-        launchCollectionTransfer(R.string.import_successful) {
+        launchCollectionTransfer(R.string.success_collection_imported) {
             collectionTransferUseCases.importCollection(uri)
         }
     }
 
     fun exportCollection(collection: Collection, uri: Uri) {
-        launchCollectionTransfer(R.string.toast_collection_exported) {
+        launchCollectionTransfer(R.string.success_collection_exported) {
             collectionTransferUseCases.exportCollection(collection, uri)
         }
     }
@@ -189,7 +193,7 @@ class HiveViewModel(
     }
 
     fun clearError(id: String) {
-        _error.update { current -> current?.takeUnless { it.id == id } }
+        messages.dismiss(id)
     }
 
     private fun loadCollections() {
@@ -199,7 +203,7 @@ class HiveViewModel(
                     .catch {
                         _collectionsLoading.value = false
                         _collectionsFailed.value = true
-                        reportError(R.string.collections_load_error, it)
+                        reportError(R.string.error_collections_load, it)
                     }
             }
                 .collect { collections ->
@@ -223,13 +227,17 @@ class HiveViewModel(
                 operation()
                 addTransferMessage(successMessage)
             } catch (error: InvalidCollectionArchiveException) {
-                reportTransferFailure(R.string.import_invalid_archive, error)
+                reportTransferFailure(R.string.error_collection_archive, error)
             } catch (error: IOException) {
-                reportTransferFailure(R.string.collection_transfer_io_error, error)
+                reportTransferFailure(R.string.error_collection_transfer_io, error)
             } catch (error: SecurityException) {
-                reportTransferFailure(R.string.collection_transfer_permission_error, error)
+                reportTransferFailure(R.string.error_collection_transfer_permission, error)
             } catch (error: SQLiteException) {
-                reportTransferFailure(R.string.collection_transfer_database_error, error)
+                reportTransferFailure(R.string.error_collection_transfer_database, error)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                reportTransferFailure(R.string.error_collection_transfer, error)
             }
         }
     }
@@ -243,10 +251,11 @@ class HiveViewModel(
         reportError(message, error)
     }
 
-    private fun launchWithError(@StringRes message: Int, operation: suspend () -> Unit) {
+    private fun launchWithError(@StringRes message: Int, onSuccess: () -> Unit = {}, operation: suspend () -> Unit) {
         viewModelScope.launch {
             try {
                 operation()
+                onSuccess()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
@@ -258,7 +267,7 @@ class HiveViewModel(
     private fun reportError(@StringRes message: Int, failure: Throwable) {
         if (failure is CancellationException) throw failure
         Log.w("HiveViewModel", "Screen operation failed", failure)
-        _error.value = UiError(message)
+        messages.show(message)
     }
 
 

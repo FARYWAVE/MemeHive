@@ -1,6 +1,5 @@
 package com.farywave.memehive.ui.activity.main.screen.editing
 
-import android.content.ContentResolver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.createSavedStateHandle
@@ -12,7 +11,6 @@ class EditingViewModelFactory(
     private val mediaItemId: Long,
     private val mediaItemUseCases: MediaItemUseCases,
     private val collectionUseCases: CollectionUseCases,
-    private val contentResolver: ContentResolver,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
@@ -20,7 +18,6 @@ class EditingViewModelFactory(
             mediaItemId,
             mediaItemUseCases,
             collectionUseCases,
-            contentResolver,
             extras.createSavedStateHandle()
         ) as T
     }

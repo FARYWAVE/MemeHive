@@ -19,12 +19,12 @@ fun EmptyHiveMessage(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = stringResource(R.string.media_library_empty_title),
+            text = stringResource(R.string.title_library_empty),
             style = MaterialTheme.typography.bodyMedium,
             color = LocalAppColors.current.contentPrimary,
         )
         Text(
-            text = stringResource(R.string.media_library_empty_message),
+            text = stringResource(R.string.message_library_empty),
             style = MaterialTheme.typography.labelMedium,
             color = LocalAppColors.current.contentSecondary,
         )

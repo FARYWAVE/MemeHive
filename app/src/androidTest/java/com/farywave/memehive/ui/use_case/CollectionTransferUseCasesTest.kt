@@ -1,5 +1,12 @@
 package com.farywave.memehive.ui.use_case
 
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelStore
+import com.farywave.memehive.R
+import com.farywave.memehive.ui.activity.main.screen.editing.EditingViewModel
+import kotlinx.coroutines.withContext
+import org.junit.Assert.assertNull
+
 import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.Bitmap
@@ -82,6 +89,72 @@ class CollectionTransferUseCasesTest {
     @After fun tearDown() {
         db.close()
         root.deleteRecursively()
+    }
+
+    @Test fun textOnlyItemsSurviveExportAndImport(): Unit = runBlocking {
+        val original = collections.createCollection(Collection(name = "Text collection"))
+        media.createMediaItem(MediaItem(caption = "No image", description = "Keep me", tags = listOf("text")), setOf(original.id))
+        val archive = File(root, "text.zip")
+        transfer.exportCollection(original, archive.toUri())
+        transfer.importCollection(archive.toUri())
+        val imported = collections.getAllCollections().first().single { it.id != original.id }
+        val item = media.getByCollectionId(imported.id).single()
+        assertEquals("No image", item.caption)
+        assertEquals("Keep me", item.description)
+        assertEquals(listOf("text"), item.tags)
+        assertNull(item.image)
+    }
+
+    @Test fun editorClosesOnlyAfterSaveAndPreservesDraftOnFailure(): Unit = runBlocking {
+        val stores = mutableListOf<ViewModelStore>()
+        suspend fun editor(): EditingViewModel = withContext(Dispatchers.Main) {
+            EditingViewModel(0, media, collections, SavedStateHandle()).also {
+                stores += ViewModelStore().apply { put("editor", it) }
+            }
+        }
+        try {
+            val successful = editor()
+            withTimeout(5_000) { successful.isLoading.first { !it } }
+            withContext(Dispatchers.Main) {
+                successful.updateName("Saved before closing")
+                successful.saveCurrentItem(closeAfterSave = true)
+                assertFalse(successful.closeRequested.value)
+            }
+            withTimeout(5_000) { successful.closeRequested.first { it } }
+            assertEquals("Saved before closing", media.getMediaItemById(successful.mediaItemDraft.value.id)?.caption)
+
+            val failed = editor()
+            withTimeout(5_000) { failed.isLoading.first { !it } }
+            db.close()
+            withContext(Dispatchers.Main) {
+                failed.updateName("Keep this draft")
+                failed.saveCurrentItem(closeAfterSave = true)
+            }
+            val error = withTimeout(5_000) { failed.error.first { it != null } }
+            assertEquals(R.string.error_media_save, error!!.messageResId)
+            assertFalse(failed.closeRequested.value)
+            assertEquals("Keep this draft", failed.mediaItemDraft.value.caption)
+            withTimeout(5_000) { failed.isSaving.first { !it } }
+            assertFalse(failed.isSaving.value)
+        } finally {
+            withContext(Dispatchers.Main) { stores.forEach { it.clear() } }
+        }
+    }
+
+    @Test fun editorReportsMissingItemInsteadOfCreatingBlankDraft(): Unit = runBlocking {
+        val store = ViewModelStore()
+        try {
+            val editor = withContext(Dispatchers.Main) {
+                EditingViewModel(999, media, collections, SavedStateHandle()).also { store.put("editor", it) }
+            }
+            withTimeout(5_000) { editor.isLoading.first { !it } }
+            assertEquals(R.string.error_media_missing, editor.loadError.value)
+            assertEquals(999L, editor.mediaItemDraft.value.id)
+            withContext(Dispatchers.Main) { editor.saveCurrentItem(closeAfterSave = true) }
+            assertFalse(editor.closeRequested.value)
+        } finally {
+            withContext(Dispatchers.Main) { store.clear() }
+        }
     }
 
     @Test fun storedFilenameWithSpecialCharactersResolvesToOriginalBytes(): Unit = runBlocking {

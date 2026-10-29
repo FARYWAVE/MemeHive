@@ -1,17 +1,17 @@
 package com.farywave.memehive.ui.collection
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
@@ -46,7 +46,7 @@ class CollectionEditorDialogTest {
         compose.onNode(hasSetTextAction()).performTextReplacement("Cats / dogs ? #")
         Espresso.closeSoftKeyboard()
         // Test the submitted snapshot independently of the device keyboard's window animation.
-        compose.onNodeWithText(text(R.string.button_create))
+        compose.onNodeWithText(text(R.string.action_create))
             .performSemanticsAction(SemanticsActions.OnClick) { it() }
         compose.runOnIdle {
             assertEquals(CollectionDraft("Cats / dogs ? #", "content://test/cover"), submitted)
@@ -67,7 +67,7 @@ class CollectionEditorDialogTest {
         }
         compose.onNode(hasSetTextAction()).performTextReplacement("Unsaved name")
         restoration.emulateSavedInstanceStateRestore()
-        compose.onNode(hasText(text(R.string.action_edit)) and hasClickAction()).performClick()
+        compose.onNode(hasText(text(R.string.action_save)) and hasClickAction()).performClick()
         compose.runOnIdle { assertEquals(CollectionDraft("Unsaved name"), submitted) }
     }
 
@@ -81,13 +81,13 @@ class CollectionEditorDialogTest {
         compose.onNode(hasSetTextAction()).performTextReplacement("Keep my draft")
         compose.runOnIdle { state.value = state.value.copy(isSaving = true) }
         compose.onNodeWithText("Keep my draft").assertIsNotEnabled()
-        compose.onNodeWithText(text(R.string.button_create)).assertIsNotEnabled()
-        compose.onNodeWithText(text(R.string.button_cancel)).assertIsNotEnabled()
+        compose.onNodeWithText(text(R.string.action_create)).assertIsNotEnabled()
+        compose.onNodeWithText(text(R.string.action_cancel)).assertIsNotEnabled()
         compose.runOnIdle {
-            state.value = state.value.copy(isSaving = false, errorResId = R.string.collection_create_error)
+            state.value = state.value.copy(isSaving = false, errorResId = R.string.error_collection_create)
         }
         compose.onNodeWithText("Keep my draft").assertExists()
-        compose.onNodeWithText(text(R.string.collection_create_error)).assertExists()
+        compose.onNodeWithText(text(R.string.error_collection_create)).assertExists()
     }
 
     @Test fun removingCoverSubmitsNullWithoutLosingTheName() {
@@ -105,8 +105,8 @@ class CollectionEditorDialogTest {
                 )
             }
         }
-        compose.onNodeWithContentDescription(text(R.string.remove_image)).performClick()
-        compose.onNode(hasText(text(R.string.action_edit)) and hasClickAction()).performClick()
+        compose.onNodeWithContentDescription(text(R.string.action_remove_image)).performClick()
+        compose.onNode(hasText(text(R.string.action_save)) and hasClickAction()).performClick()
         compose.runOnIdle {
             assertEquals("Cats", submitted?.name)
             assertNull(submitted?.coverUri)

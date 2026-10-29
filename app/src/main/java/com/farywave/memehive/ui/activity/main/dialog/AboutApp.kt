@@ -23,16 +23,18 @@ import androidx.compose.ui.unit.dp
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.core.ModelTools
+import com.farywave.memehive.ui.component.LocalAppFeedback
 import com.farywave.memehive.ui.simple_component.ActionType
 import com.farywave.memehive.ui.simple_component.SimpleDialog
 import com.farywave.memehive.ui.simple_component.SimpleDialogAction
 import com.farywave.memehive.ui.theme.LocalAppColors
 import java.io.File
+import kotlinx.coroutines.CancellationException
 
 @Composable
 fun AboutApp(onDismissRequest: () -> Unit) {
     SimpleDialog(
-        title = stringResource(R.string.action_app_info),
+        title = stringResource(R.string.action_about),
         actions = emptyArray<AboutAppAction>(),
         onDismissRequest = onDismissRequest,
         onAction = {},
@@ -62,17 +64,28 @@ fun AboutApp(onDismissRequest: () -> Unit) {
 @Composable
 private fun DirectorySize(directory: File) {
     val size by produceState<Long?>(initialValue = null, key1 = directory) {
-        value = DeviceTools.dirSize(directory)
+        value = try {
+            DeviceTools.dirSize(directory)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            android.util.Log.w("AboutApp", "Could not read directory size", failure)
+            -1L
+        }
     }
     Text(
-        text = size?.let { ModelTools.formatBytes(it) } ?: "…",
+        text = when (val bytes = size) {
+            null -> stringResource(R.string.label_loading)
+            -1L -> stringResource(R.string.label_unavailable)
+            else -> ModelTools.formatBytes(bytes)
+        },
         style = MaterialTheme.typography.bodyMedium,
         color = LocalAppColors.current.contentPrimary
     )
 }
 
 enum class AboutAppEntry(@StringRes val title: Int, val content: @Composable () -> Unit) {
-    VERSION(title = R.string.about_app_version, content = {
+    VERSION(title = R.string.label_app_version, content = {
         val context = LocalContext.current
         Text(
             text = DeviceTools.getAppVersion(context),
@@ -81,40 +94,42 @@ enum class AboutAppEntry(@StringRes val title: Int, val content: @Composable () 
         )
     }),
 
-    STORAGE(title = R.string.about_app_storage, content = {
+    STORAGE(title = R.string.label_storage, content = {
         val context = LocalContext.current
         DirectorySize(context.filesDir)
     }),
 
-    CACHE(title = R.string.about_app_cache, content = {
+    CACHE(title = R.string.label_cache, content = {
         val context = LocalContext.current
         DirectorySize(context.cacheDir)
     }),
 
-    SOURCE_CODE(title = R.string.about_app_source_code, content = {
+    SOURCE_CODE(title = R.string.label_source_code, content = {
         val context = LocalContext.current
+        val feedback = LocalAppFeedback.current
         val link = stringResource(R.string.link_source_code)
         Box(Modifier.fillMaxWidth().wrapContentHeight(), Alignment.CenterStart) {
             Text(
                 modifier = Modifier
                     .wrapContentSize()
-                    .clickable { DeviceTools.openLink(context, link) },
-                text = stringResource(R.string.git_hub),
+                    .clickable { DeviceTools.openLink(context, link) { feedback.show(R.string.error_link_open) } },
+                text = stringResource(R.string.label_github),
                 style = MaterialTheme.typography.bodyMedium,
                 color = LocalAppColors.current.accentPrimary
             )
         }
     }),
 
-    DEVELOPER(title = R.string.about_app_created_by, content = {
+    DEVELOPER(title = R.string.label_developer, content = {
         val context = LocalContext.current
+        val feedback = LocalAppFeedback.current
         val link = stringResource(R.string.link_developer)
         Box(Modifier.fillMaxWidth().wrapContentHeight(), Alignment.CenterStart) {
             Text(
                 modifier = Modifier
                     .wrapContentSize()
-                    .clickable { DeviceTools.openLink(context, link) },
-                text = stringResource(R.string.developer),
+                    .clickable { DeviceTools.openLink(context, link) { feedback.show(R.string.error_link_open) } },
+                text = stringResource(R.string.label_developer_name),
                 style = MaterialTheme.typography.bodyMedium,
                 color = LocalAppColors.current.accentPrimary
             )

@@ -2,7 +2,6 @@ package com.farywave.memehive.core
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -14,11 +13,11 @@ import androidx.core.app.NotificationManagerCompat
 import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.activity.picker.PickerActivity
+import java.io.File
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
-import java.io.File
 
 object DeviceTools {
     fun getAppVersion(context: Context): String {
@@ -26,7 +25,7 @@ object DeviceTools {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             "${pInfo.versionName}"
         } catch (e: Exception) {
-            "unknown"
+            context.getString(R.string.label_unavailable)
         }
     }
 
@@ -54,13 +53,14 @@ object DeviceTools {
         }
     }
 
-    fun openLink(context: Context, url: String) {
+    fun openLink(context: Context, url: String, onFailure: () -> Unit) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
 
         try {
             context.startActivity(intent)
-        } catch (e: ActivityNotFoundException) {
-            e.printStackTrace()
+        } catch (e: Exception) {
+            android.util.Log.w("DeviceTools", "Could not open link", e)
+            onFailure()
         }
     }
 
@@ -100,7 +100,7 @@ object DeviceTools {
             )
                 .setSmallIcon(R.drawable.ic_launcher_monochrome)
                 .setContentTitle(context.getString(R.string.app_name))
-                .setContentText(context.getString(R.string.picket_notification_text))
+                .setContentText(context.getString(R.string.notification_picker_message))
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(false)
                 .setOngoing(true)

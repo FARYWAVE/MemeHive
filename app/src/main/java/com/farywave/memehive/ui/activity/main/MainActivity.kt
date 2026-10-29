@@ -1,6 +1,7 @@
 package com.farywave.memehive.ui.activity.main
 
 import android.Manifest
+import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
@@ -8,8 +9,8 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -17,33 +18,31 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
 import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
+import com.farywave.memehive.ui.component.AppFeedback
+import com.farywave.memehive.ui.component.FeedbackHost
 import com.farywave.memehive.ui.navigation.AppNavigation
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.cancellation.CancellationException
 
 class MainActivity : ComponentActivity() {
+    private val feedback = AppFeedback()
     private var copying = false
     private val notificationPermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { granted ->
-
-            if (granted) {
-
-                DeviceTools.showPickerNotification(
-                    context = this,
-                )
-            }
+            if (granted) showPickerNotification() else reportNotificationFailure()
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,21 +50,30 @@ class MainActivity : ComponentActivity() {
 
 
 
+        val incomingUri = if (savedInstanceState == null) try {
+            getUriFromIntent(intent)
+        } catch (failure: Exception) {
+            Log.w("MainActivity", "Could not read shared image", failure)
+            feedback.show(R.string.error_image_unavailable)
+            null
+        } else null
         setContent {
             MemeHiveTheme {
-                enableEdgeToEdge(
-                    navigationBarStyle = SystemBarStyle.dark(LocalAppColors.current.backgroundPrimary.toArgb())
-                )
-                val defaultLabel = stringResource(R.string.hive_item)
-                AppNavigation(
-                    initialUri = if (savedInstanceState == null) getUriFromIntent(intent) else null,
-                    onCopyImage = { image, onFailure ->
-                        copyToClipboard(defaultLabel, image.id, onFailure)
-                    },
-                    onEnableNotification = { value ->
-                        if (value) enablePicker()
-                    }
-                )
+                FeedbackHost(feedback) {
+                    enableEdgeToEdge(
+                        navigationBarStyle = SystemBarStyle.dark(LocalAppColors.current.backgroundPrimary.toArgb())
+                    )
+                    val defaultLabel = stringResource(R.string.label_media_item)
+                    AppNavigation(
+                        initialUri = incomingUri,
+                        onCopyImage = { image ->
+                            copyToClipboard(defaultLabel, image.id)
+                        },
+                        onEnableNotification = { value ->
+                            if (value) enablePicker()
+                        }
+                    )
+                }
             }
         }
     }
@@ -81,26 +89,46 @@ class MainActivity : ComponentActivity() {
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
 
-                DeviceTools.showPickerNotification(
-                    context = this
-                )
+                showPickerNotification()
 
             } else {
 
-                notificationPermissionLauncher.launch(
-                    Manifest.permission.POST_NOTIFICATIONS
-                )
+                feedback.attempt(R.string.error_notification_enable) {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
             }
 
         } else {
 
-            DeviceTools.showPickerNotification(
-                context = this
-            )
+            showPickerNotification()
         }
     }
 
-    private fun copyToClipboard(label: String, imageId: Long, onFailure: () -> Unit) {
+    private fun reportNotificationFailure() {
+        feedback.show(R.string.error_notification_permission, R.string.action_settings, onAction = {
+            feedback.attempt(R.string.error_settings_open) {
+                startActivity(Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                    .putExtra(Settings.EXTRA_CHANNEL_ID, MemeHiveApplication.PICKER_CHANNEL_ID))
+            }
+        })
+    }
+
+    private fun showPickerNotification() {
+        val manager = getSystemService(NotificationManager::class.java)
+        val channel = manager.getNotificationChannel(MemeHiveApplication.PICKER_CHANNEL_ID)
+        if (!NotificationManagerCompat.from(this).areNotificationsEnabled() ||
+            channel?.importance == NotificationManager.IMPORTANCE_NONE) {
+            reportNotificationFailure()
+            return
+        }
+        feedback.attempt(R.string.error_notification_enable) {
+            DeviceTools.showPickerNotification(this)
+            feedback.show(R.string.success_picker_enabled)
+        }
+    }
+
+    private fun copyToClipboard(label: String, imageId: Long) {
         if (copying) return
         copying = true
         lifecycleScope.launch {
@@ -113,13 +141,12 @@ class MainActivity : ComponentActivity() {
                 }
                 val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(clip)
-                Toast.makeText(this@MainActivity, R.string.copied_to_clipboard, Toast.LENGTH_SHORT)
-                    .show()
+                feedback.show(R.string.success_image_copied)
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
                 Log.w("MainActivity", "Could not copy image", error)
-                onFailure()
+                feedback.show(R.string.error_image_copy)
             } finally {
                 copying = false
             }

@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -49,7 +47,7 @@ fun SearchAndCollectionBar(
     ) {
         SearchBar(
             modifier = Modifier.padding(horizontal = 3.dp),
-            hint = stringResource(R.string.media_search_hint),
+            hint = stringResource(R.string.hint_media_search),
             initialQuery = initialQuery,
             onQueryChange = onSearch
         )
@@ -65,9 +63,7 @@ fun SearchAndCollectionBar(
         }
         if (isLoading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         if (loadFailed) {
-            TextButton(onClick = onRetry) {
-                Text(stringResource(R.string.browse_retry))
-            }
+            ErrorNotice(R.string.error_library_load, onRetry)
         }
     }
 }

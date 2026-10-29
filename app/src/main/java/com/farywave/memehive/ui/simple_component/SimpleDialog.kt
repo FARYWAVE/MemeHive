@@ -2,6 +2,7 @@ package com.farywave.memehive.ui.simple_component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,10 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.farywave.memehive.ui.component.FeedbackHost
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
@@ -38,40 +42,49 @@ fun <T> SimpleDialog(
             dismissOnClickOutside = actionsEnabled,
         ),
     ) {
-        Surface(
-            color = LocalAppColors.current.backgroundPrimary,
-            shape = MaterialTheme.shapes.medium,
-            tonalElevation = 10.dp
-        ) {
-            Column(
-                modifier = Modifier
-                    .wrapContentSize()
-                    .padding(horizontal = 25.dp, vertical = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+        val focusManager = LocalFocusManager.current
+        FeedbackHost(overlay = false) {
+            Surface(
+                modifier = Modifier.pointerInput(focusManager) {
+                    detectTapGestures { focusManager.clearFocus() }
+                },
+                color = LocalAppColors.current.backgroundPrimary,
+                shape = MaterialTheme.shapes.medium,
+                tonalElevation = 10.dp
             ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = LocalAppColors.current.contentPrimary
-                )
-
-                content()
-
-                if (actions.isNotEmpty()) Row(
-                    modifier = Modifier.wrapContentSize(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                Column(
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .padding(horizontal = 25.dp, vertical = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    actions.forEach { item ->
-                        DialogButton(
-                            stringResource(item.text),
-                            when(item.type) {
-                                ActionType.NORMAL -> LocalAppColors.current.accentPrimary
-                                ActionType.WARNING -> LocalAppColors.current.warning
-                                ActionType.DISMISS -> LocalAppColors.current.transparent
-                            },
-                            enabled = actionsEnabled,
-                        ) { onAction(item) }
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = LocalAppColors.current.contentPrimary
+                    )
+
+                    content()
+
+                    if (actions.isNotEmpty()) Row(
+                        modifier = Modifier.wrapContentSize(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        actions.forEach { item ->
+                            DialogButton(
+                                stringResource(item.text),
+                                when(item.type) {
+                                    ActionType.NORMAL -> LocalAppColors.current.accentPrimary
+                                    ActionType.WARNING -> LocalAppColors.current.warning
+                                    ActionType.DISMISS -> LocalAppColors.current.transparent
+                                },
+                                enabled = actionsEnabled,
+                            ) {
+                                focusManager.clearFocus()
+                                onAction(item)
+                            }
+                        }
                     }
                 }
             }
