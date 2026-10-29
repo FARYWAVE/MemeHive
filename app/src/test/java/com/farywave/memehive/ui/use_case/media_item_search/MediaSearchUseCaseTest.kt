@@ -6,6 +6,7 @@ import com.farywave.memehive.data.local.db.entity.TagEntity
 import com.farywave.memehive.data.local.db.relation.MediaItemDetails
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.domain.model.MediaItem
+import com.farywave.memehive.ui.use_case.MediaSearchState
 import com.farywave.memehive.ui.use_case.MediaSearchUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -13,10 +14,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -133,33 +136,128 @@ class MediaSearchUseCaseTest {
     }
 
     @Test
-    fun `extending queries never introduces results absent for shorter prefixes`() = runTest {
+    fun `normalization handles compatibility characters composed accents and whitespace`() = runTest {
         val search = observeSearch()
-        val texts = listOf(
-            "Funny", "fundamental", "kung fu", "two words", "100%_literal",
-            "Привет", "ΟΣΑ", "İstanbul",
+        search.dao.items.value = listOf(
+            item(1, caption = "ＣＡＦÉ  cats"),
+            item(2, description = "Привет"),
+            item(3, caption = "100%_literal"),
         )
-        search.dao.items.value = texts.flatMapIndexed { index, text ->
-            listOf(
-                item(index * 3L + 1, tags = listOf(text)),
-                item(index * 3L + 2, caption = text),
-                item(index * 3L + 3, description = text),
-            )
-        }
-        for (query in texts + listOf("funnier", "funz", "missing")) {
-            search.query.value = ""
+        for ((query, ids) in listOf(
+            " cafe\u0301 \t cats " to listOf(1L),
+            "ПРИ" to listOf(2L),
+            "%_" to listOf(3L),
+            "  " to listOf(1L, 2L, 3L),
+        )) {
+            search.query.value = query
             runCurrent()
-            var previous = search.ids.toSet()
-            for (length in 1..query.length) {
-                val prefix = query.take(length)
-                search.query.value = prefix
-                runCurrent()
-                val current = search.ids.toSet()
-                assertTrue("New results appeared for '$prefix'", previous.containsAll(current))
-                previous = current
-            }
-            if (query in texts) assertEquals(3, search.ids.size)
+            assertEquals(ids, search.ids)
         }
+    }
+
+    @Test
+    fun `one edit typos include transpositions but short queries remain literal`() = runTest {
+        val search = observeSearch()
+        search.dao.items.value = listOf(item(1, caption = "funny"), item(2, caption = "cat"))
+        for (query in listOf("funy", "funnny", "fanny", "funyn")) {
+            search.query.value = query
+            runCurrent()
+            assertEquals(query, listOf(1L), search.ids)
+        }
+        for (query in listOf("fxnxy", "cta", "funny dog")) {
+            search.query.value = query
+            runCurrent()
+            assertTrue(query, search.ids.isEmpty())
+        }
+    }
+
+    @Test
+    fun `exact matches precede typos with field similarity and id tie breaks`() = runTest {
+        val search = observeSearch()
+        search.dao.items.value = listOf(
+            item(9, tags = listOf("funnys")),
+            item(8, tags = listOf("funny")),
+            item(7, tags = listOf("very funny")),
+            item(6, caption = "funny"),
+            item(5, description = "funny"),
+            item(4, tags = listOf("fanny")),
+            item(3, tags = listOf("funnny")),
+            item(2, caption = "fanny"),
+            item(1, description = "fanny"),
+            item(10, tags = listOf("funny")),
+        )
+        search.query.value = "funny"
+        runCurrent()
+        assertEquals(listOf(8L, 10L, 9L, 7L, 6L, 5L, 3L, 4L, 2L, 1L), search.ids)
+    }
+
+    @Test
+    fun `loading failure and retry recover observation and subsequent edits`() = runTest {
+        val dao = FakeMediaItemDao().apply { failuresRemaining = 1 }
+        val retries = MutableStateFlow(0)
+        val states = mutableListOf<MediaSearchState>()
+        val useCase = MediaSearchUseCase(MediaItemRepository(dao) { error("No images") }, StandardTestDispatcher(testScheduler))
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            useCase.observeState(MutableStateFlow(null), MutableStateFlow(""), retries).collect { states += it }
+        }
+        runCurrent()
+        assertTrue(states.first().isLoading)
+        assertTrue(states.last().failure is IllegalStateException)
+        retries.value++
+        runCurrent()
+        assertEquals(MediaSearchState(), states.last())
+        dao.items.value = listOf(item(1, caption = "new"))
+        runCurrent()
+        assertEquals(listOf(1L), states.last().items.map { it.id })
+        assertEquals(2, dao.observationCount)
+    }
+
+    @Test
+    fun `switching collection cancels a delayed read and clears stale results while loading`() = runTest {
+        val dao = FakeMediaItemDao().apply {
+            items.value = listOf(item(1), item(2))
+            memberships.value = mapOf(7L to setOf(1L), 8L to setOf(2L))
+            delays = mapOf(7L to 1000L)
+        }
+        val collection = MutableStateFlow<Long?>(null)
+        val states = mutableListOf<MediaSearchState>()
+        val useCase = MediaSearchUseCase(MediaItemRepository(dao) { error("No images") }, StandardTestDispatcher(testScheduler))
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            useCase.observeState(collection, MutableStateFlow(""), MutableStateFlow(0)).collect { states += it }
+        }
+        runCurrent()
+        collection.value = 7L
+        runCurrent()
+        assertTrue(states.last().isLoading)
+        assertTrue(states.last().items.isEmpty())
+        collection.value = 8L
+        runCurrent()
+        val switchIndex = states.size - 1
+        advanceTimeBy(2000)
+        runCurrent()
+        assertTrue(states.drop(switchIndex).all { it.items.map { item -> item.id } == listOf(2L) })
+        assertEquals(setOf<Long?>(8L), dao.activeScopes)
+    }
+
+    @Test
+    fun `ten thousand items support repeated queries without reloading the database`() = runTest {
+        val search = observeSearch()
+        search.dao.items.value = (1L..10_000L).map {
+            item(it, caption = "Library photo number $it", description = "A sample description for a realistic library", tags = listOf("photos", "archive"))
+        }
+        val started = System.nanoTime()
+        runCurrent()
+        for (query in listOf("photo", "phoot", "archive", "missing", "number 9999")) {
+            search.query.value = query
+            runCurrent()
+            when (query) {
+                "missing" -> assertTrue(search.ids.isEmpty())
+                "number 9999" -> assertEquals(listOf(9999L), search.ids)
+                else -> assertEquals(10_000, search.ids.size)
+            }
+        }
+        assertEquals(1, search.dao.observationCount)
+        println("10,000 items, index plus five searches: ${(System.nanoTime() - started) / 1_000_000} ms")
     }
 
     @Test
@@ -175,10 +273,10 @@ class MediaSearchUseCaseTest {
             runCurrent()
             assertEquals(setOf(1L, 2L, 3L), search.ids.toSet())
         }
-        // Sharing a trigram alone is no longer enough to match an unrelated query.
+        // A four-character query may now match a one-edit typo.
         search.query.value = "funz"
         runCurrent()
-        assertTrue(search.latest.isEmpty())
+        assertEquals(listOf(3L, 2L), search.ids)
     }
 
     private fun TestScope.observeSearch(): SearchFixture {
@@ -216,11 +314,18 @@ class MediaSearchUseCaseTest {
         val memberships = MutableStateFlow<Map<Long, Set<Long>>>(emptyMap())
         val activeScopes = mutableSetOf<Long?>()
         var observationCount = 0
+        var failuresRemaining = 0
+        var delays = emptyMap<Long?, Long>()
 
         override fun observeByCollection(collectionId: Long?): Flow<List<MediaItemDetails>> = flow {
             observationCount++
+            if (failuresRemaining > 0) {
+                failuresRemaining--
+                error("Database unavailable")
+            }
             activeScopes += collectionId
             try {
+                delay(delays[collectionId] ?: 0L)
                 emitAll(combine(items, memberships) { items, memberships ->
                     items.filter {
                         collectionId == null || it.mediaItem.id in memberships[collectionId].orEmpty()

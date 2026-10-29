@@ -15,11 +15,16 @@ import com.farywave.memehive.ui.model.UiError
 import com.farywave.memehive.ui.use_case.CollectionTransferUseCases
 import com.farywave.memehive.ui.use_case.CollectionUseCases
 import com.farywave.memehive.ui.use_case.MediaItemUseCases
+import com.farywave.memehive.ui.use_case.MediaSearchState
 import com.farywave.memehive.ui.use_case.MediaSearchUseCase
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -27,6 +32,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.IOException
 
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class HiveViewModel(
     private val mediaItemUseCases: MediaItemUseCases,
     private val collectionUseCases: CollectionUseCases,
@@ -56,14 +62,30 @@ class HiveViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
-    val mediaItems = mediaSearchUseCase(selectedCollectionId, searchQuery)
-        .onEach { items ->
-            val visibleIds = items.mapTo(mutableSetOf()) { it.id }
-            _selectedMediaItemIds.update { it.intersect(visibleIds) }
-            if (_selectedMediaItemIds.value.isEmpty()) _isMassEditingMode.value = false
+    private val _collectionsLoading = MutableStateFlow(true)
+    val collectionsLoading = _collectionsLoading.asStateFlow()
+
+    private val _collectionsFailed = MutableStateFlow(false)
+    val collectionsFailed = _collectionsFailed.asStateFlow()
+
+    private val retries = MutableStateFlow(0)
+    val mediaState = mediaSearchUseCase.observeState(
+        selectedCollectionId, searchQuery.debounce(200), retries,
+    )
+        .onEach { state ->
+            if (!state.isLoading && state.failure == null) {
+                val visibleIds = state.items.mapTo(mutableSetOf()) { it.id }
+                _selectedMediaItemIds.update { it.intersect(visibleIds) }
+                if (_selectedMediaItemIds.value.isEmpty()) _isMassEditingMode.value = false
+            }
         }
-        .catch { reportError(R.string.media_load_error, it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MediaSearchState(isLoading = true))
+
+    fun retryLoading() {
+        _collectionsLoading.value = true
+        _collectionsFailed.value = false
+        retries.update { it + 1 }
+    }
 
     init {
         loadCollections()
@@ -121,7 +143,7 @@ class HiveViewModel(
     }
 
     fun duplicateSelectedMediaItems() {
-        val selected = mediaItems.value.filter { it.id in _selectedMediaItemIds.value }
+        val selected = mediaState.value.items.filter { it.id in _selectedMediaItemIds.value }
 
         launchWithError(R.string.media_duplicate_error) {
             selected.forEach {
@@ -172,9 +194,17 @@ class HiveViewModel(
 
     private fun loadCollections() {
         viewModelScope.launch {
-            collectionUseCases.getAllCollections()
-                .catch { reportError(R.string.collections_load_error, it) }
+            retries.flatMapLatest {
+                collectionUseCases.getAllCollections()
+                    .catch {
+                        _collectionsLoading.value = false
+                        _collectionsFailed.value = true
+                        reportError(R.string.collections_load_error, it)
+                    }
+            }
                 .collect { collections ->
+                    _collectionsLoading.value = false
+                    _collectionsFailed.value = false
                     _collections.value = collections
                     val selectedId = _selectedCollectionId.value
                     if (selectedId != null && collections.none { it.id == selectedId }) {

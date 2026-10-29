@@ -64,7 +64,9 @@ fun HiveRoute(
     }
 
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
-    val mediaItems by viewModel.mediaItems.collectAsStateWithLifecycle()
+    val mediaState by viewModel.mediaState.collectAsStateWithLifecycle()
+    val collectionsLoading by viewModel.collectionsLoading.collectAsStateWithLifecycle()
+    val collectionsFailed by viewModel.collectionsFailed.collectAsStateWithLifecycle()
     val selectedMediaItemIds by viewModel.selectedMediaItemIds.collectAsStateWithLifecycle()
     val collections by viewModel.collections.collectAsStateWithLifecycle()
     val selectedCollectionId by viewModel.selectedCollectionId.collectAsStateWithLifecycle()
@@ -90,7 +92,9 @@ fun HiveRoute(
     HiveScreen(
         state = HiveUiState(
             searchQuery = searchQuery,
-            mediaItems = mediaItems,
+            mediaItems = mediaState.items,
+            isLoading = mediaState.isLoading || collectionsLoading,
+            loadFailed = mediaState.failure != null || collectionsFailed,
             selectedMediaItemIds = selectedMediaItemIds,
             collections = collections,
             selectedCollectionId = selectedCollectionId,
@@ -111,6 +115,7 @@ fun HiveRoute(
             exportLauncher.launch("${collection.name}.zip")
         },
         onDeleteCollection = viewModel::deleteCollection,
+        onRetryLoading = viewModel::retryLoading,
         onSearchQueryChanged = viewModel::onSearchQueryChanged,
         onCollectionSelected = viewModel::onCollectionSelected,
         onToggleMediaSelection = viewModel::toggleItemSelection,

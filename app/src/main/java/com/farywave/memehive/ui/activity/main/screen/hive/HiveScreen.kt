@@ -68,6 +68,7 @@ fun HiveScreen(
     onExportCollection: (Collection) -> Unit,
     onDeleteCollection: (Collection) -> Unit,
     onSearchQueryChanged: (String) -> Unit,
+    onRetryLoading: () -> Unit = {},
     onCollectionSelected: (Long?) -> Unit,
     onToggleMediaSelection: (Long) -> Unit,
     onStartMediaSelection: (Long) -> Unit,
@@ -183,6 +184,9 @@ fun HiveScreen(
                         topBarHeight = it.height
                     },
                 initialQuery = state.searchQuery,
+                    isLoading = state.isLoading,
+                    loadFailed = state.loadFailed,
+                    onRetry = onRetryLoading,
                 onSearch = onSearchQueryChanged,
                 collections = state.collections,
                 selectedCollectionId = state.selectedCollectionId,

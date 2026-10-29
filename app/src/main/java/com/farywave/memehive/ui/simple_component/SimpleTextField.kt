@@ -15,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -25,8 +26,9 @@ import androidx.compose.ui.unit.dp
 import com.farywave.memehive.ui.theme.LocalAppColors
 import kotlinx.coroutines.flow.debounce
 
+@OptIn(kotlinx.coroutines.FlowPreview::class)
 @Composable
-fun     SimpleTextField(
+fun SimpleTextField(
     modifier: Modifier = Modifier,
     hint: String,
     numberOfLines: Int = 1,
@@ -35,19 +37,22 @@ fun     SimpleTextField(
     callbackDelay: Long = 300L,
     enabled: Boolean = true,
 ) {
-    val value = rememberTextFieldState()
+    val value = rememberTextFieldState(initialText = initialValue.orEmpty())
+    val latestOnValueChange by rememberUpdatedState(onValueChange)
 
     var isFocused by remember { mutableStateOf(false) }
 
     LaunchedEffect(initialValue) {
-        value.setTextAndPlaceCursorAtEnd(initialValue ?: "")
+        if (value.text.toString() != initialValue.orEmpty()) {
+            value.setTextAndPlaceCursorAtEnd(initialValue.orEmpty())
+        }
     }
 
     LaunchedEffect(Unit) {
-        snapshotFlow { value.text }
+        snapshotFlow { value.text.toString() }
             .debounce(callbackDelay)
             .collect { text ->
-                onValueChange(text.toString())
+                latestOnValueChange(text)
             }
     }
 

@@ -6,6 +6,8 @@ import com.farywave.memehive.domain.model.MediaItem
 
 
 data class HiveUiState(
+    val isLoading: Boolean = false,
+    val loadFailed: Boolean = false,
     val searchQuery: String = "",
     val mediaItems: List<MediaItem> = emptyList(),
     val selectedMediaItemIds: Set<Long> = emptySet(),

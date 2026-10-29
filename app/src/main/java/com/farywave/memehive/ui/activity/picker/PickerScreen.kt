@@ -34,6 +34,7 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 fun PickerScreen(
     state: PickerUiState,
     onSearchQueryChanged: (String) -> Unit,
+    onRetryLoading: () -> Unit = {},
     onCollectionSelected: (Long?) -> Unit,
     onItemClicked: (MediaItem) -> Unit,
 ) {
@@ -73,6 +74,9 @@ fun PickerScreen(
                             topBarHeight = it.height
                         },
                     initialQuery = state.searchQuery,
+                    isLoading = state.isLoading,
+                    loadFailed = state.loadFailed,
+                    onRetry = onRetryLoading,
                     onSearch = onSearchQueryChanged,
                     collections = state.collections,
                     selectedCollectionId = state.selectedCollectionId,
