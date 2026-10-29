@@ -62,8 +62,10 @@
     <string name="discard_changes_message">Несохранённые изменения будут потеряны.</string>
     <string name="discard_changes_confirm">Отменить изменения</string>
     <string name="remove_image">Удалить изображение</string>
+    <string name="browse_retry">Не удалось загрузить библиотеку. Нажмите чтобы попробовать еще раз</string>
     <string name="media_search_empty_title">Ничего не нашлось</string>
     <string name="media_search_empty_message">Попробуйте другое слово или запрос покороче.</string>
     <string name="media_library_empty_title">Здесь начинается ваша коллекция мемов</string>
     <string name="media_library_empty_message">Добавьте первый мем и чувствуйте себя как дома.</string>
+    <string name="copy_to_clipboard">Скопировать в буфер</string>
 </resources>

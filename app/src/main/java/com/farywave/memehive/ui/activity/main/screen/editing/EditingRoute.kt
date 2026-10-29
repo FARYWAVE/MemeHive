@@ -11,11 +11,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.MemeHiveApplication
+import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorViewModel
 import kotlinx.coroutines.flow.filter
 
 @Composable
 fun EditingRoute(
+    onCopyImage: (Image, onFailure: () -> Unit) -> Unit,
     mediaItemId: Long,
     onClose: () -> Unit,
 ) {
@@ -84,5 +86,6 @@ fun EditingRoute(
         onRemoveTag = viewModel::removeTag,
         onUpdateTag = viewModel::updateTag,
         onAddTag = viewModel::addTag,
+        onCopyImage = onCopyImage,
     )
 }

@@ -6,11 +6,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.ui.activity.main.screen.editing.EditingRoute
 import com.farywave.memehive.ui.activity.main.screen.hive.HiveRoute
 
 @Composable
-fun AppNavigation(onEnableNotification: (Boolean) -> Unit) {
+fun AppNavigation(onEnableNotification: (Boolean) -> Unit, onCopyImage: (Image, onFailure: () -> Unit) -> Unit) {
     val controller = rememberNavController()
     NavHost(navController = controller, startDestination = HiveDestination) {
         composable<HiveDestination> { entry ->
@@ -28,6 +29,7 @@ fun AppNavigation(onEnableNotification: (Boolean) -> Unit) {
         composable<EditingDestination> { entry ->
             val destination = entry.toRoute<EditingDestination>()
             EditingRoute(
+                onCopyImage = onCopyImage,
                 mediaItemId = destination.mediaItemId ?: 0L,
                 onClose = {
                     if (controller.currentBackStackEntry == entry) controller.popBackStack()

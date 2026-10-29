@@ -74,4 +74,5 @@
     <string name="media_search_empty_message">Try a different word or a shorter search.</string>
     <string name="media_library_empty_title">Your meme collection starts here</string>
     <string name="media_library_empty_message">Add your first meme and make yourself at home.</string>
+    <string name="copy_to_clipboard">Copy to clipboard</string>
 </resources>

@@ -62,6 +62,7 @@ import com.farywave.memehive.ui.model.MediaItemDraft
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorDialog
 import com.farywave.memehive.domain.model.Collection
+import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.ui.component.CollectionPickerSheet
 import com.farywave.memehive.ui.component.CollectionSelectorSheet
 import com.farywave.memehive.ui.component.ImagePicker
@@ -90,6 +91,7 @@ fun EditingScreen(
     onRemoveTag: (Int) -> Unit,
     onUpdateTag: (Int, String) -> Unit,
     onAddTag: (String) -> Unit,
+    onCopyImage: (Image, onFailure: () -> Unit) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     var collectionSheet by rememberSaveable { mutableStateOf<String?>(null) }
@@ -164,6 +166,7 @@ fun EditingScreen(
                 SimpleActionMenu<MoreActions>(
                     options = enumEntries<MoreActions>().filter { option ->
                         when (option) {
+                            MoreActions.COPY_TO_CLIPBOARD -> state.mediaItemDraft.image != null
                             MoreActions.DUPLICATE, MoreActions.SET_AS_COVER -> state.screenState == ScreenState.SAVED
                             MoreActions.DELETE -> state.screenState in listOf(
                                 ScreenState.EDITING,
@@ -175,6 +178,7 @@ fun EditingScreen(
                     },
                     onSelected = { action ->
                         when (action) {
+                            MoreActions.COPY_TO_CLIPBOARD -> state.mediaItemDraft.image?.let { onCopyImage(it) {}}
                             MoreActions.ADD_TO_COLLECTION -> collectionSheet = "selector"
                             MoreActions.SET_AS_COVER -> collectionSheet = "cover"
                             MoreActions.DUPLICATE -> if (!state.isSaving) onDuplicate()

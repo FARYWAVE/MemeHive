@@ -8,6 +8,7 @@ enum class MoreActions(
     @StringRes override val labelId: Int,
     override val highlighted: Boolean = false
 ) : ActionMenuOptions {
+    COPY_TO_CLIPBOARD(R.string.copy_to_clipboard),
     DUPLICATE(R.string.action_duplicate),
     ADD_TO_COLLECTION(R.string.action_add_to_collection),
     SET_AS_COVER(R.string.action_set_as_cover),
