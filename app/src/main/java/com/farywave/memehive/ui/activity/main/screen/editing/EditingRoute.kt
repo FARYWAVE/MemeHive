@@ -1,5 +1,6 @@
 package com.farywave.memehive.ui.activity.main.screen.editing
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.filter
 
 @Composable
 fun EditingRoute(
+    initialUri: Uri?,
     onCopyImage: (Image, onFailure: () -> Unit) -> Unit,
     mediaItemId: Long,
     onClose: () -> Unit,
@@ -37,6 +39,10 @@ fun EditingRoute(
 
     val collections by viewModel.collections.collectAsStateWithLifecycle()
     val mediaItemDraft by viewModel.mediaItemDraft.collectAsStateWithLifecycle()
+
+    LaunchedEffect(viewModel, initialUri) {
+        initialUri?.let(viewModel::updateImage)
+    }
 
     val screenState by viewModel.screenState.collectAsStateWithLifecycle()
 

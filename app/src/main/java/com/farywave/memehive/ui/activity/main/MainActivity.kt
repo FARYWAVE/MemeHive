@@ -3,7 +3,9 @@ package com.farywave.memehive.ui.activity.main
 import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -16,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
+import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
 import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.R
@@ -46,6 +49,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+
+
         setContent {
             MemeHiveTheme {
                 enableEdgeToEdge(
@@ -53,10 +58,11 @@ class MainActivity : ComponentActivity() {
                 )
                 val defaultLabel = stringResource(R.string.hive_item)
                 AppNavigation(
+                    initialUri = if (savedInstanceState == null) getUriFromIntent(intent) else null,
                     onCopyImage = { image, onFailure ->
                         copyToClipboard(defaultLabel, image.id, onFailure)
                     },
-                    onEnableNotification = {value ->
+                    onEnableNotification = { value ->
                         if (value) enablePicker()
                     }
                 )
@@ -99,14 +105,16 @@ class MainActivity : ComponentActivity() {
         copying = true
         lifecycleScope.launch {
             try {
-                val useCases = (applicationContext as MemeHiveApplication).container.mediaItemUseCases
+                val useCases =
+                    (applicationContext as MemeHiveApplication).container.mediaItemUseCases
                 val uri = useCases.getImageSharingUri(imageId)
                 val clip = withContext(Dispatchers.IO) {
                     ClipData.newUri(contentResolver, label, uri)
                 }
                 val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(clip)
-                Toast.makeText(this@MainActivity, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, R.string.copied_to_clipboard, Toast.LENGTH_SHORT)
+                    .show()
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
@@ -115,6 +123,23 @@ class MainActivity : ComponentActivity() {
             } finally {
                 copying = false
             }
+        }
+    }
+
+
+    private fun getUriFromIntent(intent: Intent): Uri? {
+        if (intent.type?.startsWith("image/") != true) return null
+
+        return when (intent.action) {
+            Intent.ACTION_SEND ->
+                IntentCompat.getParcelableExtra(
+                    intent,
+                    Intent.EXTRA_STREAM,
+                    Uri::class.java
+                )
+
+            Intent.ACTION_VIEW, Intent.ACTION_EDIT -> intent.data
+            else -> null
         }
     }
 }

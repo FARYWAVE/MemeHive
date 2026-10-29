@@ -63,6 +63,7 @@ import com.farywave.memehive.ui.activity.main.dialog.collection_editor.Collectio
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorDialog
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.Image
+import com.farywave.memehive.ui.activity.main.dialog.DiscardEditingConfirmation
 import com.farywave.memehive.ui.component.CollectionPickerSheet
 import com.farywave.memehive.ui.component.CollectionSelectorSheet
 import com.farywave.memehive.ui.component.ImagePicker
@@ -100,8 +101,8 @@ fun EditingScreen(
     val requestClose: () -> Unit = {
         if (!state.isSaving) {
             val hasChanges = state.screenState == ScreenState.EDITING ||
-                (state.screenState == ScreenState.CREATION &&
-                    !state.mediaItemDraft.hasSameContentAs(MediaItemDraft()))
+                    (state.screenState == ScreenState.CREATION &&
+                            !state.mediaItemDraft.hasSameContentAs(MediaItemDraft()))
             if (hasChanges) showExitConfirmation = true else onBack()
         }
     }
@@ -178,7 +179,12 @@ fun EditingScreen(
                     },
                     onSelected = { action ->
                         when (action) {
-                            MoreActions.COPY_TO_CLIPBOARD -> state.mediaItemDraft.image?.let { onCopyImage(it) {}}
+                            MoreActions.COPY_TO_CLIPBOARD -> state.mediaItemDraft.image?.let {
+                                onCopyImage(
+                                    it
+                                ) {}
+                            }
+
                             MoreActions.ADD_TO_COLLECTION -> collectionSheet = "selector"
                             MoreActions.SET_AS_COVER -> collectionSheet = "cover"
                             MoreActions.DUPLICATE -> if (!state.isSaving) onDuplicate()
@@ -222,7 +228,10 @@ fun EditingScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 item {
-                    ImagePicker(initialSrc = state.mediaItemDraft.image?.uri, shape = roundedShape) { uri ->
+                    ImagePicker(
+                        initialSrc = state.mediaItemDraft.image?.uri,
+                        shape = roundedShape
+                    ) { uri ->
                         onImageChanged(uri)
                     }
                 }
@@ -315,22 +324,20 @@ fun EditingScreen(
         }
     }
     if (showExitConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showExitConfirmation = false },
-            title = { Text(stringResource(R.string.discard_changes_title)) },
-            text = { Text(stringResource(R.string.discard_changes_message)) },
-            confirmButton = {
-                TextButton(onClick = { showExitConfirmation = false; onBack() }) {
-                    Text(stringResource(R.string.discard_changes_confirm))
-                }
+        DiscardEditingConfirmation(
+            onSave = {
+                showExitConfirmation = false
+                onSave()
+                onBack()
             },
-            dismissButton = {
-                TextButton(onClick = { showExitConfirmation = false }) {
-                    Text(stringResource(R.string.button_cancel))
-                }
+            onDiscard = {
+                showExitConfirmation = false
+                onBack()
             },
+            onDismissRequest = { showExitConfirmation = false }
         )
     }
+
     CollectionEditorDialog(
         state = state.collectionEditor,
         onSubmit = onSubmitCollection,

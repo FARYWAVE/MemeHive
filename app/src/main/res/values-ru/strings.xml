@@ -68,4 +68,5 @@
     <string name="media_library_empty_title">Здесь начинается ваша коллекция мемов</string>
     <string name="media_library_empty_message">Добавьте первый мем и чувствуйте себя как дома.</string>
     <string name="copy_to_clipboard">Скопировать в буфер</string>
+    <string name="action_save">Сохранить</string>
 </resources>
