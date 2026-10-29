@@ -1,6 +1,6 @@
 package com.farywave.memehive.ui.activity.main.screen.hive
 
-import com.farywave.memehive.ui.collection.CollectionEditorState
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorState
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.MediaItem
 

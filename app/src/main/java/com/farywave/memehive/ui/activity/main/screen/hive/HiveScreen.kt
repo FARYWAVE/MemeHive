@@ -41,10 +41,12 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.activity.main.dialog.AboutApp
-import com.farywave.memehive.ui.collection.CollectionDraft
-import com.farywave.memehive.ui.collection.CollectionEditorDialog
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorDialog
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.ui.component.CollectionPickerSheet
+import com.farywave.memehive.ui.component.EmptyHiveMessage
+import com.farywave.memehive.ui.component.EmptySearchResultMessage
 import com.farywave.memehive.ui.component.MediaItemCardFull
 import com.farywave.memehive.ui.component.SearchAndCollectionBar
 import com.farywave.memehive.ui.simple_component.SimpleActionMenu
@@ -140,7 +142,10 @@ fun HiveScreen(
                     when (action) {
                         MoreActions.ENABLE_PICKER -> onEnableNotification(true)
 
-                        MoreActions.VIEW_APP_INFO -> { showAbout = true }
+                        MoreActions.VIEW_APP_INFO -> {
+                            showAbout = true
+                        }
+
                         MoreActions.IMPORT_COLLECTION -> {
                             onCollectionImport()
                         }
@@ -184,9 +189,9 @@ fun HiveScreen(
                         topBarHeight = it.height
                     },
                 initialQuery = state.searchQuery,
-                    isLoading = state.isLoading,
-                    loadFailed = state.loadFailed,
-                    onRetry = onRetryLoading,
+                isLoading = state.isLoading,
+                loadFailed = state.loadFailed,
+                onRetry = onRetryLoading,
                 onSearch = onSearchQueryChanged,
                 collections = state.collections,
                 selectedCollectionId = state.selectedCollectionId,
@@ -200,15 +205,21 @@ fun HiveScreen(
                 }
             )
 
-            LazyVerticalStaggeredGrid(
-                modifier = Modifier.constrainAs(content) {
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                    width = Dimension.fillToConstraints
-                    height = Dimension.fillToConstraints
-                },
+            val contentModifier = Modifier.constrainAs(content) {
+                top.linkTo(parent.top)
+                bottom.linkTo(parent.bottom)
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+                width = Dimension.fillToConstraints
+                height = Dimension.fillToConstraints
+            }
+
+            if (state.mediaItems.isEmpty()) {
+                if (state.searchQuery.isNotBlank()) EmptySearchResultMessage(contentModifier)
+                else EmptyHiveMessage(contentModifier)
+
+            } else LazyVerticalStaggeredGrid(
+                modifier = contentModifier,
                 columns = StaggeredGridCells.Fixed(2),
                 verticalItemSpacing = 8.dp,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

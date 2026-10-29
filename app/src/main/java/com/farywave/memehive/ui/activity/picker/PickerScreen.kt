@@ -26,6 +26,8 @@ import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import com.farywave.memehive.domain.model.MediaItem
+import com.farywave.memehive.ui.component.EmptyHiveMessage
+import com.farywave.memehive.ui.component.EmptySearchResultMessage
 import com.farywave.memehive.ui.component.MediaItemCardSimple
 import com.farywave.memehive.ui.component.SearchAndCollectionBar
 import com.farywave.memehive.ui.theme.LocalAppColors
@@ -83,15 +85,21 @@ fun PickerScreen(
                     onCollectionSelected = onCollectionSelected
                 )
 
-                LazyVerticalStaggeredGrid(
-                    modifier = Modifier.constrainAs(content) {
-                        top.linkTo(parent.top)
-                        bottom.linkTo(parent.bottom)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        width = Dimension.fillToConstraints
-                        height = Dimension.fillToConstraints
-                    },
+                val contentModifier = Modifier.constrainAs(content) {
+                    top.linkTo(parent.top)
+                    bottom.linkTo(parent.bottom)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    width = Dimension.fillToConstraints
+                    height = Dimension.fillToConstraints
+                }
+
+                if (state.mediaItems.isEmpty()) {
+                    if (state.searchQuery.isNotBlank()) EmptySearchResultMessage(contentModifier)
+                    else EmptyHiveMessage(contentModifier)
+
+                } else LazyVerticalStaggeredGrid(
+                    modifier = contentModifier,
                     columns = StaggeredGridCells.Fixed(2),
                     verticalItemSpacing = 8.dp,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),

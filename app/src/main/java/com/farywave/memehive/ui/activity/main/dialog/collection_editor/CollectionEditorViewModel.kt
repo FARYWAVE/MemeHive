@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.collection
+package com.farywave.memehive.ui.activity.main.dialog.collection_editor
 
 import android.util.Log
 import androidx.core.net.toUri

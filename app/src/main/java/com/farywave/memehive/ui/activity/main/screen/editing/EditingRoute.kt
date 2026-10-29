@@ -11,7 +11,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.MemeHiveApplication
-import com.farywave.memehive.ui.collection.CollectionEditorViewModel
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorViewModel
 import kotlinx.coroutines.flow.filter
 
 @Composable

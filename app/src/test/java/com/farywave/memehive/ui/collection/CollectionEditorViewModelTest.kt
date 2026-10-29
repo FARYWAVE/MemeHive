@@ -3,6 +3,8 @@ package com.farywave.memehive.ui.collection
 import androidx.lifecycle.SavedStateHandle
 import com.farywave.memehive.R
 import com.farywave.memehive.domain.model.Collection
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -57,7 +59,8 @@ class CollectionEditorViewModelTest {
 
     @Test fun `edit submits the original id and supports removing a cover`() = runTest(dispatcher) {
         var received: Pair<Long?, CollectionDraft>? = null
-        val editor = CollectionEditorViewModel(SavedStateHandle()) { id, draft -> received = id to draft }
+        val editor =
+            CollectionEditorViewModel(SavedStateHandle()) { id, draft -> received = id to draft }
         editor.open(Collection(id = 42, name = "Before"))
         editor.submit(CollectionDraft("After", coverUri = null))
         runCurrent()
@@ -117,7 +120,8 @@ class CollectionEditorViewModelTest {
         runCurrent()
         val snapshot = handle.keys().associateWith { handle.get<Any?>(it) }
         var restoredCalls = 0
-        val restored = CollectionEditorViewModel(SavedStateHandle(snapshot)) { _, _ -> restoredCalls++ }
+        val restored =
+            CollectionEditorViewModel(SavedStateHandle(snapshot)) { _, _ -> restoredCalls++ }
         assertEquals(editor.state.value!!.sessionId, restored.state.value!!.sessionId)
         assertEquals(CollectionDraft("After", "content://cover"), restored.state.value?.initialDraft)
         assertFalse(restored.state.value!!.isSaving)

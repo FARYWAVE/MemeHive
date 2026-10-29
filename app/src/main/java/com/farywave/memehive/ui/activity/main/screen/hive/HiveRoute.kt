@@ -15,7 +15,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.domain.model.Collection
-import com.farywave.memehive.ui.collection.CollectionEditorViewModel
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorViewModel
 
 
 @Composable

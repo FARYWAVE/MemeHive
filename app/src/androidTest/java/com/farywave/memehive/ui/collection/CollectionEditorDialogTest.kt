@@ -16,6 +16,9 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
 import com.farywave.memehive.R
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorDialog
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorState
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -31,7 +34,10 @@ class CollectionEditorDialogTest {
         compose.setContent {
             MemeHiveTheme {
                 CollectionEditorDialog(
-                    state = CollectionEditorState("new", initialDraft = CollectionDraft(coverUri = "content://test/cover")),
+                    state = CollectionEditorState(
+                        "new",
+                        initialDraft = CollectionDraft(coverUri = "content://test/cover")
+                    ),
                     onSubmit = { submitted = it },
                     onDismiss = {},
                 )
@@ -89,7 +95,11 @@ class CollectionEditorDialogTest {
         compose.setContent {
             MemeHiveTheme {
                 CollectionEditorDialog(
-                    state = CollectionEditorState("edit", 7L, CollectionDraft("Cats", "content://test/cover")),
+                    state = CollectionEditorState(
+                        "edit",
+                        7L,
+                        CollectionDraft("Cats", "content://test/cover")
+                    ),
                     onSubmit = { submitted = it },
                     onDismiss = {},
                 )

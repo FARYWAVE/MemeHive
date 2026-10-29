@@ -59,8 +59,8 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.model.MediaItemDraft
-import com.farywave.memehive.ui.collection.CollectionDraft
-import com.farywave.memehive.ui.collection.CollectionEditorDialog
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorDialog
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.ui.component.CollectionPickerSheet
 import com.farywave.memehive.ui.component.CollectionSelectorSheet

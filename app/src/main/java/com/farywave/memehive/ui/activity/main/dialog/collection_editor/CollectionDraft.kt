@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.collection
+package com.farywave.memehive.ui.activity.main.dialog.collection_editor
 
 import androidx.annotation.StringRes
 import kotlinx.serialization.Serializable
