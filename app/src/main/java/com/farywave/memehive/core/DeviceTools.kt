@@ -19,8 +19,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.IOException
-import java.io.InputStream
 
 object DeviceTools {
     fun getAppVersion(context: Context): String {

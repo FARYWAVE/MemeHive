@@ -4,9 +4,6 @@ import android.database.sqlite.SQLiteException
 import android.net.Uri
 import android.util.Log
 import androidx.annotation.StringRes
-import com.farywave.memehive.ui.model.UiError
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.catch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.farywave.memehive.R
@@ -14,13 +11,16 @@ import com.farywave.memehive.core.collection_transfer.InvalidCollectionArchiveEx
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.domain.model.MediaItem
+import com.farywave.memehive.ui.model.UiError
 import com.farywave.memehive.ui.use_case.CollectionTransferUseCases
 import com.farywave.memehive.ui.use_case.CollectionUseCases
 import com.farywave.memehive.ui.use_case.MediaItemUseCases
 import com.farywave.memehive.ui.use_case.MediaSearchUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -144,32 +144,6 @@ class HiveViewModel(
         }
     }
 
-    fun createCollection(name: String, cover: Uri?) {
-        launchWithError(R.string.collection_create_error) {
-            collectionUseCases.createCollection(
-                Collection(
-                    id = 0,
-                    name = name,
-                    cover = cover?.let { Image(uri = it) },
-                    mediaItemCount = 0
-                )
-            )
-        }
-    }
-
-    fun updateCollection(collectionId: Long, newName: String?, newCover: Uri?) {
-        launchWithError(R.string.collection_update_error) {
-            val collection = collections.value.find { it.id == collectionId } ?: return@launchWithError
-
-            collectionUseCases.updateCollection(
-                collection.copy(
-                    name = newName ?: collection.name,
-                    cover = newCover?.let { Image(uri = it) }
-                )
-            )
-        }
-    }
-
     fun deleteCollection(collection: Collection) {
         launchWithError(R.string.collection_delete_error) {
             collectionUseCases.deleteCollection(collection)
@@ -227,7 +201,6 @@ class HiveViewModel(
             } catch (error: SQLiteException) {
                 reportTransferFailure(R.string.collection_transfer_database_error, error)
             }
-            // Cancellation and programming errors propagate; they are not import failures.
         }
     }
 
@@ -257,6 +230,8 @@ class HiveViewModel(
         Log.w("HiveViewModel", "Screen operation failed", failure)
         _error.value = UiError(message)
     }
+
+
 }
 
 data class CollectionTransferMessage(val id: Long, @param:StringRes val textRes: Int)

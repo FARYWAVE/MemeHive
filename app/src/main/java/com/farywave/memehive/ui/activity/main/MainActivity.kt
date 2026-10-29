@@ -12,7 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.ContextCompat
 import com.farywave.memehive.core.DeviceTools
-import com.farywave.memehive.ui.navigation.NavController
+import com.farywave.memehive.ui.navigation.AppNavigation
 import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 
@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
                 enableEdgeToEdge(
                     navigationBarStyle = SystemBarStyle.dark(LocalAppColors.current.backgroundPrimary.toArgb())
                 )
-                NavController { value ->
+                AppNavigation { value ->
                     if (value) enablePicker()
                 }
             }

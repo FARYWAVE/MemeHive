@@ -33,6 +33,7 @@ fun     SimpleTextField(
     initialValue: String?,
     onValueChange: (String) -> Unit,
     callbackDelay: Long = 300L,
+    enabled: Boolean = true,
 ) {
     val value = rememberTextFieldState()
 
@@ -69,7 +70,8 @@ fun     SimpleTextField(
             lineLimits = if (numberOfLines == 1) TextFieldLineLimits.SingleLine else TextFieldLineLimits.MultiLine(
                 numberOfLines
             ),
-            cursorBrush = SolidColor(LocalAppColors.current.accentPrimary)
+            cursorBrush = SolidColor(LocalAppColors.current.accentPrimary),
+            enabled = enabled,
         )
     }
 }

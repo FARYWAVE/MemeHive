@@ -14,12 +14,6 @@ import com.farywave.memehive.core.collection_transfer.mapper.toMediaItem
 import com.farywave.memehive.data.local.db.MemeHiveDatabase
 import com.farywave.memehive.data.local.db.repository.ImageRepository
 import com.farywave.memehive.domain.model.Collection
-import java.io.BufferedOutputStream
-import java.io.File
-import java.io.IOException
-import java.io.OutputStream
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
@@ -27,7 +21,13 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.BufferedOutputStream
+import java.io.File
+import java.io.IOException
+import java.io.OutputStream
 import java.nio.file.Files
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class CollectionTransferUseCases(
     private val db: MemeHiveDatabase,

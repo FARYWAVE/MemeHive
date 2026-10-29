@@ -32,12 +32,10 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.core.net.toFile
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.domain.model.MediaItem
 import com.farywave.memehive.ui.theme.LocalAppColors
-import java.io.File
 
 
 @Composable

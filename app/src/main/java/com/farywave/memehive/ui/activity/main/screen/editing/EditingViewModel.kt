@@ -1,24 +1,23 @@
 package com.farywave.memehive.ui.activity.main.screen.editing
 
 import android.content.ContentResolver
-import android.os.Bundle
 import android.net.Uri
+import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.farywave.memehive.ui.mapper.toDraft
-import com.farywave.memehive.ui.mapper.toMediaItem
+import com.farywave.memehive.R
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.Image
-import com.farywave.memehive.R
-import com.farywave.memehive.ui.model.UiError
+import com.farywave.memehive.ui.mapper.toDraft
+import com.farywave.memehive.ui.mapper.toMediaItem
 import com.farywave.memehive.ui.model.MediaItemDraft
+import com.farywave.memehive.ui.model.UiError
 import com.farywave.memehive.ui.use_case.CollectionUseCases
 import com.farywave.memehive.ui.use_case.MediaItemUseCases
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +25,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class EditingViewModel(
     mediaItemId: Long,
@@ -67,6 +67,9 @@ class EditingViewModel(
             ScreenState.SAVED
         }
     )
+
+    private val _isDeleted = MutableStateFlow(false)
+    val isDeleted = _isDeleted.asStateFlow()
 
     private val _isSaving = MutableStateFlow(false)
     val isSaving = _isSaving.asStateFlow()
@@ -170,14 +173,6 @@ class EditingViewModel(
         else _mediaItemDraft.update { it.copy(collectionIds = _mediaItemDraft.value.collectionIds + collection.id) }
     }
 
-    fun createCollection(name: String) {
-        viewModelScope.launch {
-            collectionUseCases.createCollection(
-                Collection(name = name)
-            )
-        }
-    }
-
     fun setCurrentItemAsCover(collection: Collection) {
         viewModelScope.launch {
             originalMediaItem?.image?.let {
@@ -252,9 +247,22 @@ class EditingViewModel(
     }
 
     fun deleteCurrentItem() {
-        if (_isSaving.value) return
+        if (_isSaving.value || _isDeleted.value) return
+        val item = originalMediaItem ?: return
+        if (item.id == 0L) return
+        _isSaving.value = true
         viewModelScope.launch {
-            originalMediaItem?.let { mediaItemUseCases.deleteMediaItem(it.toMediaItem()) }
+            try {
+                mediaItemUseCases.deleteMediaItem(item.toMediaItem())
+                _isDeleted.value = true
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                _error.value = UiError(R.string.media_delete_error)
+                Log.w("MEDIA_DELETING", "Failed to delete media", failure)
+            } finally {
+                _isSaving.value = false
+            }
         }
     }
 

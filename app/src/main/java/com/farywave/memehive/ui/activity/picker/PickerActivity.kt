@@ -3,22 +3,23 @@ package com.farywave.memehive.ui.activity.picker
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
-import android.util.Log
 import androidx.lifecycle.lifecycleScope
 import com.farywave.memehive.MemeHiveApplication
+import com.farywave.memehive.R
+import com.farywave.memehive.ui.theme.LocalAppColors
+import com.farywave.memehive.ui.theme.MemeHiveTheme
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.farywave.memehive.R
-import com.farywave.memehive.ui.theme.LocalAppColors
-import com.farywave.memehive.ui.theme.MemeHiveTheme
 
 class PickerActivity : ComponentActivity() {
     private var copying = false
@@ -34,8 +35,8 @@ class PickerActivity : ComponentActivity() {
                 )
 
                 val defaultLabel = stringResource(R.string.hive_item)
-                PickerScreen { item, onFailure ->
-                    val image = item.image ?: return@PickerScreen
+                PickerRoute { item, onFailure ->
+                    val image = item.image ?: return@PickerRoute
                     val label = item.caption.ifEmpty { defaultLabel }
                     copyToClipboard(label, image.id, onFailure)
                 }
@@ -55,6 +56,7 @@ class PickerActivity : ComponentActivity() {
                 }
                 val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(clip)
+                Toast.makeText(this@PickerActivity, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
                 finish()
             } catch (error: CancellationException) {
                 throw error

@@ -1,12 +1,10 @@
 package com.farywave.memehive.data.local.db.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.farywave.memehive.data.local.db.entity.CollectionEntryEntity
-import com.farywave.memehive.data.local.db.entity.MediaItemEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

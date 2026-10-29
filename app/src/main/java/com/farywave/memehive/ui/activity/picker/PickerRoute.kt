@@ -1,0 +1,50 @@
+package com.farywave.memehive.ui.activity.picker
+
+import android.widget.Toast
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.farywave.memehive.MemeHiveApplication
+import com.farywave.memehive.domain.model.MediaItem
+
+@Composable
+fun PickerRoute(onItemClicked: (MediaItem, onFailure: () -> Unit) -> Unit) {
+    val context = LocalContext.current
+
+    val viewModel: PickerViewModel =
+        (context.applicationContext as MemeHiveApplication).container.let {
+            viewModel(
+                factory = PickerViewModelFactory(it.collectionUseCases, it.mediaSearchUseCase)
+            )
+        }
+
+    val error by viewModel.error.collectAsStateWithLifecycle()
+
+    LaunchedEffect(error?.id) {
+        val currentError = error ?: return@LaunchedEffect
+        Toast.makeText(context, currentError.messageResId, Toast.LENGTH_LONG).show()
+        viewModel.clearError(currentError.id)
+    }
+
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val mediaItems by viewModel.mediaItems.collectAsStateWithLifecycle()
+    val collections by viewModel.collections.collectAsStateWithLifecycle()
+    val selectedCollectionId by viewModel.selectedCollectionId.collectAsStateWithLifecycle()
+
+    PickerScreen(
+        state = PickerUiState(
+            searchQuery = searchQuery,
+            mediaItems = mediaItems,
+            collections = collections,
+            selectedCollectionId = selectedCollectionId,
+        ),
+        onSearchQueryChanged = viewModel::onSearchQueryChanged,
+        onCollectionSelected = viewModel::onCollectionSelected,
+        onItemClicked = { item ->
+            onItemClicked(item, viewModel::reportCopyFailure)
+        },
+    )
+}

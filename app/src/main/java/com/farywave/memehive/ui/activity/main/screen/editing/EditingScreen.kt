@@ -1,5 +1,6 @@
 package com.farywave.memehive.ui.activity.main.screen.editing
 
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -29,16 +30,18 @@ import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -46,7 +49,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -55,15 +57,14 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.R
+import com.farywave.memehive.ui.model.MediaItemDraft
+import com.farywave.memehive.ui.collection.CollectionDraft
+import com.farywave.memehive.ui.collection.CollectionEditorDialog
+import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.ui.component.CollectionPickerSheet
 import com.farywave.memehive.ui.component.CollectionSelectorSheet
 import com.farywave.memehive.ui.component.ImagePicker
-import com.farywave.memehive.ui.model.MediaItemDraft
-import com.farywave.memehive.ui.navigation.NavEvent
 import com.farywave.memehive.ui.simple_component.SimpleActionMenu
 import com.farywave.memehive.ui.simple_component.SimpleIconButton
 import com.farywave.memehive.ui.simple_component.SimpleTextField
@@ -72,60 +73,40 @@ import kotlin.enums.enumEntries
 
 @Composable
 fun EditingScreen(
-    savedStateHandle: SavedStateHandle,
-    mediaItemId: Long, onNavigate: (NavEvent) -> Unit
+    state: EditingUiState,
+    onBack: () -> Unit,
+    onSave: () -> Unit,
+    onDiscard: () -> Unit,
+    onDuplicate: () -> Unit,
+    onDelete: () -> Unit,
+    onCreateCollection: () -> Unit,
+    onSubmitCollection: (CollectionDraft) -> Unit,
+    onDismissCollection: () -> Unit,
+    onToggleCollection: (Collection) -> Unit,
+    onSetAsCover: (Collection) -> Unit,
+    onImageChanged: (Uri?) -> Unit,
+    onCaptionChanged: (String) -> Unit,
+    onDescriptionChanged: (String) -> Unit,
+    onRemoveTag: (Int) -> Unit,
+    onUpdateTag: (Int, String) -> Unit,
+    onAddTag: (String) -> Unit,
 ) {
-    val context = LocalContext.current
-
-    val viewModel: EditingViewModel =
-        (context.applicationContext as MemeHiveApplication).container.let {
-            viewModel(
-                factory = EditingViewModelFactory(
-                    mediaItemId,
-                    it.mediaItemUseCases,
-                    it.collectionUseCases,
-                    context.applicationContext.contentResolver
-                )
-            )
-        }
-
-    val collections by viewModel.collections.collectAsState()
-    val mediaItemDraft by viewModel.mediaItemDraft.collectAsState()
-
-    var showSelectorSheet by remember { mutableStateOf(false) }
-    var showPickerSheet by remember { mutableStateOf(false) }
-
-    val screenState by viewModel.screenState.collectAsState()
-
-    val newCollectionEvent = remember {
-        savedStateHandle.getStateFlow<String?>(
-            "newCollectionName",
-            null
-        )
-    }
-
-    val error by viewModel.error.collectAsState()
-
     val focusManager = LocalFocusManager.current
+    var collectionSheet by rememberSaveable { mutableStateOf<String?>(null) }
 
-    BackHandler {
-        onNavigate(NavEvent.Back)
-    }
-
-    LaunchedEffect(error?.id) {
-        val currentError = error ?: return@LaunchedEffect
-        //TODO add handling
-        viewModel.clearError(currentError.id)
-    }
-
-    LaunchedEffect(Unit) {
-        newCollectionEvent.collect { name ->
-            if (!name.isNullOrBlank()) {
-                viewModel.createCollection(name)
-                savedStateHandle["newCollectionName"] = null
-            }
+    var showExitConfirmation by rememberSaveable { mutableStateOf(false) }
+    val requestClose: () -> Unit = {
+        if (!state.isSaving) {
+            val hasChanges = state.screenState == ScreenState.EDITING ||
+                (state.screenState == ScreenState.CREATION &&
+                    !state.mediaItemDraft.hasSameContentAs(MediaItemDraft()))
+            if (hasChanges) showExitConfirmation = true else onBack()
         }
     }
+    BackHandler(
+        enabled = state.collectionEditor == null && collectionSheet == null && !showExitConfirmation,
+        onBack = requestClose,
+    )
 
     Scaffold(
         modifier = Modifier
@@ -140,34 +121,77 @@ fun EditingScreen(
             },
         contentWindowInsets = WindowInsets(0),
         topBar = {
-            Toolbar(
-                screenState = screenState,
-                onSave = { viewModel.saveCurrentItem() },
-                onExit = { onNavigate(NavEvent.Back) },
-                onNavigate = onNavigate,
-                onDiscard = {
-                    viewModel.discardChanges()
-                },
-                onAction = { action ->
-                    when (action) {
-                        MoreActions.ADD_TO_COLLECTION -> {
-                            showSelectorSheet = true
-                        }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .background(LocalAppColors.current.backgroundPrimary)
+                    .padding(horizontal = 17.dp, vertical = 6.dp)
+                    .statusBarsPadding(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SimpleIconButton(
+                    modifier = Modifier
+                        .padding(7.dp)
+                        .size(30.dp),
+                    icon = painterResource(R.drawable.ic_back)
+                ) {
+                    requestClose()
+                }
 
-                        MoreActions.SET_AS_COVER -> {
-                            showPickerSheet = true
-                        }
+                Spacer(Modifier.weight(1f))
 
-                        MoreActions.DUPLICATE -> {
-                            viewModel.duplicateCurrentItem()
-                        }
+                if (state.screenState in listOf(ScreenState.EDITING, ScreenState.CREATION)) {
+                    SimpleIconButton(
+                        modifier = Modifier
+                            .padding(7.dp)
+                            .size(30.dp),
+                        icon = painterResource(R.drawable.ic_check),
+                    ) {
+                        if (!state.isSaving) onSave()
+                    }
 
-                        MoreActions.DELETE -> {
-                            viewModel.deleteCurrentItem()
-                            onNavigate(NavEvent.ToHive)
+                    SimpleIconButton(
+                        modifier = Modifier
+                            .padding(7.dp)
+                            .size(30.dp),
+                        icon = painterResource(R.drawable.ic_cross)
+                    ) {
+                        if (!state.isSaving) onDiscard()
+                    }
+                }
+
+                SimpleActionMenu<MoreActions>(
+                    options = enumEntries<MoreActions>().filter { option ->
+                        when (option) {
+                            MoreActions.DUPLICATE, MoreActions.SET_AS_COVER -> state.screenState == ScreenState.SAVED
+                            MoreActions.DELETE -> state.screenState in listOf(
+                                ScreenState.EDITING,
+                                ScreenState.SAVED
+                            )
+
+                            else -> true
+                        }
+                    },
+                    onSelected = { action ->
+                        when (action) {
+                            MoreActions.ADD_TO_COLLECTION -> collectionSheet = "selector"
+                            MoreActions.SET_AS_COVER -> collectionSheet = "cover"
+                            MoreActions.DUPLICATE -> if (!state.isSaving) onDuplicate()
+                            MoreActions.DELETE -> if (!state.isSaving) onDelete()
                         }
                     }
-                })
+                ) { onClick ->
+                    SimpleIconButton(
+                        modifier = Modifier
+                            .padding(7.dp)
+                            .size(30.dp),
+                        icon = painterResource(R.drawable.ic_more)
+                    ) {
+                        onClick()
+                    }
+                }
+            }
         }
     ) { contentPadding ->
         Box(
@@ -177,205 +201,138 @@ fun EditingScreen(
                 .imePadding()
                 .background(LocalAppColors.current.backgroundPrimary),
         ) {
-            Content(
+            val textMeasurer = rememberTextMeasurer()
+            val size = textMeasurer.measure(
+                text = AnnotatedString("Ambatukam"),
+                style = MaterialTheme.typography.bodyMedium
+            ).size.height / 2
+
+            val roundedShape = RoundedCornerShape(
+                with(LocalDensity.current) { size.toDp() } + 7.dp
+            )
+
+            LazyColumn(
                 modifier = Modifier
                     .padding(horizontal = 10.dp)
                     .fillMaxSize(),
-                viewModel = viewModel,
-                mediaItemDraft = mediaItemDraft
-            )
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                item {
+                    ImagePicker(initialSrc = state.mediaItemDraft.image?.uri, shape = roundedShape) { uri ->
+                        onImageChanged(uri)
+                    }
+                }
+                item {
+                    SimpleTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .background(
+                                LocalAppColors.current.backgroundSecondary,
+                                shape = roundedShape
+                            )
+                            .padding(horizontal = 10.dp, vertical = 7.dp),
+                        hint = stringResource(R.string.editing_caption_hint),
+                        initialValue = state.mediaItemDraft.caption,
+                        onValueChange = { onCaptionChanged(it) },
+                        callbackDelay = 0L
+                    )
+                }
+
+                item {
+                    SimpleTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .background(
+                                LocalAppColors.current.backgroundSecondary,
+                                shape = roundedShape
+                            )
+                            .padding(horizontal = 10.dp, vertical = 7.dp),
+                        hint = stringResource(R.string.editing_description_hint),
+                        numberOfLines = 3,
+                        initialValue = state.mediaItemDraft.description,
+                        onValueChange = { onDescriptionChanged(it) },
+                        callbackDelay = 0L
+                    )
+                }
+                item {
+                    Text(
+                        modifier = Modifier.padding(bottom = 5.dp, start = 10.dp),
+                        text = stringResource(R.string.editing_tags_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = LocalAppColors.current.contentSecondary
+                    )
+                    FlowRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .padding(horizontal = 5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        state.mediaItemDraft.tags.forEach { tag ->
+                            key(tag.key) {
+                                TagChip(
+                                    tag = tag.text,
+                                    onFocusLost = { newText ->
+                                        if (newText.isEmpty()) onRemoveTag(tag.key)
+                                        else onUpdateTag(tag.key, newText)
+                                    }
+                                )
+                            }
+                        }
+
+                        NewTagChip { newText ->
+                            if (newText.isNotEmpty()) {
+                                onAddTag(newText)
+                            }
+                        }
+                    }
+                }
+                item { Spacer(modifier = Modifier.height(500.dp)) }
+            }
             CollectionSelectorSheet(
-                show = showSelectorSheet,
-                collections = collections,
-                selectedIds = mediaItemDraft.collectionIds,
-                onDismiss = { showSelectorSheet = false },
-                onCollectionClicked = { viewModel.toggleCollection(it) },
-                onNewCollectionClicked = { onNavigate(NavEvent.NewCollectionDialog) }
+                show = collectionSheet == "selector",
+                collections = state.collections,
+                selectedIds = state.mediaItemDraft.collectionIds,
+                onDismiss = { collectionSheet = null },
+                onCollectionClicked = { onToggleCollection(it) },
+                onNewCollectionClicked = { onCreateCollection() }
             )
 
             CollectionPickerSheet(
-                show = showPickerSheet,
-                collections = collections,
-                onDismiss = { showPickerSheet = false },
-                onCollectionSelected = { viewModel.setCurrentItemAsCover(it) },
-                onNewCollectionClicked = { onNavigate(NavEvent.NewCollectionDialog) }
+                show = collectionSheet == "cover",
+                collections = state.collections,
+                onDismiss = { collectionSheet = null },
+                onCollectionSelected = { onSetAsCover(it) },
+                onNewCollectionClicked = { onCreateCollection() }
             )
         }
     }
-}
-
-
-@Composable
-private fun Toolbar(
-    onExit: () -> Unit,
-    screenState: ScreenState,
-    onNavigate: (NavEvent) -> Unit,
-    onDiscard: () -> Unit,
-    onSave: () -> Unit,
-    onAction: (MoreActions) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .background(LocalAppColors.current.backgroundPrimary)
-            .padding(horizontal = 17.dp, vertical = 6.dp)
-            .statusBarsPadding(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        SimpleIconButton(
-            modifier = Modifier
-                .padding(7.dp)
-                .size(30.dp),
-            icon = painterResource(R.drawable.ic_back)
-        ) {
-            onExit()
-            onNavigate(NavEvent.ToHive)
-        }
-
-        Spacer(Modifier.weight(1f))
-
-        if (screenState in listOf(ScreenState.EDITING, ScreenState.CREATION)) {
-            SimpleIconButton(
-                modifier = Modifier
-                    .padding(7.dp)
-                    .size(30.dp),
-                icon = painterResource(R.drawable.ic_check),
-            ) {
-                onSave()
-            }
-
-            SimpleIconButton(
-                modifier = Modifier
-                    .padding(7.dp)
-                    .size(30.dp),
-                icon = painterResource(R.drawable.ic_cross)
-            ) {
-                onDiscard()
-            }
-        }
-
-        SimpleActionMenu<MoreActions>(
-            options = enumEntries<MoreActions>().filter { option ->
-                when (option) {
-                    MoreActions.DUPLICATE, MoreActions.SET_AS_COVER -> screenState == ScreenState.SAVED
-                    MoreActions.DELETE -> screenState in listOf(
-                        ScreenState.EDITING,
-                        ScreenState.SAVED
-                    )
-
-                    else -> true
+    if (showExitConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirmation = false },
+            title = { Text(stringResource(R.string.discard_changes_title)) },
+            text = { Text(stringResource(R.string.discard_changes_message)) },
+            confirmButton = {
+                TextButton(onClick = { showExitConfirmation = false; onBack() }) {
+                    Text(stringResource(R.string.discard_changes_confirm))
                 }
             },
-            onSelected = { onAction(it) }
-        ) { onClick ->
-            SimpleIconButton(
-                modifier = Modifier
-                    .padding(7.dp)
-                    .size(30.dp),
-                icon = painterResource(R.drawable.ic_more)
-            ) {
-                onClick()
-            }
-        }
+            dismissButton = {
+                TextButton(onClick = { showExitConfirmation = false }) {
+                    Text(stringResource(R.string.button_cancel))
+                }
+            },
+        )
     }
-}
-
-@Composable
-private fun Content(
-    modifier: Modifier = Modifier,
-    viewModel: EditingViewModel,
-    mediaItemDraft: MediaItemDraft
-) {
-    val textMeasurer = rememberTextMeasurer()
-    val size = textMeasurer.measure(
-        text = AnnotatedString("Ambatukam"),
-        style = MaterialTheme.typography.bodyMedium
-    ).size.height / 2
-
-    val roundedShape = RoundedCornerShape(
-        with(LocalDensity.current) { size.toDp() } + 7.dp
+    CollectionEditorDialog(
+        state = state.collectionEditor,
+        onSubmit = onSubmitCollection,
+        onDismiss = onDismissCollection,
     )
 
-    LazyColumn(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        item {
-            ImagePicker(initialSrc = mediaItemDraft.image?.uri, shape = roundedShape) { uri ->
-                viewModel.updateImage(uri)
-            }
-        }
-        item {
-            SimpleTextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .background(
-                        LocalAppColors.current.backgroundSecondary,
-                        shape = roundedShape
-                    )
-                    .padding(horizontal = 10.dp, vertical = 7.dp),
-                hint = stringResource(R.string.editing_caption_hint),
-                initialValue = mediaItemDraft.caption,
-                onValueChange = { viewModel.updateName(it) },
-                callbackDelay = 0L
-            )
-        }
-
-        item {
-            SimpleTextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .background(
-                        LocalAppColors.current.backgroundSecondary,
-                        shape = roundedShape
-                    )
-                    .padding(horizontal = 10.dp, vertical = 7.dp),
-                hint = stringResource(R.string.editing_description_hint),
-                numberOfLines = 3,
-                initialValue = mediaItemDraft.description,
-                onValueChange = { viewModel.updateDescription(it) },
-                callbackDelay = 0L
-            )
-        }
-        item {
-            Text(
-                modifier = Modifier.padding(bottom = 5.dp, start = 10.dp),
-                text = stringResource(R.string.editing_tags_hint),
-                style = MaterialTheme.typography.bodyMedium,
-                color = LocalAppColors.current.contentSecondary
-            )
-            FlowRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .padding(horizontal = 5.dp),
-                horizontalArrangement = Arrangement.spacedBy(7.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                mediaItemDraft.tags.forEach { tag ->
-                    key(tag.key) {
-                        TagChip(
-                            tag = tag.text,
-                            onFocusLost = { newText ->
-                                if (newText.isEmpty()) viewModel.removeTag(tag.key)
-                                else viewModel.updateTag(tag.key, newText)
-                            }
-                        )
-                    }
-                }
-
-                NewTagChip { newText ->
-                    if (newText.isNotEmpty()) {
-                        viewModel.addTag(newText)
-                    }
-                }
-            }
-        }
-        item { Spacer(modifier = Modifier.height(500.dp)) }
-    }
 }
 
 @Composable

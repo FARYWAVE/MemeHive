@@ -12,7 +12,11 @@ import com.farywave.memehive.data.local.db.MemeHiveDatabase
 import com.farywave.memehive.data.local.db.dao.ImageDao
 import com.farywave.memehive.data.local.db.entity.ImageEntity
 import com.farywave.memehive.data.local.db.entity.MediaItemEntity
-import com.farywave.memehive.data.local.db.repository.*
+import com.farywave.memehive.data.local.db.repository.CollectionRepository
+import com.farywave.memehive.data.local.db.repository.ImageRepository
+import com.farywave.memehive.data.local.db.repository.MediaItemRepository
+import com.farywave.memehive.data.local.db.repository.TagRepository
+import com.farywave.memehive.data.local.db.repository.TrigramRepository
 import com.farywave.memehive.data.local.storage.ImageStorage
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.Image
@@ -23,7 +27,13 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith

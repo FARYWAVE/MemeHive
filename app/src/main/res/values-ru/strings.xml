@@ -56,4 +56,10 @@
     <string name="media_import_error">Не удалось импортировать все изображения. Некоторые изображения могли быть импортированы.</string>
     <string name="collection_update_error">Не удалось обновить коллекцию. Повторите попытку.</string>
     <string name="collection_delete_error">Не удалось удалить коллекцию. Повторите попытку.</string>
+    <string name="collection_name_required">Введите название коллекции.</string>
+    <string name="collection_remove_cover">Убрать обложку</string>
+    <string name="discard_changes_title">Отменить изменения?</string>
+    <string name="discard_changes_message">Несохранённые изменения будут потеряны.</string>
+    <string name="discard_changes_confirm">Отменить изменения</string>
+    <string name="remove_image">Удалить изображение</string>
 </resources>

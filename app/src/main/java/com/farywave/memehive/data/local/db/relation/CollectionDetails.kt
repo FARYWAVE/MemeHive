@@ -2,7 +2,6 @@ package com.farywave.memehive.data.local.db.relation
 
 import androidx.room.ColumnInfo
 import androidx.room.Embedded
-import androidx.room.Relation
 import com.farywave.memehive.data.local.db.entity.CollectionEntity
 import com.farywave.memehive.data.local.db.entity.ImageEntity
 

@@ -14,10 +14,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
@@ -26,9 +28,16 @@ fun <T> SimpleDialog(
     onDismissRequest: () -> Unit,
     title: String,
     onAction: (T) -> Unit,
+    actionsEnabled: Boolean = true,
     content: @Composable () -> Unit
 ) where T : Enum<T>, T : SimpleDialogAction {
-    Dialog(onDismissRequest = onDismissRequest) {
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(
+            dismissOnBackPress = actionsEnabled,
+            dismissOnClickOutside = actionsEnabled,
+        ),
+    ) {
         Surface(
             color = LocalAppColors.current.backgroundPrimary,
             shape = MaterialTheme.shapes.medium,
@@ -60,7 +69,8 @@ fun <T> SimpleDialog(
                                 ActionType.NORMAL -> LocalAppColors.current.accentPrimary
                                 ActionType.WARNING -> LocalAppColors.current.warning
                                 ActionType.DISMISS -> LocalAppColors.current.transparent
-                            }
+                            },
+                            enabled = actionsEnabled,
                         ) { onAction(item) }
                     }
                 }
@@ -70,13 +80,14 @@ fun <T> SimpleDialog(
 }
 
 @Composable
-private fun DialogButton(text: String, backgroundColor: Color, onClick: () -> Unit) =
+private fun DialogButton(text: String, backgroundColor: Color, enabled: Boolean, onClick: () -> Unit) =
     Box(
         modifier = Modifier
             .wrapContentSize()
             .background(backgroundColor, MaterialTheme.shapes.large)
             .padding(10.dp)
-            .clickable(onClick = onClick),
+            .alpha(if (enabled) 1f else 0.5f)
+            .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(

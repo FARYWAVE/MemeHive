@@ -63,4 +63,10 @@
     <string name="media_import_error">Could not import all images. Some images may have been imported.</string>
     <string name="collection_update_error">Could not update the collection. Please try again.</string>
     <string name="collection_delete_error">Could not delete the collection. Please try again.</string>
+    <string name="collection_name_required">Enter a collection name.</string>
+    <string name="collection_remove_cover">Remove cover</string>
+    <string name="discard_changes_title">Discard changes?</string>
+    <string name="discard_changes_message">Your unsaved changes will be lost.</string>
+    <string name="discard_changes_confirm">Discard</string>
+    <string name="remove_image">Remove image</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.farywave.memehive.ui.component
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,7 +27,6 @@ import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.domain.model.MediaItem
 import com.farywave.memehive.ui.theme.LocalAppColors
-import android.net.Uri
 
 @Composable
 fun MediaItemCardSimple(
