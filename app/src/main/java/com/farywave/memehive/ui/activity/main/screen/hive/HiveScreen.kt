@@ -7,8 +7,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -36,6 +39,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
@@ -97,10 +101,10 @@ fun HiveScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight()
                     .background(LocalAppColors.current.backgroundPrimary)
                     .padding(horizontal = 17.dp, vertical = 6.dp)
-                    .statusBarsPadding(),
+                    .statusBarsPadding()
+                    .height(46.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
@@ -122,46 +126,55 @@ fun HiveScreen(
 
                 Spacer(Modifier.weight(1f))
 
-                SimpleActionMenu<CreateActions>(onSelected = { action ->
-                    when (action) {
-                        CreateActions.CREATE_MEDIA_ITEM -> onCreateMedia()
-                        CreateActions.CREATE_COLLECTION -> onCreateCollection()
-                    }
-                }) { onClick ->
-                    SimpleIconButton(
-                        modifier = Modifier
-                            .padding(7.dp)
-                            .size(30.dp),
-                        icon = painterResource(R.drawable.ic_add)
-                    ) {
-                        onClick()
-                    }
-                }
-
-                SimpleActionMenu<MoreActions>(onSelected = { action ->
-                    when (action) {
-                        MoreActions.ENABLE_PICKER -> onEnableNotification(true)
-
-                        MoreActions.VIEW_APP_INFO -> {
-                            showAbout = true
+                if (state.isMassEditingMode) {
+                    Text(
+                        modifier = Modifier.padding(end = 8.dp),
+                        text = "${state.selectedMediaItemIds.size} ${stringResource(R.string.label_selected)}",
+                        style = Typography.bodyMedium,
+                        color = LocalAppColors.current.contentPrimary
+                    )
+                } else {
+                    SimpleActionMenu<CreateActions>(onSelected = { action ->
+                        when (action) {
+                            CreateActions.CREATE_MEDIA_ITEM -> onCreateMedia()
+                            CreateActions.CREATE_COLLECTION -> onCreateCollection()
                         }
-
-                        MoreActions.IMPORT_COLLECTION -> {
-                            onCollectionImport()
-                        }
-
-                        MoreActions.MASS_IMPORT -> {
-                            onMassImport()
+                    }) { onClick ->
+                        SimpleIconButton(
+                            modifier = Modifier
+                                .padding(7.dp)
+                                .size(30.dp),
+                            icon = painterResource(R.drawable.ic_add)
+                        ) {
+                            onClick()
                         }
                     }
-                }) { onClick ->
-                    SimpleIconButton(
-                        modifier = Modifier
-                            .padding(7.dp)
-                            .size(30.dp),
-                        icon = painterResource(R.drawable.ic_more)
-                    ) {
-                        onClick()
+
+                    SimpleActionMenu<MoreActions>(onSelected = { action ->
+                        when (action) {
+                            MoreActions.ENABLE_PICKER -> onEnableNotification(true)
+
+                            MoreActions.VIEW_APP_INFO -> {
+                                showAbout = true
+                            }
+
+                            MoreActions.IMPORT_COLLECTION -> {
+                                onCollectionImport()
+                            }
+
+                            MoreActions.MASS_IMPORT -> {
+                                onMassImport()
+                            }
+                        }
+                    }) { onClick ->
+                        SimpleIconButton(
+                            modifier = Modifier
+                                .padding(7.dp)
+                                .size(30.dp),
+                            icon = painterResource(R.drawable.ic_more)
+                        ) {
+                            onClick()
+                        }
                     }
                 }
             }
@@ -172,6 +185,8 @@ fun HiveScreen(
         ConstraintLayout(
             modifier = Modifier
                 .padding(contentPadding)
+                .consumeWindowInsets(contentPadding)
+                .imePadding()
                 .background(LocalAppColors.current.backgroundPrimary)
                 .padding(horizontal = 10.dp)
                 .fillMaxSize()
@@ -271,6 +286,7 @@ fun HiveScreen(
                 ) { onCancelMediaSelection() }
 
                 SimpleActionMenu<MassEditActions>(
+                    properties = PopupProperties(focusable = false),
                     onSelected = { action ->
                         when (action) {
                             MassEditActions.ADD_TO_COLLECTION -> showSheet = true

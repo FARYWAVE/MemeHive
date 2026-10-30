@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 
@@ -20,6 +21,7 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 inline fun <reified T> SimpleActionMenu(
     modifier: Modifier = Modifier,
     options: List<T> = enumValues<T>().toList(),
+    properties: PopupProperties = PopupProperties(focusable = true),
     crossinline onSelected: (T) -> Unit,
     trigger: @Composable (onClick: () -> Unit) -> Unit
 ) where T: Enum<T>, T: ActionMenuOptions {
@@ -35,6 +37,7 @@ inline fun <reified T> SimpleActionMenu(
             tonalElevation = 0.dp,
             shadowElevation = 9.dp,
             expanded = expanded,
+            properties = properties,
             onDismissRequest = { expanded = false }
         ) {
             options.forEach { option ->

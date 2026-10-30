@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,7 +21,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.R
 import com.farywave.memehive.domain.model.Collection
@@ -37,6 +40,8 @@ fun CollectionNavigation(
     onAction: ((collection: Collection, action: CollectionActions) -> Unit)? = null
 ) {
     val entries = listOf<Collection?>(null) + collections
+    val textMeasurer = rememberTextMeasurer()
+    val density = LocalDensity.current
     val barModifier = modifier
         .fillMaxWidth()
         .wrapContentHeight()
@@ -52,34 +57,47 @@ fun CollectionNavigation(
         .clip(MaterialTheme.shapes.large)
         .padding(horizontal = 5.dp, vertical = 4.dp)
 
-    if (entries.size > 4) {
-        LazyRow(
-            modifier = barModifier,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            items(entries, key = { it?.id ?: "all" }) { collection ->
-                CollectionNavigationItem(
-                    collection = collection,
-                    selectedCollectionId = selectedCollectionId,
-                    onCollectionSelected = onCollectionSelected,
-                    onAction = onAction
-                )
-            }
+    BoxWithConstraints(modifier = barModifier) {
+        val chipWidths = entries.map { collection ->
+            textMeasurer.measure(
+                text = collection?.name ?: stringResource(R.string.label_all_collections),
+                style = MaterialTheme.typography.bodyMedium,
+                softWrap = false,
+                maxLines = 1
+            ).size.width + with(density) { CollectionChipHorizontalPadding.roundToPx() * 2 }
         }
-    } else {
-        Row(
-            modifier = barModifier,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            entries.forEach { collection ->
-                key(collection?.id) {
+        val naturalWidth = chipWidths.sum()
+
+        if (naturalWidth > constraints.maxWidth) {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items(entries, key = { it?.id ?: "all" }) { collection ->
                     CollectionNavigationItem(
-                        modifier = Modifier.weight(1f),
                         collection = collection,
                         selectedCollectionId = selectedCollectionId,
                         onCollectionSelected = onCollectionSelected,
                         onAction = onAction
                     )
+                }
+            }
+        } else {
+            val extraWidthPerChip = (constraints.maxWidth - naturalWidth).toFloat() / entries.size
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                entries.forEachIndexed { index, collection ->
+                    key(collection?.id) {
+                        CollectionNavigationItem(
+                            modifier = Modifier.weight(chipWidths[index] + extraWidthPerChip),
+                            collection = collection,
+                            selectedCollectionId = selectedCollectionId,
+                            onCollectionSelected = onCollectionSelected,
+                            onAction = onAction
+                        )
+                    }
                 }
             }
         }
@@ -117,6 +135,8 @@ private fun CollectionNavigationItem(
     }
 }
 
+private val CollectionChipHorizontalPadding = 10.dp
+
 @Composable
 private fun CollectionChip(
     modifier: Modifier,
@@ -128,12 +148,12 @@ private fun CollectionChip(
     val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
+            .clip(MaterialTheme.shapes.large)
             .background(
                 if (isSelected) LocalAppColors.current.accentPrimary
                 else LocalAppColors.current.transparent,
                 shape = MaterialTheme.shapes.large
             )
-            .padding(horizontal = 10.dp, vertical = 4.dp)
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = ripple(
@@ -142,11 +162,14 @@ private fun CollectionChip(
                 ),
                 onClick = onClick,
                 onLongClick = onLongClick,
-            ),
+            )
+            .padding(horizontal = CollectionChipHorizontalPadding, vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
+            maxLines = 1,
+            softWrap = false,
             style = MaterialTheme.typography.bodyMedium,
             color = if (isSelected) LocalAppColors.current.contentPrimary else LocalAppColors.current.contentSecondary,
         )

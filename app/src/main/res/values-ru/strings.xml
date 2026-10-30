@@ -104,4 +104,5 @@
         <item quantity="many">%1$d элементов</item>
         <item quantity="other">%1$d элемента</item>
     </plurals>
+    <string name="label_selected">выбрано</string>
 </resources>

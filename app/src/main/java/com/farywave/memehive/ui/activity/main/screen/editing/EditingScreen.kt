@@ -130,10 +130,10 @@ fun EditingScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight()
                     .background(LocalAppColors.current.backgroundPrimary)
                     .padding(horizontal = 17.dp, vertical = 6.dp)
-                    .statusBarsPadding(),
+                    .statusBarsPadding()
+                    .height(46.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 SimpleIconButton(

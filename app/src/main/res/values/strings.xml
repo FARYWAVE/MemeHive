@@ -111,4 +111,5 @@
         <item quantity="one">%1$d item</item>
         <item quantity="other">%1$d items</item>
     </plurals>
+    <string name="label_selected">selected</string>
 </resources>

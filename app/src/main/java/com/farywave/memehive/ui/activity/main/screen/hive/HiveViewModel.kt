@@ -71,15 +71,11 @@ class HiveViewModel(
     private val retries = MutableStateFlow(0)
     val mediaState = mediaSearchUseCase.observeState(
         selectedCollectionId, searchQuery.debounce(200), retries,
+    ).stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        MediaSearchState(isLoading = true)
     )
-        .onEach { state ->
-            if (!state.isLoading && state.failure == null) {
-                val visibleIds = state.items.mapTo(mutableSetOf()) { it.id }
-                _selectedMediaItemIds.update { it.intersect(visibleIds) }
-                if (_selectedMediaItemIds.value.isEmpty()) _isMassEditingMode.value = false
-            }
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MediaSearchState(isLoading = true))
 
     fun retryLoading() {
         _collectionsLoading.value = true
@@ -93,13 +89,11 @@ class HiveViewModel(
 
     fun onSearchQueryChanged(query: String) {
         if (_searchQuery.value == query) return
-        disableMassEditingMode()
         _searchQuery.value = query
     }
 
     fun onCollectionSelected(collectionId: Long?) {
         if (_selectedCollectionId.value == collectionId) return
-        disableMassEditingMode()
         _selectedCollectionId.value = collectionId
     }
 
@@ -147,7 +141,10 @@ class HiveViewModel(
     fun duplicateSelectedMediaItems() {
         val selected = mediaState.value.items.filter { it.id in _selectedMediaItemIds.value }
 
-        launchWithError(R.string.error_media_duplicate_partial, onSuccess = ::disableMassEditingMode) {
+        launchWithError(
+            R.string.error_media_duplicate_partial,
+            onSuccess = ::disableMassEditingMode
+        ) {
             selected.forEach {
                 mediaItemUseCases.createMediaItem(it.copy(id = 0))
             }
@@ -251,7 +248,11 @@ class HiveViewModel(
         reportError(message, error)
     }
 
-    private fun launchWithError(@StringRes message: Int, onSuccess: () -> Unit = {}, operation: suspend () -> Unit) {
+    private fun launchWithError(
+        @StringRes message: Int,
+        onSuccess: () -> Unit = {},
+        operation: suspend () -> Unit
+    ) {
         viewModelScope.launch {
             try {
                 operation()
