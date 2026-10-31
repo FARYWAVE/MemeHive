@@ -387,7 +387,9 @@ private fun TagChip(tag: String, enabled: Boolean = true, onFocusLost: (tag: Str
                 .padding(horizontal = 7.dp, vertical = 6.dp)
                 .onFocusChanged { focusState ->
                     if (focusState.isFocused.not()) {
-                        onFocusLost(value.text.toString().trim().lowercase().replace(' ', '_'))
+                        val normalizedTag = normalizeTag(value.text.toString())
+                        value.setTextAndPlaceCursorAtEnd(normalizedTag)
+                        onFocusLost(normalizedTag)
                     }
                 },
             textStyle = MaterialTheme.typography.bodyMedium.copy(color = LocalAppColors.current.contentPrimary),
@@ -414,7 +416,7 @@ private fun NewTagChip(enabled: Boolean = true, onFocusLost: (tag: String) -> Un
             .collect { text ->
                 if (text.isNotEmpty() && (text.trim().endsWith(","))) {
                     onFocusLost(
-                        text.trim().dropLast(1).toString().trim().lowercase().replace(' ', '_')
+                        normalizeTag(text.toString())
                     )
                     value.setTextAndPlaceCursorAtEnd("")
                 }
@@ -443,7 +445,7 @@ private fun NewTagChip(enabled: Boolean = true, onFocusLost: (tag: String) -> Un
                 .onFocusChanged { focusState ->
                     isFocused = focusState.isFocused
                     if (!isFocused) {
-                        onFocusLost(value.text.toString().trim().lowercase())
+                        onFocusLost(normalizeTag(value.text.toString()))
                         value.setTextAndPlaceCursorAtEnd("")
                     }
                 },
@@ -454,9 +456,13 @@ private fun NewTagChip(enabled: Boolean = true, onFocusLost: (tag: String) -> Un
                 imeAction = ImeAction.Done
             ),
             onKeyboardAction = KeyboardActionHandler {
-                onFocusLost(value.text.toString().trim().lowercase())
+                onFocusLost(normalizeTag(value.text.toString()))
                 value.setTextAndPlaceCursorAtEnd("")
             }
         )
     }
+}
+
+private fun normalizeTag(tag: String): String {
+    return tag.trim().removeSuffix(",").trim().lowercase().replace(' ', '_')
 }
