@@ -50,7 +50,6 @@ class MediaSearchUseCase(
 
     operator fun invoke(collectionIds: Flow<Long?>, queries: Flow<String>): Flow<List<MediaItem>> =
         collectionIds.distinctUntilChanged().flatMapLatest { collectionId ->
-            // Normalize and tokenize once per database emission, not once per keystroke.
             val index = mediaItemRepository.observeMediaItems(collectionId).mapLatest { items ->
                 items.map { item ->
                     currentCoroutineContext().ensureActive()
@@ -83,7 +82,6 @@ class MediaSearchUseCase(
                     for (word in words) {
                         context.ensureActive()
                         if (oneEditApart(query, word)) {
-                            // Retain similarity and field weight instead of collapsing fuzzy hits.
                             score = maxOf(score, (1.0 - 1.0 / maxOf(query.length, word.length)) * (3 - field))
                         }
                     }
@@ -110,7 +108,6 @@ class MediaSearchUseCase(
             .lowercase(Locale.ROOT).replace(whitespace, " ").trim()
         private fun words(text: String): List<String> = text.split(separators).filter { it.isNotEmpty() }
 
-        // A bounded, linear comparison: insertion, deletion, substitution, or adjacent transposition.
         private fun oneEditApart(a: String, b: String): Boolean {
             if (kotlin.math.abs(a.length - b.length) > 1) return false
             var i = 0

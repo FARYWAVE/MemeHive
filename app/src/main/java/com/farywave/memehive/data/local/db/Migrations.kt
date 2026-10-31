@@ -19,7 +19,6 @@ val MIGRATION_1_2: Migration = object : Migration(1, 2) {
         for (table in rebuiltTables) {
             db.execSQL("CREATE TEMP TABLE migration_1_2_$table AS SELECT * FROM `$table`")
         }
-        // Rebuilding AUTOINCREMENT tables must not reuse IDs of previously deleted rows.
         db.execSQL(
             """
             CREATE TEMP TABLE migration_1_2_sequences AS
@@ -96,7 +95,6 @@ val MIGRATION_1_2: Migration = object : Migration(1, 2) {
             """.trimIndent()
         )
 
-        // LEFT JOIN keeps owners whose old optional image reference is missing.
         db.execSQL(
             """
             INSERT INTO media_items (id, image_id, caption, description)
@@ -112,7 +110,6 @@ val MIGRATION_1_2: Migration = object : Migration(1, 2) {
             LEFT JOIN images AS image ON image.id = old.cover_image_id
             """.trimIndent()
         )
-        // Inner joins discard orphan dependents; MIN(id) deterministically keeps one pair.
         db.execSQL(
             """
             INSERT INTO media_item_trigrams (id, trigram, media_item_id)
@@ -173,5 +170,13 @@ val MIGRATION_1_2: Migration = object : Migration(1, 2) {
         db.query("PRAGMA foreign_key_check").use { violations ->
             check(!violations.moveToFirst()) { "Foreign key violation after migration 1 -> 2" }
         }
+    }
+}
+
+
+/** Search now uses an in-memory index; discard only the obsolete derived data. */
+val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TABLE IF EXISTS media_item_trigrams")
     }
 }

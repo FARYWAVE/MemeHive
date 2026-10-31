@@ -12,6 +12,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 class ReactiveSearchTest {
     @Test fun roomInvalidationUpdatesSearchAfterImportEditTagAndMembershipChanges() = runBlocking {
@@ -24,7 +25,7 @@ class ReactiveSearchTest {
         val job = launch {
             search(MutableStateFlow<Long?>(collectionId), MutableStateFlow("cat")).collect { updates.send(it) }
         }
-        suspend fun awaitIds(vararg ids: Long) = withTimeout(5_000) {
+        suspend fun awaitIds(vararg ids: Long) = withTimeout(5_000.milliseconds) {
             while (true) {
                 val result = updates.receive()
                 if (result.map { it.id } == ids.toList()) break

@@ -1,7 +1,6 @@
 package com.farywave.memehive.data.local.db
 
 import androidx.room.Room
-import androidx.room.RoomDatabase
 import androidx.room.withTransaction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -15,7 +14,6 @@ import com.farywave.memehive.data.local.db.relation.MediaItemDetails
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -28,8 +26,8 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration.Companion.milliseconds
 
 @RunWith(AndroidJUnit4::class)
 class RelationReadTest {
@@ -43,15 +41,13 @@ class RelationReadTest {
             InstrumentationRegistry.getInstrumentation().targetContext,
             MemeHiveDatabase::class.java,
         ).setQueryCallback(
-            object : RoomDatabase.QueryCallback {
-                override fun onQuery(sqlQuery: String, bindArgs: List<Any?>) {
-                    if (recordReads.get() && sqlQuery.trimStart().startsWith("SELECT", ignoreCase = true)) {
-                        readTransactions.add(sqlQuery to db.inTransaction())
-                    }
+            { sqlQuery, _ ->
+                if (recordReads.get() && sqlQuery.trimStart().startsWith("SELECT", ignoreCase = true)) {
+                    readTransactions.add(sqlQuery to db.inTransaction())
                 }
             },
             // Inspect the transaction on the query's own thread, before it executes.
-            Executor { it.run() },
+            { it.run() },
         ).build()
     }
 
@@ -94,8 +90,8 @@ class RelationReadTest {
             }
         }
         try {
-            withTimeout(10_000) { assertEquals("A", updates.receive().mediaItem.caption) }
-            withTimeout(20_000) {
+            withTimeout(10_000.milliseconds) { assertEquals("A", updates.receive().mediaItem.caption) }
+            withTimeout(20_000.milliseconds) {
                 val writer = launch(Dispatchers.IO) {
                     repeat(40) { iteration ->
                         val state = if (iteration % 2 == 0) "A" else "B"

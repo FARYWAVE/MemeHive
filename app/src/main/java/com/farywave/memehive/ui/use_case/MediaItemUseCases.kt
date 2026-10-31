@@ -2,13 +2,11 @@ package com.farywave.memehive.ui.use_case
 
 import android.net.Uri
 import androidx.room.withTransaction
-import com.farywave.memehive.core.ModelTools
 import com.farywave.memehive.data.local.db.MemeHiveDatabase
 import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.ImageRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.data.local.db.repository.TagRepository
-import com.farywave.memehive.data.local.db.repository.TrigramRepository
 import com.farywave.memehive.data.local.storage.ImageChanges
 import com.farywave.memehive.domain.model.MediaItem
 
@@ -17,7 +15,6 @@ class MediaItemUseCases(
     private val mediaItemRepository: MediaItemRepository,
     private val tagRepository: TagRepository,
     private val collectionRepository: CollectionRepository,
-    private val trigramRepository: TrigramRepository,
     private val imageRepository: ImageRepository,
 ) {
     suspend fun getMediaItemById(id: Long): MediaItem? {
@@ -61,10 +58,6 @@ class MediaItemUseCases(
 
             collectionRepository.addItemToCollections(mediaItemId, collectionIdsToAdd)
 
-            val trigrams = ModelTools.generateTrigrams(mediaItem.caption)
-                .union(ModelTools.generateTrigrams(mediaItem.description))
-            trigramRepository.insertAll(trigrams, mediaItemId)
-
             mediaItem.copy(id = mediaItemId, image = image)
         }
     }
@@ -81,12 +74,6 @@ class MediaItemUseCases(
                     mediaItemRepository.updateMediaItem(updatedMediaItem)
 
                     tagRepository.updateTagsForMediaItem(updatedMediaItem)
-
-                    trigramRepository.updateTrigramsForMediaItem(
-                        updatedMediaItem.id,
-                        ModelTools.generateTrigrams(updatedMediaItem.caption)
-                            .union(ModelTools.generateTrigrams(updatedMediaItem.description))
-                    )
 
                     collectionRepository.deleteCollectionEntriesByItem(mediaItem.id)
                     collectionRepository.addItemToCollections(mediaItem.id, replacementCollectionIds)

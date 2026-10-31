@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.ui.theme.LocalAppColors
 import kotlinx.coroutines.flow.debounce
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(kotlinx.coroutines.FlowPreview::class)
 @Composable
@@ -50,7 +51,7 @@ fun SimpleTextField(
 
     LaunchedEffect(Unit) {
         snapshotFlow { value.text.toString() }
-            .debounce(callbackDelay)
+            .debounce(callbackDelay.milliseconds)
             .collect { text ->
                 latestOnValueChange(text)
             }

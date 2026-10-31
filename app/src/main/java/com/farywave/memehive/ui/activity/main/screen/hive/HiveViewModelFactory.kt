@@ -7,6 +7,7 @@ import com.farywave.memehive.ui.use_case.CollectionUseCases
 import com.farywave.memehive.ui.use_case.MediaItemUseCases
 import com.farywave.memehive.ui.use_case.MediaSearchUseCase
 
+@Suppress("UNCHECKED_CAST")
 class HiveViewModelFactory(
     private val mediaItemUseCases: MediaItemUseCases,
     private val collectionUseCases: CollectionUseCases,
@@ -17,8 +18,8 @@ class HiveViewModelFactory(
         return HiveViewModel(
             mediaItemUseCases,
             collectionUseCases,
+            collectionTransferUseCases,
             mediaSearchUseCase,
-            collectionTransferUseCases
         ) as T
     }
 }

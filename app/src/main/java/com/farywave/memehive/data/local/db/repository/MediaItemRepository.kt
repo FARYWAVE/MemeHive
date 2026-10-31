@@ -34,21 +34,19 @@ class MediaItemRepository(
     }
 
     suspend fun getMediaItemImageIds(mediaItemIds: Set<Long>): Set<Long?> {
-        return mediaItemIds.chunked(1000)
-            .map { mediaItemDao.getImageIds(it.toSet()) }
-            .flatten().toSet()
+        return mediaItemIds.chunked(1000).flatMap { mediaItemDao.getImageIds(it.toSet()) }.toSet()
     }
 
     suspend fun insertMediaItem(mediaItem: MediaItem): Long {
         return mediaItemDao.insert(mediaItem.toEntity())
     }
 
-    suspend fun updateMediaItem(mediaItem: MediaItem): Unit {
+    suspend fun updateMediaItem(mediaItem: MediaItem) {
         val affectedCount = mediaItemDao.update(mediaItem.toEntity())
         if (affectedCount == 0) throw IllegalStateException("Failed to update media item: $mediaItem")
     }
 
-    suspend fun deleteMediaItem(mediaItem: MediaItem): Unit {
+    suspend fun deleteMediaItem(mediaItem: MediaItem) {
         mediaItemDao.delete(mediaItem.id)
     }
 

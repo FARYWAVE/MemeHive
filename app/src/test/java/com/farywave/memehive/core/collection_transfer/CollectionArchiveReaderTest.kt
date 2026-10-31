@@ -144,6 +144,69 @@ class CollectionArchiveReaderTest {
         assertTrue(input.closed)
     }
 
+    @Test
+    fun `highly compressed files are limited by extracted size`() = runTest {
+        val directory = temporaryFolder.newFolder()
+        expectFailure<InvalidCollectionArchiveException> {
+            CollectionArchiveReader.extract(
+                zipOf("large.bin" to "x".repeat(100_000)).inputStream(), directory,
+                CollectionArchiveReader.Limits(fileBytes = 100),
+            )
+        }
+        assertTrue(File(directory, "large.bin").length() <= 100)
+    }
+
+    @Test
+    fun `total size is bounded across multiple files`() = runTest {
+        expectFailure<InvalidCollectionArchiveException> {
+            CollectionArchiveReader.extract(
+                zipOf("a" to "123456", "b" to "123456").inputStream(), temporaryFolder.newFolder(),
+                CollectionArchiveReader.Limits(totalBytes = 10),
+            )
+        }
+    }
+
+    @Test
+    fun `manifest has its own smaller byte limit`() = runTest {
+        expectFailure<InvalidCollectionArchiveException> {
+            CollectionArchiveReader.extract(validArchive().inputStream(), temporaryFolder.newFolder(),
+                CollectionArchiveReader.Limits(manifestBytes = 10))
+        }
+    }
+
+    @Test
+    fun `entry limit counts directories too`() = runTest {
+        expectFailure<InvalidCollectionArchiveException> {
+            CollectionArchiveReader.extract(zipOf("a/" to "", "b/" to "").inputStream(),
+                temporaryFolder.newFolder(), CollectionArchiveReader.Limits(entries = 1))
+        }
+    }
+
+    @Test
+    fun `directory payload cannot bypass size limits`() = runTest {
+        expectFailure<InvalidCollectionArchiveException> {
+            CollectionArchiveReader.extract(zipOf("hidden/" to "x".repeat(100_000)).inputStream(),
+                temporaryFolder.newFolder())
+        }
+    }
+
+    @Test
+    fun `canonical path aliases cannot overwrite an earlier file`() = runTest {
+        expectFailure<InvalidCollectionArchiveException> {
+            CollectionArchiveReader.extract(zipOf("a" to "first", "./a" to "replacement").inputStream(),
+                temporaryFolder.newFolder())
+        }
+    }
+
+    @Test
+    fun `exact limits accept a valid archive`() = runTest {
+        val manifestSize = manifest.toByteArray().size.toLong()
+        val result = CollectionArchiveReader.extract(validArchive().inputStream(), temporaryFolder.newFolder(),
+            CollectionArchiveReader.Limits(totalBytes = manifestSize + 22, fileBytes = manifestSize,
+                manifestBytes = manifestSize, entries = 3))
+        assertEquals(2, result.mediaItems.size)
+    }
+
     private fun validArchive() = zipOf(
         "manifest.json" to manifest,
         "collection/cover.jpg" to "cover bytes",

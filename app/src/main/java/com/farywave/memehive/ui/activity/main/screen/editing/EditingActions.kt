@@ -5,7 +5,7 @@ import com.farywave.memehive.R
 import com.farywave.memehive.ui.simple_component.ActionMenuOptions
 
 enum class MoreActions(
-    @StringRes override val labelId: Int,
+    @param:StringRes override val labelId: Int,
     override val highlighted: Boolean = false
 ) : ActionMenuOptions {
     COPY_TO_CLIPBOARD(R.string.action_copy_image),

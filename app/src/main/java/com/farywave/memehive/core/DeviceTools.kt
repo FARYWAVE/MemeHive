@@ -18,13 +18,14 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import androidx.core.net.toUri
 
 object DeviceTools {
     fun getAppVersion(context: Context): String {
         return try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             "${pInfo.versionName}"
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             context.getString(R.string.label_unavailable)
         }
     }
@@ -54,7 +55,7 @@ object DeviceTools {
     }
 
     fun openLink(context: Context, url: String, onFailure: () -> Unit) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
 
         try {
             context.startActivity(intent)

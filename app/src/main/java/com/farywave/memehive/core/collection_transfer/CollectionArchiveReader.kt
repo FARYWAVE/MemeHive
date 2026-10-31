@@ -13,23 +13,58 @@ import java.util.zip.ZipException
 import java.util.zip.ZipInputStream
 
 internal object CollectionArchiveReader {
-    suspend fun extract(input: InputStream, directory: File): TransferManifest {
+    // Limits apply to actual decompressed bytes, never the untrusted ZIP size headers.
+    internal data class Limits(
+        val totalBytes: Long = 512L * 1024 * 1024,
+        val fileBytes: Long = 32L * 1024 * 1024,
+        val manifestBytes: Long = 2L * 1024 * 1024,
+        val entries: Int = 10_000,
+    ) {
+        init {
+            require(totalBytes > 0 && fileBytes > 0 && manifestBytes > 0 && entries > 0)
+        }
+    }
+
+    suspend fun extract(input: InputStream, directory: File, limits: Limits = Limits()): TransferManifest {
+        var totalBytes = 0L
+        var entryCount = 0
+        val destinations = mutableSetOf<File>()
+        val manifestPath = File(directory, "manifest.json").canonicalFile
         try {
             ZipInputStream(input.buffered()).use { zip ->
                 var entry = zip.nextEntry
                 while (entry != null) {
                     currentCoroutineContext().ensureActive()
+                    if (++entryCount > limits.entries) {
+                        throw InvalidCollectionArchiveException("The archive contains too many entries.")
+                    }
                     val destination = resolvePath(directory, entry.name)
+                    if (!destinations.add(destination)) {
+                        throw InvalidCollectionArchiveException("Duplicate archive path: ${entry.name}")
+                    }
                     if (entry.isDirectory) {
                         createDirectory(destination)
+                        // closeEntry otherwise drains hidden directory payloads without a limit.
+                        if (zip.read() != -1) {
+                            throw InvalidCollectionArchiveException("Directory entries cannot contain data.")
+                        }
                     } else {
                         createDirectory(destination.parentFile!!)
+                        val maximum = if (destination == manifestPath) {
+                            minOf(limits.fileBytes, limits.manifestBytes)
+                        } else limits.fileBytes
+                        var fileBytes = 0L
                         destination.outputStream().use { output ->
                             val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
                             while (true) {
                                 currentCoroutineContext().ensureActive()
                                 val count = zip.read(buffer)
                                 if (count == -1) break
+                                if (count > maximum - fileBytes || count > limits.totalBytes - totalBytes) {
+                                    throw InvalidCollectionArchiveException("The archive exceeds the import size limits.")
+                                }
+                                fileBytes += count
+                                totalBytes += count
                                 output.write(buffer, 0, count)
                             }
                         }

@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -14,7 +14,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.R
 import com.farywave.memehive.core.DeviceTools
-import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorViewModel
 import com.farywave.memehive.ui.component.LocalAppFeedback
 
@@ -81,13 +80,14 @@ fun HiveRoute(
     val collectionEditorState by collectionEditor.state.collectAsStateWithLifecycle()
 
     val massImportLauncher = DeviceTools.requestMultipleMedia(viewModel::onMassImport)
-    var collectionToExport by remember { mutableStateOf<Collection?>(null) }
+    var collectionToExportId by rememberSaveable { mutableStateOf<Long?>(null) }
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip")
     ) { uri ->
-        val collection = collectionToExport
-        if (uri != null && collection != null) {
-            viewModel.exportCollection(collection, uri)
+        val collectionId = collectionToExportId
+        collectionToExportId = null
+        if (uri != null && collectionId != null) {
+            viewModel.exportCollection(collectionId, uri)
         }
     }
 
@@ -113,7 +113,7 @@ fun HiveRoute(
         onMassImport = { feedback.attempt(R.string.error_picker_open) { massImportLauncher.launch("image/*") } },
         onCollectionImport = { feedback.attempt(R.string.error_picker_open) { importLauncher.launch(arrayOf("application/zip")) } },
         onExportCollection = { collection ->
-            collectionToExport = collection
+            collectionToExportId = collection.id
             feedback.attempt(R.string.error_picker_open) { exportLauncher.launch("${collection.name}.zip") }
         },
         onDeleteCollection = viewModel::deleteCollection,

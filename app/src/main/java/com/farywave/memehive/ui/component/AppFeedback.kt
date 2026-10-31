@@ -2,12 +2,34 @@ package com.farywave.memehive.ui.component
 
 import android.util.Log
 import androidx.annotation.StringRes
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -19,14 +41,13 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.update
 
 
 class AppFeedback {
     private val queue = MutableStateFlow<List<Message>>(emptyList())
-    internal val messages = queue.map { it.firstOrNull() }.filterNotNull().distinctUntilChanged()
+    internal val messages = queue.mapNotNull { it.firstOrNull() }.distinctUntilChanged()
 
     internal fun dismiss(message: Message) {
         queue.update { it.filterNot { queued -> queued === message } }
@@ -62,14 +83,15 @@ fun FeedbackHost(
     content: @Composable () -> Unit,
 ) {
     val host = remember { SnackbarHostState() }
-    val context = LocalContext.current
+    val resources = LocalResources.current
+    val configuration = LocalConfiguration.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    LaunchedEffect(feedback, lifecycle) {
+    LaunchedEffect(feedback, lifecycle, configuration) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             feedback.messages.collect { message ->
                 val result = host.showSnackbar(
-                    message = context.getString(message.text),
-                    actionLabel = message.action?.let(context::getString),
+                    message = resources.getString(message.text),
+                    actionLabel = message.action?.let(resources::getString),
                     withDismissAction = true,
                     duration = if (message.action != null) SnackbarDuration.Long else SnackbarDuration.Short,
                 )

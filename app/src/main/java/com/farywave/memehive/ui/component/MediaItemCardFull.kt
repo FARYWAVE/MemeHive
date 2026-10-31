@@ -96,7 +96,7 @@ fun MediaItemCardFull(
                 }
             )
 
-            if (mediaItem.caption?.isNotEmpty() == true) Name(
+            if (mediaItem.caption.isNotEmpty()) Name(
                 modifier = Modifier.constrainAs(name) {
                     bottom.linkTo(parent.bottom)
                     start.linkTo(parent.start)

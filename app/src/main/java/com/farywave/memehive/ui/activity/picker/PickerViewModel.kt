@@ -23,11 +23,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class PickerViewModel(
     private val collectionUseCases: CollectionUseCases,
-    private val mediaSearchUseCase: MediaSearchUseCase
+    mediaSearchUseCase: MediaSearchUseCase
 ) : ViewModel() {
     private val messages = UiMessageQueue()
     val error = messages.current
@@ -49,7 +50,7 @@ class PickerViewModel(
 
     private val retries = MutableStateFlow(0)
     val mediaState = mediaSearchUseCase.observeState(
-        selectedCollectionId, searchQuery.debounce(200), retries,
+        selectedCollectionId, searchQuery.debounce(200.milliseconds), retries,
     )
         .map { it.copy(items = it.items.filter { item -> item.image != null }) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MediaSearchState(isLoading = true))

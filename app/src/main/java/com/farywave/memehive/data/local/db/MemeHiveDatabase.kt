@@ -9,14 +9,12 @@ import com.farywave.memehive.data.local.db.dao.CollectionEntryDao
 import com.farywave.memehive.data.local.db.dao.ImageDao
 import com.farywave.memehive.data.local.db.dao.MediaItemDao
 import com.farywave.memehive.data.local.db.dao.MediaItemTagDao
-import com.farywave.memehive.data.local.db.dao.MediaItemTrigramDao
 import com.farywave.memehive.data.local.db.dao.TagDao
 import com.farywave.memehive.data.local.db.entity.CollectionEntity
 import com.farywave.memehive.data.local.db.entity.CollectionEntryEntity
 import com.farywave.memehive.data.local.db.entity.ImageEntity
 import com.farywave.memehive.data.local.db.entity.MediaItemEntity
 import com.farywave.memehive.data.local.db.entity.MediaItemTagEntity
-import com.farywave.memehive.data.local.db.entity.MediaItemTrigramEntity
 import com.farywave.memehive.data.local.db.entity.TagEntity
 
 @Database(
@@ -25,11 +23,10 @@ import com.farywave.memehive.data.local.db.entity.TagEntity
         ImageEntity::class,
         TagEntity::class,
         MediaItemTagEntity::class,
-        MediaItemTrigramEntity::class,
         CollectionEntity::class,
         CollectionEntryEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class MemeHiveDatabase : RoomDatabase() {
@@ -37,7 +34,6 @@ abstract class MemeHiveDatabase : RoomDatabase() {
     abstract fun mediaItemDao(): MediaItemDao
     abstract fun tagDao(): TagDao
     abstract fun mediaItemTagDao(): MediaItemTagDao
-    abstract fun mediaItemTrigramDao(): MediaItemTrigramDao
 
     abstract fun collectionDao(): CollectionDao
     abstract fun collectionEntryDao(): CollectionEntryDao
@@ -54,7 +50,7 @@ abstract class MemeHiveDatabase : RoomDatabase() {
                     context.applicationContext,
                     MemeHiveDatabase::class.java,
                     "memehive_db"
-                ).addMigrations(MIGRATION_1_2, ImageFilenameMigration(context.applicationContext.filesDir)).build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_1_2, ImageFilenameMigration(context.applicationContext.filesDir), MIGRATION_3_4).build().also { INSTANCE = it }
             }
         }
     }

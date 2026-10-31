@@ -1,7 +1,5 @@
 package com.farywave.memehive.core
 
-import android.net.Uri
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.farywave.memehive.R
@@ -21,21 +19,4 @@ object ModelTools {
         }
     }
 
-    fun encode(arg: String?) = Uri.encode(arg ?: "")
-
-    fun decode(arg: String?) = Uri.decode(arg ?: "")
-
-    fun generateTrigrams(text: String): Set<String> {
-        val normalized = text.lowercase()
-        if (normalized.length < 3) return emptySet()
-        val result = mutableSetOf<String>()
-
-        for (i in 0..normalized.length - 3) {
-            result.add(normalized.substring(i, i + 3))
-        }
-
-        return result
-    }
-
-    fun quickLog(message: String) = Log.d("MH_DEBUG", message)
 }

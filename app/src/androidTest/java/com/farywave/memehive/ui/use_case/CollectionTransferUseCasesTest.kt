@@ -1,20 +1,16 @@
 package com.farywave.memehive.ui.use_case
 
-import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModelStore
-import com.farywave.memehive.R
-import com.farywave.memehive.ui.activity.main.screen.editing.EditingViewModel
-import kotlinx.coroutines.withContext
-import org.junit.Assert.assertNull
-
 import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.Bitmap
 import androidx.core.net.toUri
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelStore
 import androidx.room.Room
 import androidx.room.withTransaction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.farywave.memehive.R
 import com.farywave.memehive.core.collection_transfer.InvalidCollectionArchiveException
 import com.farywave.memehive.core.collection_transfer.entity.TransferCollection
 import com.farywave.memehive.core.collection_transfer.entity.TransferManifest
@@ -25,11 +21,11 @@ import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.ImageRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.data.local.db.repository.TagRepository
-import com.farywave.memehive.data.local.db.repository.TrigramRepository
 import com.farywave.memehive.data.local.storage.ImageStorage
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.domain.model.MediaItem
+import com.farywave.memehive.ui.activity.main.screen.editing.EditingViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -38,13 +34,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -57,6 +54,7 @@ import java.nio.file.Files
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
+import kotlin.time.Duration.Companion.milliseconds
 
 @RunWith(AndroidJUnit4::class)
 class CollectionTransferUseCasesTest {
@@ -82,7 +80,7 @@ class CollectionTransferUseCasesTest {
         val mediaRepo = MediaItemRepository(db.mediaItemDao(), images::toModel)
         collections = CollectionUseCases(db, collectionRepo, images)
         media = MediaItemUseCases(db, mediaRepo, TagRepository(db.tagDao(), db.mediaItemTagDao()),
-            collectionRepo, TrigramRepository(db.mediaItemTrigramDao()), images)
+            collectionRepo, images)
         transfer = CollectionTransferUseCases(db, context, Dispatchers.IO, collections, media, images)
     }
 
@@ -114,27 +112,27 @@ class CollectionTransferUseCasesTest {
         }
         try {
             val successful = editor()
-            withTimeout(5_000) { successful.isLoading.first { !it } }
+            withTimeout(5_000.milliseconds) { successful.isLoading.first { !it } }
             withContext(Dispatchers.Main) {
                 successful.updateName("Saved before closing")
                 successful.saveCurrentItem(closeAfterSave = true)
                 assertFalse(successful.closeRequested.value)
             }
-            withTimeout(5_000) { successful.closeRequested.first { it } }
+            withTimeout(5_000.milliseconds) { successful.closeRequested.first { it } }
             assertEquals("Saved before closing", media.getMediaItemById(successful.mediaItemDraft.value.id)?.caption)
 
             val failed = editor()
-            withTimeout(5_000) { failed.isLoading.first { !it } }
+            withTimeout(5_000.milliseconds) { failed.isLoading.first { !it } }
             db.close()
             withContext(Dispatchers.Main) {
                 failed.updateName("Keep this draft")
                 failed.saveCurrentItem(closeAfterSave = true)
             }
-            val error = withTimeout(5_000) { failed.error.first { it != null } }
+            val error = withTimeout(5_000.milliseconds) { failed.error.first { it != null } }
             assertEquals(R.string.error_media_save, error!!.messageResId)
             assertFalse(failed.closeRequested.value)
             assertEquals("Keep this draft", failed.mediaItemDraft.value.caption)
-            withTimeout(5_000) { failed.isSaving.first { !it } }
+            withTimeout(5_000.milliseconds) { failed.isSaving.first { !it } }
             assertFalse(failed.isSaving.value)
         } finally {
             withContext(Dispatchers.Main) { stores.forEach { it.clear() } }
@@ -147,7 +145,7 @@ class CollectionTransferUseCasesTest {
             val editor = withContext(Dispatchers.Main) {
                 EditingViewModel(999, media, collections, SavedStateHandle()).also { store.put("editor", it) }
             }
-            withTimeout(5_000) { editor.isLoading.first { !it } }
+            withTimeout(5_000.milliseconds) { editor.isLoading.first { !it } }
             assertEquals(R.string.error_media_missing, editor.loadError.value)
             assertEquals(999L, editor.mediaItemDraft.value.id)
             withContext(Dispatchers.Main) { editor.saveCurrentItem(closeAfterSave = true) }
@@ -229,7 +227,7 @@ class CollectionTransferUseCasesTest {
     }
 
     @Test fun cancellingOneOverlappingImportDoesNotRemoveTheOtherDirectory(): Unit = runBlocking {
-        withTimeout(15_000) {
+        withTimeout(15_000.milliseconds) {
             val archive = archive("overlap")
             val locked = CompletableDeferred<Unit>()
             val release = CompletableDeferred<Unit>()
@@ -263,7 +261,7 @@ class CollectionTransferUseCasesTest {
     }
 
     private suspend fun awaitExtractedDirectories(count: Int) {
-        while (transferDirectories().count { File(it, "media/item.png").isFile } != count) delay(10)
+        while (transferDirectories().count { File(it, "media/item.png").isFile } != count) delay(10.milliseconds)
     }
 
     private fun transferDirectories() = context.cacheDir.listFiles()!!.filter {
@@ -275,7 +273,7 @@ class CollectionTransferUseCasesTest {
     private suspend fun assertEmptyDatabaseAndImages() {
         assertTrue(collections.getAllCollections().first().isEmpty())
         assertTrue(db.mediaItemDao().getAllIds().isEmpty())
-        for (table in listOf("images", "tags", "media_item_tags", "media_item_trigrams", "collection_entries")) {
+        for (table in listOf("images", "tags", "media_item_tags", "collection_entries")) {
             db.openHelper.writableDatabase.query("SELECT COUNT(*) FROM $table").use {
                 assertTrue(it.moveToFirst()); assertEquals(table, 0, it.getInt(0))
             }

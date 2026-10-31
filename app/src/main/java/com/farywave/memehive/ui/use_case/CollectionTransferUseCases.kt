@@ -142,7 +142,7 @@ class CollectionTransferUseCases(
                 appVersion = context.packageManager.getPackageInfo(
                     context.packageName,
                     0
-                ).versionCode,
+                ).longVersionCode,
                 exportedAt = System.currentTimeMillis(),
                 collection = TransferCollection(
                     name = collection.name,

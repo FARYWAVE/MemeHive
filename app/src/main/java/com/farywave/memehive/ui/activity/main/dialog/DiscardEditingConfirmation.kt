@@ -33,7 +33,7 @@ fun DiscardEditingConfirmation(onSave: () -> Unit, onDiscard: () -> Unit, onDism
     }
 }
 
-enum class DiscardEditingAction(@StringRes override val text: Int, override val type: ActionType) :
+enum class DiscardEditingAction(@param:StringRes override val text: Int, override val type: ActionType) :
     SimpleDialogAction {
     SAVE(R.string.action_save, ActionType.NORMAL),
     DISCARD(R.string.action_discard, ActionType.WARNING),

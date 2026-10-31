@@ -31,11 +31,11 @@ class TagRepository(
         deleteOrphanedTags()
     }
 
-    suspend fun deleteByMediaItemId(mediaItemId: Long): Unit {
+    suspend fun deleteByMediaItemId(mediaItemId: Long) {
         mediaItemTagDao.deleteByMediaItemId(mediaItemId)
     }
 
-    suspend fun deleteOrphanedTags(): Unit {
+    suspend fun deleteOrphanedTags() {
         tagDao.deleteOrphanedTags()
     }
 }

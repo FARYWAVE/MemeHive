@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TransferManifest(
-    val appVersion: Int,
+    val appVersion: Long,
     val exportedAt: Long,
     val collection: TransferCollection,
     val mediaItems: List<TransferMediaItem>

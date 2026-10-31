@@ -6,7 +6,6 @@ import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.ImageRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.data.local.db.repository.TagRepository
-import com.farywave.memehive.data.local.db.repository.TrigramRepository
 import com.farywave.memehive.data.local.storage.ImageStorage
 import com.farywave.memehive.ui.use_case.CollectionTransferUseCases
 import com.farywave.memehive.ui.use_case.CollectionUseCases
@@ -29,7 +28,6 @@ class AppContainer(
     private val imageDao = database.imageDao()
     private val tagDao = database.tagDao()
     private val mediaItemTagDao = database.mediaItemTagDao()
-    private val mediaItemTrigramDao = database.mediaItemTrigramDao()
 
     private val imageStorage = ImageStorage(appContext, ioDispatcher)
     private val imageRepo = ImageRepository(appContext, imageDao, ioDispatcher, imageStorage)
@@ -40,14 +38,12 @@ class AppContainer(
         collectionEntryDao
     )
     private val tagRepo = TagRepository(tagDao, mediaItemTagDao)
-    private val trigramRepo = TrigramRepository(mediaItemTrigramDao)
 
     val mediaItemUseCases = MediaItemUseCases(
         database,
         mediaItemRepo,
         tagRepo,
         collectionRepo,
-        trigramRepo,
         imageRepo
     )
     val collectionUseCases = CollectionUseCases(database, collectionRepo, imageRepo)

@@ -121,7 +121,7 @@ class Migration1To2Test {
     fun roomOpensAnOldDatabaseThroughTheRegisteredMigration(): Unit = runBlocking {
         helper.createDatabase(databaseName, 1).use(::seedValidData)
         val db = Room.databaseBuilder(context, MemeHiveDatabase::class.java, databaseName)
-            .addMigrations(MIGRATION_1_2, ImageFilenameMigration(context.filesDir))
+            .addMigrations(MIGRATION_1_2, ImageFilenameMigration(context.filesDir), MIGRATION_3_4)
             .build()
         try {
             val summaries = db.collectionDao().getAll().first()
@@ -130,7 +130,7 @@ class Migration1To2Test {
             assertEquals("first", db.mediaItemDao().get(10)?.mediaItem?.caption)
             val id = db.mediaItemDao().insert(MediaItemEntity(imageId = null, caption = "after upgrade", description = ""))
             assertTrue(id > 11)
-            assertEquals(3, db.openHelper.writableDatabase.version)
+            assertEquals(4, db.openHelper.writableDatabase.version)
             db.openHelper.writableDatabase.assertForeignKeysValid()
         } finally {
             db.close()
@@ -184,10 +184,10 @@ class Migration1To2Test {
 
     private fun assertReopens(): Unit = runBlocking {
         val db = Room.databaseBuilder(context, MemeHiveDatabase::class.java, databaseName)
-            .addMigrations(MIGRATION_1_2, ImageFilenameMigration(context.filesDir))
+            .addMigrations(MIGRATION_1_2, ImageFilenameMigration(context.filesDir), MIGRATION_3_4)
             .build()
         try {
-            assertEquals(3, db.openHelper.writableDatabase.version)
+            assertEquals(4, db.openHelper.writableDatabase.version)
             db.openHelper.writableDatabase.assertForeignKeysValid()
             db.collectionDao().getAll().first()
             db.mediaItemDao().getAll().first()

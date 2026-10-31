@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.farywave.memehive.ui.use_case.CollectionUseCases
 import com.farywave.memehive.ui.use_case.MediaSearchUseCase
 
+@Suppress("UNCHECKED_CAST")
 class PickerViewModelFactory(
     private val collectionUseCases: CollectionUseCases,
     private val mediaSearchUseCase: MediaSearchUseCase

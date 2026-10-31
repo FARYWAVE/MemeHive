@@ -30,6 +30,7 @@ import com.farywave.memehive.ui.simple_component.SimpleDialogAction
 import com.farywave.memehive.ui.theme.LocalAppColors
 import java.io.File
 import kotlinx.coroutines.CancellationException
+import kotlin.enums.enumEntries
 
 @Composable
 fun AboutApp(onDismissRequest: () -> Unit) {
@@ -47,7 +48,7 @@ fun AboutApp(onDismissRequest: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            enumValues<AboutAppEntry>().forEach { entry ->
+            enumEntries<AboutAppEntry>().forEach { entry ->
                 item {
                     Text(
                         text = stringResource(entry.title),
@@ -84,7 +85,7 @@ private fun DirectorySize(directory: File) {
     )
 }
 
-enum class AboutAppEntry(@StringRes val title: Int, val content: @Composable () -> Unit) {
+enum class AboutAppEntry(@param:StringRes val title: Int, val content: @Composable () -> Unit) {
     VERSION(title = R.string.label_app_version, content = {
         val context = LocalContext.current
         Text(
@@ -137,5 +138,5 @@ enum class AboutAppEntry(@StringRes val title: Int, val content: @Composable () 
     })
 }
 
-enum class AboutAppAction(@StringRes override val text: Int, override val type: ActionType) :
+enum class AboutAppAction(@param:StringRes override val text: Int, override val type: ActionType) :
     SimpleDialogAction

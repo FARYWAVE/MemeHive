@@ -16,7 +16,6 @@ import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.ImageRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.data.local.db.repository.TagRepository
-import com.farywave.memehive.data.local.db.repository.TrigramRepository
 import com.farywave.memehive.data.local.storage.ImageStorage
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.Image
@@ -41,6 +40,7 @@ import java.io.File
 import java.nio.file.Files
 import java.security.MessageDigest
 
+@Suppress("SameParameterValue")
 @RunWith(AndroidJUnit4::class)
 class AtomicPersistenceTest {
     private lateinit var root: File
@@ -63,7 +63,7 @@ class AtomicPersistenceTest {
         collections = CollectionUseCases(db, collectionRepo, images)
         media = MediaItemUseCases(db, MediaItemRepository(db.mediaItemDao(), images::toModel),
             TagRepository(db.tagDao(), db.mediaItemTagDao()), collectionRepo,
-            TrigramRepository(db.mediaItemTrigramDao()), images)
+            images)
     }
 
     @After fun tearDown() {
@@ -78,7 +78,6 @@ class AtomicPersistenceTest {
             MediaItem(image = source("old"), caption = "CAT", description = "DOG", tags = listOf("old")),
             setOf(first.id),
         )
-        assertEquals(setOf("cat", "dog"), trigrams(original.id))
         assertEquals(setOf(first.id), collections.getCollectionIdsByMediaItem(original.id))
         val oldFile = File(original.image!!.uri.path!!)
         val updated = media.updateMediaItem(
@@ -86,7 +85,6 @@ class AtomicPersistenceTest {
             setOf(second.id),
         )
         assertEquals(updated, media.getMediaItemById(original.id))
-        assertEquals(setOf("owl", "fox"), trigrams(original.id))
         assertEquals(setOf(second.id), collections.getCollectionIdsByMediaItem(original.id))
         assertEquals(listOf("new"), db.tagDao().getAll().map { it.name })
         assertNull(db.imageDao().getById(original.image.id))
@@ -95,7 +93,7 @@ class AtomicPersistenceTest {
     }
 
     @Test fun failedCreateRollsBackItemImageTagsAndMemberships(): Unit = runBlocking {
-        failOn("INSERT", "media_item_trigrams")
+        failOn("INSERT", "collection_entries")
         val collection = collections.createCollection(Collection(name = "keep"))
         expectFailure<SQLiteException> {
             media.createMediaItem(MediaItem(image = source("create"), caption = "cat", tags = listOf("tag")), setOf(collection.id))
@@ -111,14 +109,13 @@ class AtomicPersistenceTest {
         val second = collections.createCollection(Collection(name = "second"))
         val original = media.createMediaItem(MediaItem(image = source("old"), caption = "cat", tags = listOf("old")), setOf(first.id))
         val filesBefore = savedFiles()
-        // Membership insertion follows the item, tag and trigram replacements.
+        // Membership insertion follows the item and tag replacements.
         failOn("INSERT", "collection_entries")
         expectFailure<SQLiteException> {
             media.updateMediaItem(original.copy(image = source("replacement"), caption = "dog", tags = listOf("new")), setOf(second.id))
         }
         assertEquals(original, media.getMediaItemById(original.id))
         assertEquals(setOf(first.id), collections.getCollectionIdsByMediaItem(original.id))
-        assertEquals(setOf("cat"), trigrams(original.id))
         assertEquals(listOf("old"), db.tagDao().getAll().map { it.name })
         assertEquals(filesBefore, savedFiles())
         assertEquals(1, count("images"))
@@ -142,7 +139,6 @@ class AtomicPersistenceTest {
         val item = media.createMediaItem(MediaItem(image = source("remove"), caption = "cat", tags = listOf("tag")), setOf(collection.id))
         val updated = media.updateMediaItem(item.copy(image = null, caption = "", tags = emptyList()), emptySet())
         assertEquals(updated, media.getMediaItemById(item.id))
-        assertTrue(trigrams(item.id).isEmpty())
         assertTrue(collections.getCollectionIdsByMediaItem(item.id).isEmpty())
         assertEquals(0, count("tags"))
         assertEquals(0, count("images"))
@@ -195,7 +191,6 @@ class AtomicPersistenceTest {
         media.deleteMediaItemsByIds(ids)
         assertEquals(listOf(outside.id), db.mediaItemDao().getAllIds())
         assertEquals(0, count("collection_entries"))
-        assertEquals(0, count("media_item_trigrams"))
         assertEquals(listOf("keep"), db.tagDao().getAll().map { it.name })
         assertEquals(1, count("images"))
         assertEquals(1, savedFiles().size)
@@ -218,7 +213,6 @@ class AtomicPersistenceTest {
         expectFailure<SQLiteException> { media.deleteMediaItemsByIds(ids) }
         assertEquals(ids, db.mediaItemDao().getAllIds().toSet())
         assertEquals(item, media.getMediaItemById(item.id))
-        assertEquals(setOf("cat"), trigrams(item.id))
         assertEquals(filesBefore, savedFiles())
         assertEquals(1, count("images"))
     }
@@ -256,7 +250,6 @@ class AtomicPersistenceTest {
         assertEquals(1, count("images"))
         assertEquals(1, count("tags"))
         assertEquals(4, count("media_item_tags"))
-        assertEquals(4, count("media_item_trigrams"))
         assertEquals(1, savedFiles().size)
     }
 
@@ -276,9 +269,6 @@ class AtomicPersistenceTest {
         }
     }
 
-    private suspend fun trigrams(itemId: Long): Set<String> =
-        db.mediaItemTrigramDao().getAll().filter { it.mediaItemId == itemId }.map { it.trigram }.toSet()
-
     private fun savedFiles(): Set<String> = File(context.filesDir, "images").listFiles().orEmpty().map { it.name }.toSet()
 
     private fun count(table: String): Int = db.openHelper.writableDatabase.query("SELECT COUNT(*) FROM $table").use {
@@ -287,7 +277,7 @@ class AtomicPersistenceTest {
     }
 
     private fun assertNoItemsOrDependents() {
-        for (table in listOf("media_items", "tags", "media_item_tags", "media_item_trigrams", "collection_entries")) {
+        for (table in listOf("media_items", "tags", "media_item_tags", "collection_entries")) {
             assertEquals(table, 0, count(table))
         }
     }

@@ -5,7 +5,7 @@ import com.farywave.memehive.R
 import com.farywave.memehive.ui.simple_component.ActionMenuOptions
 
 enum class CreateActions(
-    @StringRes override val labelId: Int,
+    @param:StringRes override val labelId: Int,
     override val highlighted: Boolean = false
 ) : ActionMenuOptions {
     CREATE_COLLECTION(R.string.action_create_collection),
@@ -13,7 +13,7 @@ enum class CreateActions(
 }
 
 enum class MoreActions(
-    @StringRes override val labelId: Int,
+    @param:StringRes override val labelId: Int,
     override val highlighted: Boolean = false
 ) : ActionMenuOptions {
     ENABLE_PICKER(R.string.action_enable_picker),
@@ -23,7 +23,7 @@ enum class MoreActions(
 }
 
 enum class MassEditActions(
-    @StringRes override val labelId: Int,
+    @param:StringRes override val labelId: Int,
     override val highlighted: Boolean = false
 ) : ActionMenuOptions {
     DUPLICATE(R.string.action_duplicate),
@@ -32,7 +32,7 @@ enum class MassEditActions(
 }
 
 enum class CollectionActions(
-    @StringRes override val labelId: Int,
+    @param:StringRes override val labelId: Int,
     override val highlighted: Boolean = false
 ) : ActionMenuOptions {
     EXPORT(R.string.action_export),

@@ -17,7 +17,6 @@ import com.farywave.memehive.ui.use_case.CollectionUseCases
 import com.farywave.memehive.ui.use_case.MediaItemUseCases
 import com.farywave.memehive.ui.use_case.MediaSearchState
 import com.farywave.memehive.ui.use_case.MediaSearchUseCase
-import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -26,18 +25,20 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class HiveViewModel(
     private val mediaItemUseCases: MediaItemUseCases,
     private val collectionUseCases: CollectionUseCases,
-    private val mediaSearchUseCase: MediaSearchUseCase,
-    private val collectionTransferUseCases: CollectionTransferUseCases
+    private val collectionTransferUseCases: CollectionTransferUseCases,
+    mediaSearchUseCase: MediaSearchUseCase,
 ) : ViewModel() {
     private val messages = UiMessageQueue()
     val error = messages.current
@@ -70,7 +71,7 @@ class HiveViewModel(
 
     private val retries = MutableStateFlow(0)
     val mediaState = mediaSearchUseCase.observeState(
-        selectedCollectionId, searchQuery.debounce(200), retries,
+        selectedCollectionId, searchQuery.debounce(200.milliseconds), retries,
     ).stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
@@ -119,21 +120,17 @@ class HiveViewModel(
     fun onMassImport(uris: List<Uri>) {
         if (uris.isEmpty()) return
         val collectionId = _selectedCollectionId.value
+        val collectionSet = collectionId?.let { setOf(it) } ?: emptySet()
         launchWithError(R.string.error_media_import_partial) {
-            val mediaItems = uris.map {
+            uris.forEach {
                 mediaItemUseCases.createMediaItem(
                     MediaItem(
                         image = Image(uri = it),
-                    )
+                    ),
+                    collectionSet
                 )
             }
 
-            collectionId?.let {
-                collectionUseCases.addItemsToCollection(
-                    mediaItems.map { item -> item.id }.toSet(),
-                    it
-                )
-            }
             addTransferMessage(R.string.success_media_imported)
         }
     }
@@ -179,8 +176,11 @@ class HiveViewModel(
         }
     }
 
-    fun exportCollection(collection: Collection, uri: Uri) {
+    fun exportCollection(collectionId: Long, uri: Uri) {
         launchCollectionTransfer(R.string.success_collection_exported) {
+            val collection = collectionUseCases.getAllCollections().first()
+                .firstOrNull { it.id == collectionId }
+                ?: throw IOException("The collection no longer exists.")
             collectionTransferUseCases.exportCollection(collection, uri)
         }
     }

@@ -13,12 +13,12 @@
 .externalNativeBuild
 .cxx
 local.properties
-/app/schemas/com.farywave.memehive.data.local.db.MemeHiveDatabase/1.json
-/app/schemas/com.farywave.memehive.data.local.db.MemeHiveDatabase/2.json
-/app/schemas/com.farywave.memehive.data.local.db.MemeHiveDatabase/3.json
 /gradle/gradle-daemon-jvm.properties
-/docs/navigation.md
-/app/src/androidTest/java/com/farywave/memehive/data/local/db/README.md
 
 # Kotlin compiler session files
 /.kotlin/
+
+# Local IDE state
+/.idea/deviceManager.xml
+/.idea/deploymentTargetSelector.xml
+/.idea/dictionaries/

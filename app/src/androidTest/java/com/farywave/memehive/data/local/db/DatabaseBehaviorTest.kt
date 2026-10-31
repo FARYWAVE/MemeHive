@@ -10,7 +10,6 @@ import com.farywave.memehive.data.local.db.entity.CollectionEntryEntity
 import com.farywave.memehive.data.local.db.entity.ImageEntity
 import com.farywave.memehive.data.local.db.entity.MediaItemEntity
 import com.farywave.memehive.data.local.db.entity.MediaItemTagEntity
-import com.farywave.memehive.data.local.db.entity.MediaItemTrigramEntity
 import com.farywave.memehive.data.local.db.entity.TagEntity
 import com.farywave.memehive.data.local.db.relation.CollectionDetails
 import kotlinx.coroutines.CoroutineStart
@@ -30,6 +29,7 @@ import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.time.Duration.Companion.milliseconds
 
 @RunWith(AndroidJUnit4::class)
 class DatabaseBehaviorTest {
@@ -49,15 +49,14 @@ class DatabaseBehaviorTest {
     }
 
     @Test
-    fun freshVersion3RejectsMissingParents(): Unit = runBlocking {
-        assertEquals(3, db.openHelper.writableDatabase.version)
+    fun freshVersion4RejectsMissingParents(): Unit = runBlocking {
+        assertEquals(4, db.openHelper.writableDatabase.version)
         val item = insertItem()
         val collection = insertCollection()
         val tag = db.tagDao().insert(TagEntity(name = "tag"))
         assertConstraint { db.mediaItemDao().insert(MediaItemEntity(imageId = 999, caption = "bad", description = "")) }
         assertConstraint { db.collectionDao().insert(CollectionEntity(name = "bad", coverImageId = 999)) }
         assertConstraint { db.collectionDao().setCover(collection, 999) }
-        assertConstraint { db.mediaItemTrigramDao().insert(MediaItemTrigramEntity(trigram = "bad", mediaItemId = 999)) }
         assertConstraint { db.collectionEntryDao().insert(CollectionEntryEntity(collection, 999)) }
         assertConstraint { db.collectionEntryDao().insert(CollectionEntryEntity(999, item)) }
         assertConstraint { db.mediaItemTagDao().insert(MediaItemTagEntity(999, tag)) }
@@ -93,12 +92,10 @@ class DatabaseBehaviorTest {
         for (id in listOf(item, otherItem)) {
             db.collectionEntryDao().insert(CollectionEntryEntity(collection, id))
             db.mediaItemTagDao().insert(MediaItemTagEntity(id, tag))
-            db.mediaItemTrigramDao().insert(MediaItemTrigramEntity(trigram = "cat", mediaItemId = id))
         }
         db.mediaItemDao().delete(item)
         assertEquals(listOf(otherItem), db.collectionEntryDao().getIdsByCollection(collection))
         assertEquals(listOf(otherItem), db.mediaItemTagDao().getByTag(tag).first().map { it.mediaItemId })
-        assertEquals(listOf(otherItem), db.mediaItemTrigramDao().getAll().map { it.mediaItemId })
         assertNotNull(db.tagDao().getByName("shared"))
         assertEquals(collection, db.collectionDao().getAll().first().single().collection.id)
         db.openHelper.writableDatabase.assertForeignKeysValid()
@@ -118,28 +115,6 @@ class DatabaseBehaviorTest {
         assertTrue(db.mediaItemTagDao().getByTag(tag).first().isEmpty())
         assertNotNull(db.mediaItemDao().get(item))
         db.openHelper.writableDatabase.assertForeignKeysValid()
-    }
-
-    @Test
-    fun trigramsAreUniquePerItemAndRepeatedBatchInsertionIsSafe(): Unit = runBlocking {
-        val item = insertItem()
-        val otherItem = insertItem()
-        val values = listOf(
-            MediaItemTrigramEntity(trigram = "cat", mediaItemId = item),
-            MediaItemTrigramEntity(trigram = "cat", mediaItemId = item),
-            MediaItemTrigramEntity(trigram = "cat", mediaItemId = otherItem),
-        )
-        repeat(2) { db.mediaItemTrigramDao().insertAll(values) }
-        assertEquals(setOf(item, otherItem), db.mediaItemTrigramDao().getAll().map { it.mediaItemId }.toSet())
-        assertEquals(2, db.mediaItemTrigramDao().getAll().size)
-        assertEquals(setOf(item, otherItem), db.mediaItemTrigramDao().getMediaItemIdsByTrigrams(setOf("cat")).toSet())
-        // A raw insert confirms the constraint; the DAO deliberately uses IGNORE.
-        assertConstraint {
-            db.openHelper.writableDatabase.execSQL(
-                "INSERT INTO media_item_trigrams (trigram, media_item_id) VALUES ('cat', ?)",
-                arrayOf(item),
-            )
-        }
     }
 
     @Test
@@ -214,7 +189,6 @@ class DatabaseBehaviorTest {
             "SELECT id FROM collections WHERE cover_image_id = 1" to "index_collections_cover_image_id",
             "SELECT collection_id FROM collection_entries WHERE media_item_id = 1" to "index_collection_entries_media_item_id",
             "SELECT media_item_id FROM media_item_tags WHERE tag_id = 1" to "index_media_item_tags_tag_id",
-            "SELECT media_item_id FROM media_item_trigrams WHERE trigram IN ('cat', 'dog')" to "index_media_item_trigrams_trigram_media_item_id",
         )
         for ((query, index) in queries) {
             val plan = db.openHelper.writableDatabase.rows("EXPLAIN QUERY PLAN $query").flatten().joinToString(" ")
@@ -239,7 +213,7 @@ class DatabaseBehaviorTest {
 
     private suspend fun Channel<List<CollectionDetails>>.await(
         predicate: (List<CollectionDetails>) -> Boolean,
-    ): List<CollectionDetails> = withTimeout(10_000) {
+    ): List<CollectionDetails> = withTimeout(10_000.milliseconds) {
         var rows = receive()
         while (!predicate(rows)) rows = receive()
         rows
