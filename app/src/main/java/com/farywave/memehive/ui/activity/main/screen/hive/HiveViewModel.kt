@@ -164,9 +164,9 @@ class HiveViewModel(
         }
     }
 
-    fun deleteCollection(collection: Collection) {
+    fun deleteCollection(collection: Collection, deleteContents: Boolean = false) {
         launchWithError(R.string.error_collection_delete) {
-            collectionUseCases.deleteCollection(collection)
+            collectionUseCases.deleteCollection(collection, deleteContents)
         }
     }
 

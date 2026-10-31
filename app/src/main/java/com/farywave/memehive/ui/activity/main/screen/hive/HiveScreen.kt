@@ -37,6 +37,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
@@ -46,8 +47,10 @@ import androidx.constraintlayout.compose.Dimension
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.activity.main.dialog.AboutApp
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
-import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorDialog
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditor
 import com.farywave.memehive.domain.model.Collection
+import com.farywave.memehive.ui.activity.main.dialog.CollectionDeletionConfirmation
+import com.farywave.memehive.ui.activity.main.dialog.MassDeletionConfirmation
 import com.farywave.memehive.ui.component.CollectionPickerSheet
 import com.farywave.memehive.ui.component.EmptyHiveMessage
 import com.farywave.memehive.ui.component.EmptySearchResultMessage
@@ -72,7 +75,7 @@ fun HiveScreen(
     onMassImport: () -> Unit,
     onCollectionImport: () -> Unit,
     onExportCollection: (Collection) -> Unit,
-    onDeleteCollection: (Collection) -> Unit,
+    onDeleteCollection: (collection: Collection, deleteContents: Boolean) -> Unit,
     onSearchQueryChanged: (String) -> Unit,
     onRetryLoading: () -> Unit = {},
     onCollectionSelected: (Long?) -> Unit,
@@ -84,6 +87,8 @@ fun HiveScreen(
     onAddSelectedMediaToCollection: (Collection) -> Unit,
 ) {
     var showAbout by rememberSaveable { mutableStateOf(false) }
+    var showMassDeletionConfirmation by rememberSaveable { mutableStateOf(false) }
+    var collectionPendingDeletion by rememberSaveable { mutableStateOf<Collection?>(null) }
     val focusManager = LocalFocusManager.current
 
     Scaffold(
@@ -129,7 +134,11 @@ fun HiveScreen(
                 if (state.isMassEditingMode) {
                     Text(
                         modifier = Modifier.padding(end = 8.dp),
-                        text = "${state.selectedMediaItemIds.size} ${stringResource(R.string.label_selected)}",
+                        text = pluralStringResource(
+                            R.plurals.label_selected,
+                            state.selectedMediaItemIds.size,
+                            state.selectedMediaItemIds.size
+                        ),
                         style = Typography.bodyMedium,
                         color = LocalAppColors.current.contentPrimary
                     )
@@ -204,7 +213,6 @@ fun HiveScreen(
                         topBarHeight = it.height
                     },
                 initialQuery = state.searchQuery,
-                isLoading = state.isLoading,
                 loadFailed = state.loadFailed,
                 onRetry = onRetryLoading,
                 onSearch = onSearchQueryChanged,
@@ -215,7 +223,7 @@ fun HiveScreen(
                     when (action) {
                         CollectionActions.EXPORT -> onExportCollection(collection)
                         CollectionActions.EDIT -> onEditCollection(collection)
-                        CollectionActions.DELETE -> onDeleteCollection(collection)
+                        CollectionActions.DELETE -> collectionPendingDeletion = collection
                     }
                 }
             )
@@ -291,7 +299,7 @@ fun HiveScreen(
                         when (action) {
                             MassEditActions.ADD_TO_COLLECTION -> showSheet = true
                             MassEditActions.DELETE -> {
-                                onDeleteSelectedMedia()
+                                showMassDeletionConfirmation = true
                             }
 
                             MassEditActions.DUPLICATE -> {
@@ -330,10 +338,28 @@ fun HiveScreen(
         )
     }
     if (showAbout) AboutApp(onDismissRequest = { showAbout = false })
-    CollectionEditorDialog(
+    CollectionEditor(
         state = state.collectionEditor,
         onSubmit = onSubmitCollection,
         onDismiss = onDismissCollection,
+    )
+
+    if (showMassDeletionConfirmation) MassDeletionConfirmation(
+        selectedCount = state.selectedMediaItemIds.size,
+        onDismissRequest = { showMassDeletionConfirmation = false },
+        onDelete = {
+            showMassDeletionConfirmation = false
+            onDeleteSelectedMedia()
+        },
+    )
+
+    if (collectionPendingDeletion != null) CollectionDeletionConfirmation(
+        collection = collectionPendingDeletion!!,
+        onDismissRequest = { collectionPendingDeletion = null },
+        onDelete = { deleteContents ->
+            onDeleteCollection(collectionPendingDeletion!!, deleteContents)
+            collectionPendingDeletion = null
+        }
     )
 
 }

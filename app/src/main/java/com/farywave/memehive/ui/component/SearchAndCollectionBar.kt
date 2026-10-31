@@ -22,7 +22,6 @@ fun SearchAndCollectionBar(
     modifier: Modifier = Modifier,
     onSearch: (String) -> Unit,
     initialQuery: String = "",
-    isLoading: Boolean = false,
     loadFailed: Boolean = false,
     onRetry: () -> Unit = {},
     collections: List<Collection>,
@@ -61,7 +60,6 @@ fun SearchAndCollectionBar(
                 onAction = onAction
             )
         }
-        if (isLoading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         if (loadFailed) {
             ErrorNotice(R.string.error_library_load, onRetry)
         }

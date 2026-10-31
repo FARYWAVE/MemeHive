@@ -21,6 +21,17 @@ interface CollectionEntryDao {
     """)
     suspend fun getIdsByCollection(collectionId: Long): List<Long>
 
+    @Query("""
+        SELECT entry.media_item_id FROM collection_entries AS entry
+        WHERE entry.collection_id = :collectionId
+          AND NOT EXISTS (
+              SELECT 1 FROM collection_entries AS other
+              WHERE other.media_item_id = entry.media_item_id
+                AND other.collection_id != :collectionId
+          )
+    """)
+    suspend fun getExclusiveIdsByCollection(collectionId: Long): List<Long>
+
     @Query("SELECT COUNT(*) FROM collection_entries WHERE collection_id = :collectionId")
     fun getEntryCount(collectionId: Long): Flow<Int>
 

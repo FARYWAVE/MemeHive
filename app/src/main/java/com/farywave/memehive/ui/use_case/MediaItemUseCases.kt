@@ -16,6 +16,7 @@ class MediaItemUseCases(
     private val tagRepository: TagRepository,
     private val collectionRepository: CollectionRepository,
     private val imageRepository: ImageRepository,
+    private val deleteMediaItemsUseCase: DeleteMediaItemsUseCase,
 ) {
     suspend fun getMediaItemById(id: Long): MediaItem? {
         return mediaItemRepository.getMediaItemById(id)
@@ -38,7 +39,7 @@ class MediaItemUseCases(
         }
     }
 
-    /** Use inside imageRepository.withImageChanges, sharing the tracker for the whole transaction. */
+
     suspend fun createMediaItem(
         mediaItem: MediaItem,
         changes: ImageChanges,
@@ -87,27 +88,10 @@ class MediaItemUseCases(
     }
 
     suspend fun deleteMediaItem(mediaItem: MediaItem) {
-        imageRepository.withImageCleanup { cleanup ->
-            db.withTransaction {
-                val imageId = mediaItemRepository.getMediaItemImageId(mediaItem.id)
-
-                mediaItemRepository.deleteMediaItem(mediaItem)
-                tagRepository.deleteOrphanedTags()
-
-                cleanup(setOf(imageId))
-            }
-        }
+        deleteMediaItemsUseCase(setOf(mediaItem.id))
     }
 
     suspend fun deleteMediaItemsByIds(mediaItemIds: Set<Long>) {
-        imageRepository.withImageCleanup { cleanup ->
-            db.withTransaction {
-                val imageIds = mediaItemRepository.getMediaItemImageIds(mediaItemIds)
-                mediaItemRepository.deleteMediaItemsByIds(mediaItemIds)
-                tagRepository.deleteOrphanedTags()
-
-                cleanup(imageIds.minus(null))
-            }
-        }
+        deleteMediaItemsUseCase(mediaItemIds)
     }
 }

@@ -61,7 +61,7 @@ import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.ui.activity.main.dialog.DiscardEditingConfirmation
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
-import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorDialog
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditor
 import com.farywave.memehive.ui.component.CollectionPickerSheet
 import com.farywave.memehive.ui.component.CollectionSelectorSheet
 import com.farywave.memehive.ui.component.ErrorNotice
@@ -359,7 +359,7 @@ fun EditingScreen(
         )
     }
 
-    CollectionEditorDialog(
+    CollectionEditor(
         state = state.collectionEditor,
         onSubmit = onSubmitCollection,
         onDismiss = onDismissCollection,

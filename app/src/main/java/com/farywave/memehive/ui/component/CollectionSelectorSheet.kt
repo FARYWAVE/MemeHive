@@ -1,5 +1,6 @@
 package com.farywave.memehive.ui.component
 
+import android.widget.CheckBox
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -178,16 +179,6 @@ private fun CollectionItem(collection: Collection, isSelected: Boolean, onClicke
 
         Spacer(modifier = Modifier.weight(1f))
 
-        CheckBox(checked = isSelected)
+        CheckBox(checked = isSelected, onClick = {})
     }
-}
-
-@Composable
-private fun CheckBox(checked: Boolean) {
-    Icon(
-        modifier = Modifier.size(25.dp),
-        painter = painterResource(if (checked) R.drawable.ic_checkbox_selected else R.drawable.ic_checkbox_blank),
-        tint = if (checked) LocalAppColors.current.accentSecondary else LocalAppColors.current.contentSecondary,
-        contentDescription = null
-    )
 }

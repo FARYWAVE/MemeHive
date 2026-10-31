@@ -25,6 +25,10 @@ class CollectionRepository(
             .distinctUntilChanged()
     }
 
+    suspend fun getExclusiveMediaItemIdsByCollection(collectionId: Long): Set<Long> {
+        return collectionEntryDao.getExclusiveIdsByCollection(collectionId).toSet()
+    }
+
     suspend fun getCollectionCoverId(collectionId: Long): Long? {
         return collectionDao.getCoverId(collectionId)
     }

@@ -26,7 +26,7 @@ import com.farywave.memehive.ui.simple_component.SimpleTextField
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
-fun CollectionEditorDialog(
+fun CollectionEditor(
     state: CollectionEditorState?,
     onSubmit: (CollectionDraft) -> Unit,
     onDismiss: () -> Unit,

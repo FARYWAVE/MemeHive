@@ -75,7 +75,6 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
-    // Room's transitive metadata reader predates Kotlin 2.4. Keep it aligned with our compiler.
     kapt(libs.kotlin.metadata.jvm)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)

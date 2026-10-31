@@ -104,5 +104,20 @@
         <item quantity="many">%1$d элементов</item>
         <item quantity="other">%1$d элемента</item>
     </plurals>
-    <string name="label_selected">выбрано</string>
+
+    <plurals name="delete_items_confirmation">
+        <item quantity="one">Вы уверены что хотите удалить %1$d элемент?</item>
+        <item quantity="few">Вы уверены что хотите удалить %1$d элемента?</item>
+        <item quantity="many">Вы уверены что хотите удалить %1$d элементов?</item>
+        <item quantity="other">Вы уверены что хотите удалить %1$d элемента?</item>
+    </plurals>
+
+    <plurals name="label_selected">
+        <item quantity="one">%1$d выбран</item>
+        <item quantity="few">%1$d выбрано</item>
+        <item quantity="many">%1$d выбрано</item>
+        <item quantity="other">%1$d выбрано</item>
+    </plurals>
+    <string name="message_delete_collection">Вы уверены что хотите удалить эту коллекцию?</string>
+    <string name="label_delete_contents">Удалить содержимое коллекции (%1$d)</string>
 </resources>

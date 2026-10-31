@@ -12,6 +12,7 @@ class CollectionUseCases(
     private val db: MemeHiveDatabase,
     private val collectionRepository: CollectionRepository,
     private val imageRepository: ImageRepository,
+    private val deleteMediaItemsUseCase: DeleteMediaItemsUseCase,
 ) {
     fun getAllCollections(): Flow<List<Collection>> {
         return collectionRepository.getAllCollections()
@@ -73,10 +74,16 @@ class CollectionUseCases(
         }
     }
 
-    suspend fun deleteCollection(collection: Collection) {
+
+    /** [deleteContents] deletes only items that belong to no other collection. */
+    suspend fun deleteCollection(collection: Collection, deleteContents: Boolean = false) {
         imageRepository.withImageCleanup { cleanup ->
             db.withTransaction {
                 val coverId = collectionRepository.getCollectionCoverId(collection.id)
+                if (deleteContents) {
+                    val itemIds = collectionRepository.getExclusiveMediaItemIdsByCollection(collection.id)
+                    deleteMediaItemsUseCase(itemIds, cleanup)
+                }
                 collectionRepository.deleteCollection(collection)
                 cleanup(setOf(coverId))
             }

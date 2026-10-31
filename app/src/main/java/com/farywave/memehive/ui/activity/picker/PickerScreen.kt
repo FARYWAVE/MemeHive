@@ -76,7 +76,6 @@ fun PickerScreen(
                             topBarHeight = it.height
                         },
                     initialQuery = state.searchQuery,
-                    isLoading = state.isLoading,
                     loadFailed = state.loadFailed,
                     onRetry = onRetryLoading,
                     onSearch = onSearchQueryChanged,

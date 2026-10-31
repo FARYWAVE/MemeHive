@@ -9,6 +9,7 @@ import com.farywave.memehive.data.local.db.repository.TagRepository
 import com.farywave.memehive.data.local.storage.ImageStorage
 import com.farywave.memehive.ui.use_case.CollectionTransferUseCases
 import com.farywave.memehive.ui.use_case.CollectionUseCases
+import com.farywave.memehive.ui.use_case.DeleteMediaItemsUseCase
 import com.farywave.memehive.ui.use_case.MediaItemUseCases
 import com.farywave.memehive.ui.use_case.MediaSearchUseCase
 import kotlinx.coroutines.CoroutineDispatcher
@@ -39,14 +40,18 @@ class AppContainer(
     )
     private val tagRepo = TagRepository(tagDao, mediaItemTagDao)
 
+    private val deleteMediaItemsUseCase =
+        DeleteMediaItemsUseCase(database, mediaItemRepo, tagRepo, imageRepo)
+
     val mediaItemUseCases = MediaItemUseCases(
         database,
         mediaItemRepo,
         tagRepo,
         collectionRepo,
-        imageRepo
+        imageRepo,
+        deleteMediaItemsUseCase
     )
-    val collectionUseCases = CollectionUseCases(database, collectionRepo, imageRepo)
+    val collectionUseCases = CollectionUseCases(database, collectionRepo, imageRepo, deleteMediaItemsUseCase)
     val collectionTransferUseCases =
         CollectionTransferUseCases(
             database,

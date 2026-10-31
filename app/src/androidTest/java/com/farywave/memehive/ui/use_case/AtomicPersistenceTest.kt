@@ -60,10 +60,11 @@ class AtomicPersistenceTest {
         db = Room.inMemoryDatabaseBuilder(base, MemeHiveDatabase::class.java).build()
         images = imageRepository(db.imageDao())
         val collectionRepo = CollectionRepository(db.collectionDao(), images::toModel, db.collectionEntryDao())
-        collections = CollectionUseCases(db, collectionRepo, images)
-        media = MediaItemUseCases(db, MediaItemRepository(db.mediaItemDao(), images::toModel),
-            TagRepository(db.tagDao(), db.mediaItemTagDao()), collectionRepo,
-            images)
+        val deletionMediaRepo = MediaItemRepository(db.mediaItemDao(), images::toModel)
+        val tagRepo = TagRepository(db.tagDao(), db.mediaItemTagDao())
+        val deleteMediaItems = DeleteMediaItemsUseCase(db, deletionMediaRepo, tagRepo, images)
+        collections = CollectionUseCases(db, collectionRepo, images, deleteMediaItems)
+        media = MediaItemUseCases(db, deletionMediaRepo, tagRepo, collectionRepo, images, deleteMediaItems)
     }
 
     @After fun tearDown() {
@@ -215,6 +216,59 @@ class AtomicPersistenceTest {
         assertEquals(item, media.getMediaItemById(item.id))
         assertEquals(filesBefore, savedFiles())
         assertEquals(1, count("images"))
+    }
+
+    @Test fun deletingCollectionByDefaultPreservesItsContents(): Unit = runBlocking {
+        val collection = collections.createCollection(Collection(name = "delete"))
+        val item = media.createMediaItem(MediaItem(image = source("keep"), tags = listOf("keep")), setOf(collection.id))
+        collections.deleteCollection(collection)
+        assertEquals(0, count("collections"))
+        assertEquals(0, count("collection_entries"))
+        assertEquals(item, media.getMediaItemById(item.id))
+        assertTrue(File(item.image!!.uri.path!!).exists())
+        assertEquals(listOf("keep"), db.tagDao().getAll().map { it.name })
+    }
+
+    @Test fun deletingCollectionContentsPreservesItemsInOtherCollections(): Unit = runBlocking {
+        val collection = collections.createCollection(Collection(name = "delete", cover = source("cover")))
+        val other = collections.createCollection(Collection(name = "keep"))
+        val item = media.createMediaItem(MediaItem(image = source("item"), tags = listOf("shared")), setOf(collection.id, other.id))
+        val exclusive = media.createMediaItem(MediaItem(image = collection.cover, tags = listOf("delete")), setOf(collection.id))
+        val outside = media.createMediaItem(MediaItem(image = item.image, tags = listOf("keep")), setOf(other.id))
+        val coverFile = File(collection.cover!!.uri.path!!)
+        collections.deleteCollection(collection, deleteContents = true)
+        assertEquals(setOf(item.id, outside.id), db.mediaItemDao().getAllIds().toSet())
+        assertEquals(item, media.getMediaItemById(item.id))
+        assertEquals(setOf(other.id), collections.getCollectionIdsByMediaItem(item.id))
+        assertNull(media.getMediaItemById(exclusive.id))
+        assertEquals(1, count("collections"))
+        assertEquals(2, count("collection_entries"))
+        assertEquals(setOf("keep", "shared"), db.tagDao().getAll().map { it.name }.toSet())
+        assertEquals(1, count("images"))
+        assertFalse(coverFile.exists())
+        assertTrue(File(outside.image!!.uri.path!!).exists())
+        collections.deleteCollection(other, deleteContents = true)
+        assertNoItemsOrDependents()
+        assertTrue(savedFiles().isEmpty())
+        val empty = collections.createCollection(Collection(name = "empty"))
+        collections.deleteCollection(empty, deleteContents = true)
+        assertEquals(0, count("collections"))
+    }
+
+    @Test fun failedCollectionDeletionRestoresContentsAndTheirFiles(): Unit = runBlocking {
+        val collection = collections.createCollection(Collection(name = "restore", cover = source("cover")))
+        val item = media.createMediaItem(MediaItem(image = source("item"), tags = listOf("restore")), setOf(collection.id))
+        val filesBefore = savedFiles()
+        failOn("DELETE", "collections")
+        expectFailure<SQLiteException> {
+            collections.deleteCollection(collection, deleteContents = true)
+        }
+        assertEquals(1, count("collections"))
+        assertEquals(item, media.getMediaItemById(item.id))
+        assertEquals(setOf(collection.id), collections.getCollectionIdsByMediaItem(item.id))
+        assertEquals(listOf("restore"), db.tagDao().getAll().map { it.name })
+        assertEquals(2, count("images"))
+        assertEquals(filesBefore, savedFiles())
     }
 
     @Test fun savedHashMatchesCopiedBytesWhenOriginalSourceChanges(): Unit = runBlocking {

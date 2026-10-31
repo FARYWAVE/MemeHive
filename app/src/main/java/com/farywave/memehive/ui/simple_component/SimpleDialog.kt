@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -62,7 +63,8 @@ fun <T> SimpleDialog(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleMedium,
-                        color = LocalAppColors.current.contentPrimary
+                        color = LocalAppColors.current.contentPrimary,
+                        textAlign = TextAlign.Center
                     )
 
                     content()

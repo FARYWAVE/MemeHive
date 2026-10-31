@@ -77,10 +77,11 @@ class CollectionTransferUseCasesTest {
         db = Room.inMemoryDatabaseBuilder(base, MemeHiveDatabase::class.java).build()
         images = ImageRepository(context, db.imageDao(), Dispatchers.IO, ImageStorage(context, Dispatchers.IO))
         val collectionRepo = CollectionRepository(db.collectionDao(), images::toModel, db.collectionEntryDao())
-        val mediaRepo = MediaItemRepository(db.mediaItemDao(), images::toModel)
-        collections = CollectionUseCases(db, collectionRepo, images)
-        media = MediaItemUseCases(db, mediaRepo, TagRepository(db.tagDao(), db.mediaItemTagDao()),
-            collectionRepo, images)
+        val deletionMediaRepo = MediaItemRepository(db.mediaItemDao(), images::toModel)
+        val tagRepo = TagRepository(db.tagDao(), db.mediaItemTagDao())
+        val deleteMediaItems = DeleteMediaItemsUseCase(db, deletionMediaRepo, tagRepo, images)
+        collections = CollectionUseCases(db, collectionRepo, images, deleteMediaItems)
+        media = MediaItemUseCases(db, deletionMediaRepo, tagRepo, collectionRepo, images, deleteMediaItems)
         transfer = CollectionTransferUseCases(db, context, Dispatchers.IO, collections, media, images)
     }
 

@@ -17,7 +17,7 @@ import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
-import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorDialog
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditor
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorState
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 import org.junit.Assert.assertEquals
@@ -33,7 +33,7 @@ class CollectionEditorDialogTest {
         var submitted: CollectionDraft? = null
         compose.setContent {
             MemeHiveTheme {
-                CollectionEditorDialog(
+                CollectionEditor(
                     state = CollectionEditorState(
                         "new",
                         initialDraft = CollectionDraft(coverUri = "content://test/cover")
@@ -58,7 +58,7 @@ class CollectionEditorDialogTest {
         var submitted: CollectionDraft? = null
         restoration.setContent {
             MemeHiveTheme {
-                CollectionEditorDialog(
+                CollectionEditor(
                     state = CollectionEditorState("restored", 7L, CollectionDraft("Before")),
                     onSubmit = { submitted = it },
                     onDismiss = {},
@@ -75,7 +75,7 @@ class CollectionEditorDialogTest {
         val state = mutableStateOf(CollectionEditorState("saving"))
         compose.setContent {
             MemeHiveTheme {
-                CollectionEditorDialog(state.value, onSubmit = {}, onDismiss = {})
+                CollectionEditor(state.value, onSubmit = {}, onDismiss = {})
             }
         }
         compose.onNode(hasSetTextAction()).performTextReplacement("Keep my draft")
@@ -94,7 +94,7 @@ class CollectionEditorDialogTest {
         var submitted: CollectionDraft? = null
         compose.setContent {
             MemeHiveTheme {
-                CollectionEditorDialog(
+                CollectionEditor(
                     state = CollectionEditorState(
                         "edit",
                         7L,
