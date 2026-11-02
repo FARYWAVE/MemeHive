@@ -16,14 +16,19 @@ import org.junit.runner.RunWith
 class DraftSavedStateTest {
     @Test
     fun draftSurvivesParcelRoundTripWithIdentityAndContent() {
-        val draft = MediaItemDraft(
-            id = 42L,
-            image = Image(id = 7L, uri = Uri.parse("content://images/7")),
-            caption = "Unsaved caption",
-            description = "Unsaved description",
-            tags = listOf(MediaItemDraft.EditableTag(8, "one"), MediaItemDraft.EditableTag(12, "two")),
-            collectionIds = setOf(3L, 9L),
-        )
+        val draft =
+            MediaItemDraft(
+                id = 42L,
+                image = Image(id = 7L, uri = Uri.parse("content://images/7")),
+                caption = "Unsaved caption",
+                description = "Unsaved description",
+                tags =
+                    listOf(
+                        MediaItemDraft.EditableTag(8, "one"),
+                        MediaItemDraft.EditableTag(12, "two"),
+                    ),
+                collectionIds = setOf(3L, 9L),
+            )
         val restored = roundTrip(draft.toSavedBundle()).toDraft()
         assertTrue(draft.hasSameContentAs(restored))
         assertEquals(draft.id, restored.id)

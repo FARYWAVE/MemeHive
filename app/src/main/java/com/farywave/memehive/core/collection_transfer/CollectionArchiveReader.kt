@@ -1,16 +1,16 @@
 package com.farywave.memehive.core.collection_transfer
 
 import com.farywave.memehive.core.collection_transfer.entity.TransferManifest
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
 import java.io.EOFException
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.util.zip.ZipException
 import java.util.zip.ZipInputStream
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 
 internal object CollectionArchiveReader {
     // Limits apply to actual decompressed bytes, never the untrusted ZIP size headers.
@@ -25,7 +25,11 @@ internal object CollectionArchiveReader {
         }
     }
 
-    suspend fun extract(input: InputStream, directory: File, limits: Limits = Limits()): TransferManifest {
+    suspend fun extract(
+        input: InputStream,
+        directory: File,
+        limits: Limits = Limits(),
+    ): TransferManifest {
         var totalBytes = 0L
         var entryCount = 0
         val destinations = mutableSetOf<File>()
@@ -36,23 +40,30 @@ internal object CollectionArchiveReader {
                 while (entry != null) {
                     currentCoroutineContext().ensureActive()
                     if (++entryCount > limits.entries) {
-                        throw InvalidCollectionArchiveException("The archive contains too many entries.")
+                        throw InvalidCollectionArchiveException(
+                            "The archive contains too many entries."
+                        )
                     }
                     val destination = resolvePath(directory, entry.name)
                     if (!destinations.add(destination)) {
-                        throw InvalidCollectionArchiveException("Duplicate archive path: ${entry.name}")
+                        throw InvalidCollectionArchiveException(
+                            "Duplicate archive path: ${entry.name}"
+                        )
                     }
                     if (entry.isDirectory) {
                         createDirectory(destination)
                         // closeEntry otherwise drains hidden directory payloads without a limit.
                         if (zip.read() != -1) {
-                            throw InvalidCollectionArchiveException("Directory entries cannot contain data.")
+                            throw InvalidCollectionArchiveException(
+                                "Directory entries cannot contain data."
+                            )
                         }
                     } else {
                         createDirectory(destination.parentFile!!)
-                        val maximum = if (destination == manifestPath) {
-                            minOf(limits.fileBytes, limits.manifestBytes)
-                        } else limits.fileBytes
+                        val maximum =
+                            if (destination == manifestPath) {
+                                minOf(limits.fileBytes, limits.manifestBytes)
+                            } else limits.fileBytes
                         var fileBytes = 0L
                         destination.outputStream().use { output ->
                             val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
@@ -60,8 +71,13 @@ internal object CollectionArchiveReader {
                                 currentCoroutineContext().ensureActive()
                                 val count = zip.read(buffer)
                                 if (count == -1) break
-                                if (count > maximum - fileBytes || count > limits.totalBytes - totalBytes) {
-                                    throw InvalidCollectionArchiveException("The archive exceeds the import size limits.")
+                                if (
+                                    count > maximum - fileBytes ||
+                                        count > limits.totalBytes - totalBytes
+                                ) {
+                                    throw InvalidCollectionArchiveException(
+                                        "The archive exceeds the import size limits."
+                                    )
                                 }
                                 fileBytes += count
                                 totalBytes += count
@@ -83,14 +99,19 @@ internal object CollectionArchiveReader {
         if (!manifestFile.isFile) {
             throw InvalidCollectionArchiveException("The archive has no manifest.json file.")
         }
-        val manifest = try {
-            Json.decodeFromString<TransferManifest>(manifestFile.readText())
-        } catch (error: SerializationException) {
-            throw InvalidCollectionArchiveException("The collection manifest is invalid.", error)
-        }
+        val manifest =
+            try {
+                Json.decodeFromString<TransferManifest>(manifestFile.readText())
+            } catch (error: SerializationException) {
+                throw InvalidCollectionArchiveException(
+                    "The collection manifest is invalid.",
+                    error,
+                )
+            }
 
-        val paths = listOfNotNull(manifest.collection.coverPath) +
-            manifest.mediaItems.mapNotNull { it.path }
+        val paths =
+            listOfNotNull(manifest.collection.coverPath) +
+                manifest.mediaItems.mapNotNull { it.path }
         paths.forEach { path ->
             currentCoroutineContext().ensureActive()
             val file = resolvePath(directory, path)

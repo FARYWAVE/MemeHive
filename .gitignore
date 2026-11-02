@@ -22,3 +22,4 @@ local.properties
 /.idea/deviceManager.xml
 /.idea/deploymentTargetSelector.xml
 /.idea/dictionaries/
+/.github/workflows/android.yml

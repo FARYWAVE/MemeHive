@@ -16,16 +16,15 @@ class SchemaExportTest {
     private val testDatabaseName = "schema-export-test"
 
     @get:Rule
-    val helper = MigrationTestHelper(
-        InstrumentationRegistry.getInstrumentation(),
-        MemeHiveDatabase::class.java
-    )
+    val helper =
+        MigrationTestHelper(
+            InstrumentationRegistry.getInstrumentation(),
+            MemeHiveDatabase::class.java,
+        )
 
     @After
     fun cleanUp() {
-        InstrumentationRegistry.getInstrumentation()
-            .targetContext
-            .deleteDatabase(testDatabaseName)
+        InstrumentationRegistry.getInstrumentation().targetContext.deleteDatabase(testDatabaseName)
     }
 
     @Test
@@ -37,12 +36,11 @@ class SchemaExportTest {
                 """
                 INSERT INTO collections (id, name, cover_image_id)
                 VALUES (1, 'Test collection', NULL)
-                """.trimIndent()
+                """
+                    .trimIndent()
             )
 
-            database.query(
-                "SELECT name FROM collections WHERE id = 1"
-            ).use { cursor ->
+            database.query("SELECT name FROM collections WHERE id = 1").use { cursor ->
                 assertTrue(cursor.moveToFirst())
                 assertEquals("Test collection", cursor.getString(0))
             }

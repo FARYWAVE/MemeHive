@@ -4,7 +4,8 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class UiMessageQueueTest {
-    @Test fun repeatedFailuresAreDeliveredInOrderAndStaleDismissalsDoNotRemoveTheNextMessage() {
+    @Test
+    fun repeatedFailuresAreDeliveredInOrderAndStaleDismissalsDoNotRemoveTheNextMessage() {
         val queue = UiMessageQueue()
         queue.show(1)
         val first = queue.current.value!!

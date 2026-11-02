@@ -7,16 +7,10 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "images",
-    indices = [Index(value = ["sha256"], unique = true), Index(value = ["name"], unique = true)]
+    indices = [Index(value = ["sha256"], unique = true), Index(value = ["name"], unique = true)],
 )
-data class ImageEntity (
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "id")
-    val id: Long = 0,
-
-    @ColumnInfo(name = "name")
-    val name: String,
-
-    @ColumnInfo(name = "sha256")
-    val sha256: String
+data class ImageEntity(
+    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "id") val id: Long = 0,
+    @ColumnInfo(name = "name") val name: String,
+    @ColumnInfo(name = "sha256") val sha256: String,
 )

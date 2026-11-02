@@ -1,5 +1,7 @@
 [versions]
+# Pinned to the newest AGP supported by the installed Android Studio.
 agp = "9.2.1"
+ksp = "2.3.13"
 coilCompose = "2.7.0"
 constraintlayoutCompose = "1.1.2"
 kotlin = "2.4.21"
@@ -16,7 +18,6 @@ kotlinxSerializationJson = "1.12.0"
 kotlinxCoroutines = "1.11.0"
 
 [libraries]
-kotlin-metadata-jvm = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-constraintlayout-compose = { module = "androidx.constraintlayout:constraintlayout-compose", version.ref = "constraintlayoutCompose" }
@@ -45,6 +46,6 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 androidx-room = { id = "androidx.room", version.ref = "roomRuntime" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

@@ -11,6 +11,6 @@ data class EditingUiState(
     val isSaving: Boolean = false,
     val isLoading: Boolean = false,
     val loadError: Int? = null,
-    val collectionsFailed: Boolean = false,
-    val screenState: ScreenState = ScreenState.BLANK,
+    val hasCollectionsLoadError: Boolean = false,
+    val contentState: EditorContentState = EditorContentState.BLANK,
 )

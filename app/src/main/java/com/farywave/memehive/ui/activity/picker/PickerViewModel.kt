@@ -5,11 +5,12 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.farywave.memehive.R
+import com.farywave.memehive.application.usecase.CollectionUseCases
+import com.farywave.memehive.application.usecase.MediaSearchState
+import com.farywave.memehive.application.usecase.MediaSearchUseCase
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.ui.model.UiMessageQueue
-import com.farywave.memehive.ui.use_case.CollectionUseCases
-import com.farywave.memehive.ui.use_case.MediaSearchState
-import com.farywave.memehive.ui.use_case.MediaSearchUseCase
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -23,12 +24,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class PickerViewModel(
     private val collectionUseCases: CollectionUseCases,
-    mediaSearchUseCase: MediaSearchUseCase
+    mediaSearchUseCase: MediaSearchUseCase,
 ) : ViewModel() {
     private val messages = UiMessageQueue()
     val error = messages.current
@@ -42,22 +42,30 @@ class PickerViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
-    private val _collectionsLoading = MutableStateFlow(true)
-    val collectionsLoading = _collectionsLoading.asStateFlow()
+    private val _isLoadingCollections = MutableStateFlow(true)
+    val isLoadingCollections = _isLoadingCollections.asStateFlow()
 
-    private val _collectionsFailed = MutableStateFlow(false)
-    val collectionsFailed = _collectionsFailed.asStateFlow()
+    private val _hasCollectionsLoadError = MutableStateFlow(false)
+    val hasCollectionsLoadError = _hasCollectionsLoadError.asStateFlow()
 
     private val retries = MutableStateFlow(0)
-    val mediaState = mediaSearchUseCase.observeState(
-        selectedCollectionId, searchQuery.debounce(200.milliseconds), retries,
-    )
-        .map { it.copy(items = it.items.filter { item -> item.image != null }) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MediaSearchState(isLoading = true))
+    val mediaState =
+        mediaSearchUseCase
+            .observeState(
+                selectedCollectionId,
+                searchQuery.debounce(200.milliseconds),
+                retries,
+            )
+            .map { it.copy(items = it.items.filter { item -> item.image != null }) }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                MediaSearchState(isLoading = true),
+            )
 
     fun retryLoading() {
-        _collectionsLoading.value = true
-        _collectionsFailed.value = false
+        _isLoadingCollections.value = true
+        _hasCollectionsLoadError.value = false
         retries.update { it + 1 }
     }
 
@@ -65,7 +73,7 @@ class PickerViewModel(
         loadCollections()
     }
 
-    fun onSearchQueryChanged(query: String) {
+    fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
     }
 
@@ -79,17 +87,17 @@ class PickerViewModel(
 
     private fun loadCollections() {
         viewModelScope.launch {
-            retries.flatMapLatest {
-                collectionUseCases.getAllCollections()
-                    .catch {
-                        _collectionsLoading.value = false
-                        _collectionsFailed.value = true
+            retries
+                .flatMapLatest {
+                    collectionUseCases.observeCollections().catch {
+                        _isLoadingCollections.value = false
+                        _hasCollectionsLoadError.value = true
                         reportError(R.string.error_collections_load, it)
                     }
-            }
+                }
                 .collect { collections ->
-                    _collectionsLoading.value = false
-                    _collectionsFailed.value = false
+                    _isLoadingCollections.value = false
+                    _hasCollectionsLoadError.value = false
                     _collections.value = collections
                     val selectedId = _selectedCollectionId.value
                     if (selectedId != null && collections.none { it.id == selectedId }) {

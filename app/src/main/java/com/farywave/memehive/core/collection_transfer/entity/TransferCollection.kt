@@ -5,5 +5,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TransferCollection(
     val name: String,
-    val coverPath: String?
+    val coverPath: String?,
 )

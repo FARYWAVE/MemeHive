@@ -15,7 +15,8 @@ class MediaItemRepository(
     private val resolveImage: (ImageEntity) -> Image,
 ) {
     fun observeMediaItems(collectionId: Long?): Flow<List<MediaItem>> {
-        return mediaItemDao.observeByCollection(collectionId)
+        return mediaItemDao
+            .observeByCollection(collectionId)
             .map { items -> items.map { it.toMediaItem(it.image?.let(resolveImage)) } }
             .distinctUntilChanged()
     }
@@ -25,15 +26,16 @@ class MediaItemRepository(
     }
 
     suspend fun getMediaItemsByCollectionId(collectionId: Long): List<MediaItem> {
-        return mediaItemDao.getByCollection(collectionId)
-            .map { it.toMediaItem(it.image?.let(resolveImage)) }
+        return mediaItemDao.getByCollection(collectionId).map {
+            it.toMediaItem(it.image?.let(resolveImage))
+        }
     }
 
     suspend fun getMediaItemImageId(mediaItemId: Long): Long? {
         return mediaItemDao.getImageId(mediaItemId)
     }
 
-    suspend fun getMediaItemImageIds(mediaItemIds: Set<Long>): Set<Long?> {
+    suspend fun getMediaItemImageIds(mediaItemIds: Set<Long>): Set<Long> {
         return mediaItemIds.chunked(1000).flatMap { mediaItemDao.getImageIds(it.toSet()) }.toSet()
     }
 
@@ -43,11 +45,8 @@ class MediaItemRepository(
 
     suspend fun updateMediaItem(mediaItem: MediaItem) {
         val affectedCount = mediaItemDao.update(mediaItem.toEntity())
-        if (affectedCount == 0) throw IllegalStateException("Failed to update media item: $mediaItem")
-    }
-
-    suspend fun deleteMediaItem(mediaItem: MediaItem) {
-        mediaItemDao.delete(mediaItem.id)
+        if (affectedCount == 0)
+            throw IllegalStateException("Failed to update media item: $mediaItem")
     }
 
     suspend fun deleteMediaItemsByIds(mediaItemIds: Set<Long>) {

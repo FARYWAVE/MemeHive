@@ -7,7 +7,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.StateRestorationTester
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -17,7 +17,7 @@ import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
 import com.farywave.memehive.R
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
-import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditor
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorDialog
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorState
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 import org.junit.Assert.assertEquals
@@ -27,41 +27,49 @@ import org.junit.Test
 
 class CollectionEditorDialogTest {
     @get:Rule val compose = createComposeRule()
-    private fun text(id: Int) = InstrumentationRegistry.getInstrumentation().targetContext.getString(id)
 
-    @Test fun submitIncludesTheLatestNameAndCover() {
+    private fun text(id: Int) =
+        InstrumentationRegistry.getInstrumentation().targetContext.getString(id)
+
+    @Test
+    fun submitIncludesTheLatestNameAndCover() {
         var submitted: CollectionDraft? = null
         compose.setContent {
             MemeHiveTheme {
-                CollectionEditor(
-                    state = CollectionEditorState(
-                        "new",
-                        initialDraft = CollectionDraft(coverUri = "content://test/cover")
-                    ),
+                CollectionEditorDialog(
+                    state =
+                        CollectionEditorState(
+                            "new",
+                            initialDraft = CollectionDraft(coverUri = "content://test/cover"),
+                        ),
                     onSubmit = { submitted = it },
-                    onDismiss = {},
+                    onDismissRequest = {},
                 )
             }
         }
         compose.onNode(hasSetTextAction()).performTextReplacement("Cats / dogs ? #")
         Espresso.closeSoftKeyboard()
         // Test the submitted snapshot independently of the device keyboard's window animation.
-        compose.onNodeWithText(text(R.string.action_create))
-            .performSemanticsAction(SemanticsActions.OnClick) { it() }
+        compose.onNodeWithText(text(R.string.action_create)).performSemanticsAction(
+            SemanticsActions.OnClick
+        ) {
+            it()
+        }
         compose.runOnIdle {
             assertEquals(CollectionDraft("Cats / dogs ? #", "content://test/cover"), submitted)
         }
     }
 
-    @Test fun localDraftSurvivesSavedStateRestoration() {
+    @Test
+    fun localDraftSurvivesSavedStateRestoration() {
         val restoration = StateRestorationTester(compose)
         var submitted: CollectionDraft? = null
         restoration.setContent {
             MemeHiveTheme {
-                CollectionEditor(
+                CollectionEditorDialog(
                     state = CollectionEditorState("restored", 7L, CollectionDraft("Before")),
                     onSubmit = { submitted = it },
-                    onDismiss = {},
+                    onDismissRequest = {},
                 )
             }
         }
@@ -71,11 +79,12 @@ class CollectionEditorDialogTest {
         compose.runOnIdle { assertEquals(CollectionDraft("Unsaved name"), submitted) }
     }
 
-    @Test fun savingDisablesFieldsAndActionsAndFailureAllowsRetry() {
+    @Test
+    fun savingDisablesFieldsAndActionsAndFailureAllowsRetry() {
         val state = mutableStateOf(CollectionEditorState("saving"))
         compose.setContent {
             MemeHiveTheme {
-                CollectionEditor(state.value, onSubmit = {}, onDismiss = {})
+                CollectionEditorDialog(state.value, onSubmit = {}, onDismissRequest = {})
             }
         }
         compose.onNode(hasSetTextAction()).performTextReplacement("Keep my draft")
@@ -84,24 +93,27 @@ class CollectionEditorDialogTest {
         compose.onNodeWithText(text(R.string.action_create)).assertIsNotEnabled()
         compose.onNodeWithText(text(R.string.action_cancel)).assertIsNotEnabled()
         compose.runOnIdle {
-            state.value = state.value.copy(isSaving = false, errorResId = R.string.error_collection_create)
+            state.value =
+                state.value.copy(isSaving = false, errorResId = R.string.error_collection_create)
         }
         compose.onNodeWithText("Keep my draft").assertExists()
         compose.onNodeWithText(text(R.string.error_collection_create)).assertExists()
     }
 
-    @Test fun removingCoverSubmitsNullWithoutLosingTheName() {
+    @Test
+    fun removingCoverSubmitsNullWithoutLosingTheName() {
         var submitted: CollectionDraft? = null
         compose.setContent {
             MemeHiveTheme {
-                CollectionEditor(
-                    state = CollectionEditorState(
-                        "edit",
-                        7L,
-                        CollectionDraft("Cats", "content://test/cover")
-                    ),
+                CollectionEditorDialog(
+                    state =
+                        CollectionEditorState(
+                            "edit",
+                            7L,
+                            CollectionDraft("Cats", "content://test/cover"),
+                        ),
                     onSubmit = { submitted = it },
-                    onDismiss = {},
+                    onDismissRequest = {},
                 )
             }
         }

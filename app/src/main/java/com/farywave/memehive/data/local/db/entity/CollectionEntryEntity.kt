@@ -9,25 +9,23 @@ import androidx.room.Index
     tableName = "collection_entries",
     indices = [Index(value = ["media_item_id"])],
     primaryKeys = ["collection_id", "media_item_id"],
-    foreignKeys = [
-        ForeignKey(
-            entity = CollectionEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["collection_id"],
-            onDelete = ForeignKey.CASCADE
-        ),
-        ForeignKey(
-            entity = MediaItemEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["media_item_id"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ]
+    foreignKeys =
+        [
+            ForeignKey(
+                entity = CollectionEntity::class,
+                parentColumns = ["id"],
+                childColumns = ["collection_id"],
+                onDelete = ForeignKey.CASCADE,
+            ),
+            ForeignKey(
+                entity = MediaItemEntity::class,
+                parentColumns = ["id"],
+                childColumns = ["media_item_id"],
+                onDelete = ForeignKey.CASCADE,
+            ),
+        ],
 )
 data class CollectionEntryEntity(
-    @ColumnInfo(name = "collection_id")
-    val collectionId: Long,
-
-    @ColumnInfo(name = "media_item_id")
-    val mediaItemId: Long
+    @ColumnInfo(name = "collection_id") val collectionId: Long,
+    @ColumnInfo(name = "media_item_id") val mediaItemId: Long,
 )

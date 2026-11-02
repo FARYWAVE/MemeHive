@@ -4,6 +4,8 @@ import android.content.ClipData
 import androidx.core.content.FileProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertArrayEquals
@@ -13,15 +15,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-import java.io.IOException
 
 @RunWith(AndroidJUnit4::class)
 class ImageSharingTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private val storage = ImageStorage(context, Dispatchers.IO)
 
-    @Test fun sharedUriIsReadableAndHasImageMimeType(): Unit = runBlocking {
+    @Test
+    fun sharedUriIsReadableAndHasImageMimeType(): Unit = runBlocking {
         val directory = File(context.filesDir, "images").apply { mkdirs() }
         val file = File.createTempFile("sharing_", ".png", directory)
         try {
@@ -31,7 +32,10 @@ class ImageSharingTest {
             assertEquals("content", uri.scheme)
             assertEquals("${context.packageName}.provider", uri.authority)
             assertEquals("image/png", context.contentResolver.getType(uri))
-            assertArrayEquals(bytes, context.contentResolver.openInputStream(uri)!!.use { it.readBytes() })
+            assertArrayEquals(
+                bytes,
+                context.contentResolver.openInputStream(uri)!!.use { it.readBytes() },
+            )
             val clip = ClipData.newUri(context.contentResolver, "Image", uri)
             assertEquals(uri, clip.getItemAt(0).uri)
             assertTrue(clip.description.hasMimeType("image/png"))
@@ -40,7 +44,8 @@ class ImageSharingTest {
         }
     }
 
-    @Test fun providerRejectsFilesOutsideImageDirectory() {
+    @Test
+    fun providerRejectsFilesOutsideImageDirectory() {
         val file = File.createTempFile("private_", ".txt", context.filesDir)
         try {
             assertThrows(IllegalArgumentException::class.java) {
@@ -51,7 +56,8 @@ class ImageSharingTest {
         }
     }
 
-    @Test fun missingImagesFailBeforeClipboardCopy(): Unit = runBlocking {
+    @Test
+    fun missingImagesFailBeforeClipboardCopy(): Unit = runBlocking {
         val directory = File(context.filesDir, "images").apply { mkdirs() }
         val file = File.createTempFile("missing_", ".png", directory)
         check(file.delete())

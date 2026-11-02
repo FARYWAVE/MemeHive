@@ -8,12 +8,8 @@ import com.farywave.memehive.domain.model.MediaItem
 
 class TagRepository(
     private val tagDao: TagDao,
-    private val mediaItemTagDao: MediaItemTagDao
+    private val mediaItemTagDao: MediaItemTagDao,
 ) {
-    suspend fun getAll(): List<TagEntity> {
-        return tagDao.getAll()
-    }
-
     suspend fun getByName(name: String): TagEntity? {
         return tagDao.getByName(name)
     }
