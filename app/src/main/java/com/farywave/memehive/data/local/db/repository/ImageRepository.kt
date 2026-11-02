@@ -43,9 +43,15 @@ class ImageRepository(
         val imageEntity = imageDao.getBySha256(sha256)
         if (imageEntity != null) return toModel(imageEntity)
 
-        val id = imageDao.insert(ImageEntity(0, file.name, sha256))
-
-        return Image(id, file.toUri())
+        val dimensions = storage.readDimensions(file)
+        val entity = ImageEntity(
+            name = file.name,
+            sha256 = sha256,
+            width = dimensions?.first,
+            height = dimensions?.second,
+        )
+        val id = imageDao.insert(entity)
+        return entity.copy(id = id).toModel(file.toUri())
     }
 
     suspend fun <T> withImageChanges(block: suspend (ImageChanges) -> T): T {

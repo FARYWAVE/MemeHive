@@ -38,6 +38,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.domain.model.MediaItem
+import com.farywave.memehive.domain.model.aspectRatio
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
@@ -81,6 +82,7 @@ fun SelectableMediaItemCard(
                         }
                         .wrapContentSize(),
                 imageUri = mediaItem.image?.uri,
+                imageAspectRatio = mediaItem.image.aspectRatio,
                 roundBottom = mediaItem.tags.isEmpty(),
                 onImageLoaded = onImageLoaded,
             )
@@ -125,6 +127,7 @@ fun SelectableMediaItemCard(
 private fun ImageWithPlaceholder(
     modifier: Modifier,
     imageUri: Uri?,
+    imageAspectRatio: Float,
     roundBottom: Boolean,
     onImageLoaded: () -> Unit,
 ) {
@@ -134,12 +137,10 @@ private fun ImageWithPlaceholder(
             bottomEnd = CornerSize(0.dp),
         )
     var loadFailed by remember(imageUri) { mutableStateOf(false) }
-    var loadFinished by remember(imageUri) { mutableStateOf(false) }
     if (imageUri != null && !loadFailed)
         AsyncImage(
             model = imageUri,
             onSuccess = {
-                loadFinished = true
                 onImageLoaded()
             },
             onError = {
@@ -149,16 +150,15 @@ private fun ImageWithPlaceholder(
             contentDescription = null,
             modifier =
                 modifier.fillMaxWidth()
-                    // Reserve space until the drawable supplies its intrinsic height.
-                    .then(if (loadFinished) Modifier else Modifier.aspectRatio(1.5f))
+                    .aspectRatio(imageAspectRatio)
                     .clip(roundedTopShape),
-            contentScale = ContentScale.FillWidth,
+            contentScale = ContentScale.Fit,
         )
     else
         Box(
             modifier =
                 modifier
-                    .aspectRatio(1.5F)
+                    .aspectRatio(imageAspectRatio)
                     .fillMaxWidth()
                     .background(
                         color = LocalAppColors.current.backgroundPrimary,

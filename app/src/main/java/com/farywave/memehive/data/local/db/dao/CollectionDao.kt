@@ -22,6 +22,8 @@ interface CollectionDao {
         i.id AS cover_id,
         i.name AS cover_name,
         i.sha256 AS cover_sha256,
+        i.width AS cover_width,
+        i.height AS cover_height,
         COUNT(ce.media_item_id) AS media_item_count
     FROM collections AS c
     LEFT JOIN images AS i
@@ -34,7 +36,9 @@ interface CollectionDao {
         c.cover_image_id,
         i.id,
         i.name,
-        i.sha256
+        i.sha256,
+        i.width,
+        i.height
     ORDER BY c.id
     """
     )

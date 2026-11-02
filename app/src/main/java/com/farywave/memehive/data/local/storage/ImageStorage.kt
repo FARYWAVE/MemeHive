@@ -1,6 +1,8 @@
 package com.farywave.memehive.data.local.storage
 
 import android.content.Context
+import android.graphics.BitmapFactory
+import android.media.ExifInterface
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
@@ -62,6 +64,31 @@ class ImageStorage(
         return context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
             val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
             if (cursor.moveToFirst() && index != -1) cursor.getString(index) else null
+        }
+    }
+
+    /** Reads metadata only, without allocating an image bitmap. */
+    suspend fun readDimensions(file: File): Pair<Int, Int>? = withContext(ioDispatcher) {
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, options)
+        val width = options.outWidth
+        val height = options.outHeight
+        if (width <= 0 || height <= 0) return@withContext null
+
+        val orientation = try {
+            ExifInterface(file.absolutePath).getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL,
+            )
+        } catch (_: IOException) {
+            ExifInterface.ORIENTATION_NORMAL
+        }
+        when (orientation) {
+            ExifInterface.ORIENTATION_TRANSPOSE,
+            ExifInterface.ORIENTATION_ROTATE_90,
+            ExifInterface.ORIENTATION_TRANSVERSE,
+            ExifInterface.ORIENTATION_ROTATE_270 -> height to width
+            else -> width to height
         }
     }
 

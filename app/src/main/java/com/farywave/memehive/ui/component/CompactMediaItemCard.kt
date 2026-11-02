@@ -31,6 +31,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.domain.model.MediaItem
+import com.farywave.memehive.domain.model.aspectRatio
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
@@ -61,6 +62,7 @@ fun CompactMediaItemCard(
                     }
                     .wrapContentSize(),
             imageUri = mediaItem.image?.uri,
+                imageAspectRatio = mediaItem.image.aspectRatio,
             roundBottom = mediaItem.tags.isEmpty(),
         )
 
@@ -77,7 +79,7 @@ fun CompactMediaItemCard(
 }
 
 @Composable
-private fun ImageWithPlaceholder(modifier: Modifier, imageUri: Uri?, roundBottom: Boolean) {
+private fun ImageWithPlaceholder(modifier: Modifier, imageUri: Uri?, imageAspectRatio: Float, roundBottom: Boolean) {
     val roundedTopShape =
         MaterialTheme.shapes.medium.copy(
             bottomStart = CornerSize(0.dp),
@@ -89,14 +91,14 @@ private fun ImageWithPlaceholder(modifier: Modifier, imageUri: Uri?, roundBottom
             model = imageUri,
             onError = { loadFailed = true },
             contentDescription = null,
-            modifier = modifier.fillMaxWidth().clip(roundedTopShape),
-            contentScale = ContentScale.FillWidth,
+            modifier = modifier.fillMaxWidth().aspectRatio(imageAspectRatio).clip(roundedTopShape),
+            contentScale = ContentScale.Fit,
         )
     else
         Box(
             modifier =
                 modifier
-                    .aspectRatio(1.5F)
+                    .aspectRatio(imageAspectRatio)
                     .fillMaxWidth()
                     .background(
                         color = LocalAppColors.current.backgroundPrimary,

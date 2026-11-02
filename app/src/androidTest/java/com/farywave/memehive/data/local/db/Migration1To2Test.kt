@@ -164,6 +164,7 @@ class Migration1To2Test {
                     MIGRATION_1_2,
                     ImageFilenameMigration(context.filesDir),
                     MIGRATION_3_4,
+                    MIGRATION_4_5,
                 )
                 .build()
         try {
@@ -177,7 +178,7 @@ class Migration1To2Test {
                         MediaItemEntity(imageId = null, caption = "after upgrade", description = "")
                     )
             assertTrue(id > 11)
-            assertEquals(4, db.openHelper.writableDatabase.version)
+            assertEquals(5, db.openHelper.writableDatabase.version)
             db.openHelper.writableDatabase.assertForeignKeysValid()
         } finally {
             db.close()
@@ -243,10 +244,11 @@ class Migration1To2Test {
                     MIGRATION_1_2,
                     ImageFilenameMigration(context.filesDir),
                     MIGRATION_3_4,
+                    MIGRATION_4_5,
                 )
                 .build()
         try {
-            assertEquals(4, db.openHelper.writableDatabase.version)
+            assertEquals(5, db.openHelper.writableDatabase.version)
             db.openHelper.writableDatabase.assertForeignKeysValid()
             db.collectionDao().observeAll().first()
             db.mediaItemDao().observeAll().first()

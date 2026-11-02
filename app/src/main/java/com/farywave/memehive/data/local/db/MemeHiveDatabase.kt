@@ -27,7 +27,7 @@ import com.farywave.memehive.data.local.db.entity.TagEntity
             CollectionEntity::class,
             CollectionEntryEntity::class,
         ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class MemeHiveDatabase : RoomDatabase() {
@@ -60,6 +60,7 @@ abstract class MemeHiveDatabase : RoomDatabase() {
                                 MIGRATION_1_2,
                                 ImageFilenameMigration(context.applicationContext.filesDir),
                                 MIGRATION_3_4,
+                                MIGRATION_4_5,
                             )
                             .build()
                             .also { INSTANCE = it }

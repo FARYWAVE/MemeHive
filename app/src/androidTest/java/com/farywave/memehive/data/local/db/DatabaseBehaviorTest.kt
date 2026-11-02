@@ -60,8 +60,8 @@ class DatabaseBehaviorTest {
     }
 
     @Test
-    fun freshVersion4RejectsMissingParents(): Unit = runBlocking {
-        assertEquals(4, db.openHelper.writableDatabase.version)
+    fun freshVersion5RejectsMissingParents(): Unit = runBlocking {
+        assertEquals(5, db.openHelper.writableDatabase.version)
         val item = insertItem()
         val collection = insertCollection()
         val tag = db.tagDao().insert(TagEntity(name = "tag"))

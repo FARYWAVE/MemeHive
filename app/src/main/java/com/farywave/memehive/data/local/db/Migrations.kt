@@ -209,3 +209,12 @@ val MIGRATION_3_4: Migration =
             db.execSQL("DROP TABLE IF EXISTS media_item_trigrams")
         }
     }
+
+// Existing images deliberately keep unknown dimensions; no files are inspected here.
+val MIGRATION_4_5: Migration =
+    object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE images ADD COLUMN width INTEGER")
+            db.execSQL("ALTER TABLE images ADD COLUMN height INTEGER")
+        }
+    }
