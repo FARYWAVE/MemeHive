@@ -16,7 +16,7 @@
     <string name="action_edit_collection">Edit collection</string>
     <string name="action_enable_picker">Enable quick picker</string>
     <string name="action_export">Export</string>
-    <string name="action_import_collection">Import collection</string>
+    <string name="action_import_collection">Import collection (.mhc)</string>
     <string name="action_import_images">Import images</string>
     <string name="action_remove_image">Remove image</string>
     <string name="action_retry">Retry</string>
@@ -29,7 +29,7 @@
     <string name="app_name_p2" translatable="false">Hive</string>
 
     <string name="error_collection_add_items">Could not add the items to the collection. Try again.</string>
-    <string name="error_collection_archive">This collection archive is invalid or has missing images.</string>
+    <string name="error_collection_file">This collection file is invalid or has missing images. Select a MemeHive collection (.mhc).</string>
     <string name="error_collection_cover">Could not update the collection cover. Try again.</string>
     <string name="error_collection_create">Could not create the collection. Try again.</string>
     <string name="error_collection_delete">Could not delete the collection. Try again.</string>

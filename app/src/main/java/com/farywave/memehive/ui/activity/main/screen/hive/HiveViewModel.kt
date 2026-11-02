@@ -228,7 +228,7 @@ class HiveViewModel(
                 operation()
                 addTransferMessage(successMessage)
             } catch (error: InvalidCollectionArchiveException) {
-                reportTransferFailure(R.string.error_collection_archive, error)
+                reportTransferFailure(R.string.error_collection_file, error)
             } catch (error: IOException) {
                 reportTransferFailure(R.string.error_collection_transfer_io, error)
             } catch (error: SecurityException) {

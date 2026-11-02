@@ -16,7 +16,7 @@
     <string name="action_edit_collection">Редактировать коллекцию</string>
     <string name="action_enable_picker">Включить быстрый выбор</string>
     <string name="action_export">Экспорт</string>
-    <string name="action_import_collection">Импортировать коллекцию</string>
+    <string name="action_import_collection">Импортировать коллекцию (.mhc)</string>
     <string name="action_import_images">Импортировать изображения</string>
     <string name="action_remove_image">Удалить изображение</string>
     <string name="action_retry">Повторить</string>
@@ -25,7 +25,7 @@
     <string name="action_settings">Настройки</string>
 
     <string name="error_collection_add_items">Не удалось добавить элементы в коллекцию. Повторите попытку.</string>
-    <string name="error_collection_archive">Архив коллекции повреждён или содержит не все изображения.</string>
+    <string name="error_collection_file">Файл коллекции повреждён или содержит не все изображения. Выберите коллекцию MemeHive (.mhc).</string>
     <string name="error_collection_cover">Не удалось обновить обложку коллекции. Повторите попытку.</string>
     <string name="error_collection_create">Не удалось создать коллекцию. Повторите попытку.</string>
     <string name="error_collection_delete">Не удалось удалить коллекцию. Повторите попытку.</string>

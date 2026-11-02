@@ -118,7 +118,7 @@ class CollectionTransferUseCasesTest {
             MediaItem(caption = "No image", description = "Keep me", tags = listOf("text")),
             setOf(original.id),
         )
-        val archive = File(root, "text.zip")
+        val archive = File(root, "text.mhc")
         transfer.exportCollection(original, archive.toUri())
         transfer.importCollection(archive.toUri())
         val imported = collections.observeCollections().first().single { it.id != original.id }
@@ -225,7 +225,7 @@ class CollectionTransferUseCasesTest {
                 ),
                 setOf(original.id),
             )
-            val archive = File(root, "$extension.zip")
+            val archive = File(root, "$extension.mhc")
             transfer.exportCollection(original, archive.toUri())
             assertNoTransferDirectories()
             ZipFile(archive).use { zip ->
@@ -258,8 +258,28 @@ class CollectionTransferUseCasesTest {
     }
 
     @Test
+    fun validCollectionWithNonMhcExtensionIsRejected(): Unit = runBlocking {
+        for (name in listOf("legacy.zip", "collection.mhc.zip", "collection")) {
+            val file = archive("source").copyTo(File(root, name), overwrite = true)
+            expectFailure<InvalidCollectionArchiveException> {
+                transfer.importCollection(file.toUri())
+            }
+            assertEmptyDatabaseAndImages()
+            assertNoTransferDirectories()
+        }
+    }
+
+    @Test
+    fun uppercaseMhcExtensionIsAccepted(): Unit = runBlocking {
+        val file = archive("uppercase").copyTo(File(root, "collection.MHC"))
+        transfer.importCollection(file.toUri())
+        assertEquals("uppercase", collections.observeCollections().first().single().name)
+        assertNoTransferDirectories()
+    }
+
+    @Test
     fun invalidArchiveRemovesExtractedFilesAndDoesNotWriteDatabase(): Unit = runBlocking {
-        val archive = File(root, "invalid.zip")
+        val archive = File(root, "invalid.mhc")
         ZipOutputStream(archive.outputStream()).use { zip ->
             zip.putNextEntry(ZipEntry("partial.png"))
             zip.write(png())
@@ -364,7 +384,7 @@ class CollectionTransferUseCasesTest {
     }
 
     private fun archive(name: String): File {
-        val file = File(root, "$name.zip")
+        val file = File(root, "$name.mhc")
         val manifest =
             TransferManifest(
                 1,

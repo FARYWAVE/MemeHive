@@ -13,6 +13,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.R
+import com.farywave.memehive.core.collection_transfer.CollectionFileFormat
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorViewModel
 import com.farywave.memehive.ui.component.LocalAppFeedback
 
@@ -74,7 +75,7 @@ fun HiveRoute(
     var collectionToExportId by rememberSaveable { mutableStateOf<Long?>(null) }
     val exportLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.CreateDocument("application/zip")
+            contract = ActivityResultContracts.CreateDocument(CollectionFileFormat.MIME_TYPE)
         ) { uri ->
             val collectionId = collectionToExportId
             collectionToExportId = null
@@ -109,13 +110,18 @@ fun HiveRoute(
         },
         onCollectionImport = {
             feedback.attempt(R.string.error_picker_open) {
-                importLauncher.launch(arrayOf("application/zip"))
+                importLauncher.launch(
+                    arrayOf(
+                        CollectionFileFormat.MIME_TYPE,
+                        CollectionFileFormat.FALLBACK_MIME_TYPE,
+                    )
+                )
             }
         },
         onExportCollection = { collection ->
             collectionToExportId = collection.id
             feedback.attempt(R.string.error_picker_open) {
-                exportLauncher.launch("${collection.name}.zip")
+                exportLauncher.launch("${collection.name}${CollectionFileFormat.EXTENSION}")
             }
         },
         onDeleteCollection = viewModel::deleteCollection,

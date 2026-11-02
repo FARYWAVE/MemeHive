@@ -2,10 +2,13 @@ package com.farywave.memehive.application.usecase
 
 import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Log
 import androidx.core.net.toUri
 import androidx.room.withTransaction
 import com.farywave.memehive.core.collection_transfer.CollectionArchiveReader
+import com.farywave.memehive.core.collection_transfer.CollectionFileFormat
+import com.farywave.memehive.core.collection_transfer.InvalidCollectionArchiveException
 import com.farywave.memehive.core.collection_transfer.entity.TransferCollection
 import com.farywave.memehive.core.collection_transfer.entity.TransferManifest
 import com.farywave.memehive.core.collection_transfer.entity.TransferMediaItem
@@ -42,6 +45,7 @@ class CollectionTransferUseCases(
     }
 
     suspend fun importCollection(uri: Uri) {
+        requireCollectionFile(uri)
         withTransferDirectory("import_") { dir ->
             val manifest = unzipCollection(uri, dir)
             imageRepository.withImageChanges { changes ->
@@ -80,6 +84,27 @@ class CollectionTransferUseCases(
                     )
                 }
             }
+        }
+    }
+
+    private suspend fun requireCollectionFile(uri: Uri) = withContext(ioDispatcher) {
+        val name =
+            if (uri.scheme == "file") {
+                uri.lastPathSegment
+            } else {
+                context.contentResolver.query(
+                    uri,
+                    arrayOf(OpenableColumns.DISPLAY_NAME),
+                    null,
+                    null,
+                    null,
+                )?.use { cursor ->
+                    val column = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (column >= 0 && cursor.moveToFirst()) cursor.getString(column) else null
+                }
+            }
+        if (name?.endsWith(CollectionFileFormat.EXTENSION, ignoreCase = true) != true) {
+            throw InvalidCollectionArchiveException("Select a MemeHive collection (.mhc).")
         }
     }
 
@@ -182,7 +207,7 @@ class CollectionTransferUseCases(
         return withContext(ioDispatcher) {
             val input =
                 context.contentResolver.openInputStream(uri)
-                    ?: throw IOException("Could not open the collection archive.")
+                    ?: throw IOException("Could not open the collection file.")
             CollectionArchiveReader.extract(input, directory)
         }
     }

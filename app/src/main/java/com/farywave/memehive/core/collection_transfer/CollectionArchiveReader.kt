@@ -13,7 +13,6 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
 internal object CollectionArchiveReader {
-    // Limits apply to actual decompressed bytes, never the untrusted ZIP size headers.
     internal data class Limits(
         val totalBytes: Long = 512L * 1024 * 1024,
         val fileBytes: Long = 32L * 1024 * 1024,
@@ -41,18 +40,17 @@ internal object CollectionArchiveReader {
                     currentCoroutineContext().ensureActive()
                     if (++entryCount > limits.entries) {
                         throw InvalidCollectionArchiveException(
-                            "The archive contains too many entries."
+                            "The collection file contains too many entries."
                         )
                     }
                     val destination = resolvePath(directory, entry.name)
                     if (!destinations.add(destination)) {
                         throw InvalidCollectionArchiveException(
-                            "Duplicate archive path: ${entry.name}"
+                            "Duplicate collection file path: ${entry.name}"
                         )
                     }
                     if (entry.isDirectory) {
                         createDirectory(destination)
-                        // closeEntry otherwise drains hidden directory payloads without a limit.
                         if (zip.read() != -1) {
                             throw InvalidCollectionArchiveException(
                                 "Directory entries cannot contain data."
@@ -76,7 +74,7 @@ internal object CollectionArchiveReader {
                                         count > limits.totalBytes - totalBytes
                                 ) {
                                     throw InvalidCollectionArchiveException(
-                                        "The archive exceeds the import size limits."
+                                        "The collection file exceeds the import size limits."
                                     )
                                 }
                                 fileBytes += count
@@ -90,14 +88,14 @@ internal object CollectionArchiveReader {
                 }
             }
         } catch (error: ZipException) {
-            throw InvalidCollectionArchiveException("The ZIP archive is corrupt.", error)
+            throw InvalidCollectionArchiveException("The collection file is corrupt.", error)
         } catch (error: EOFException) {
-            throw InvalidCollectionArchiveException("The ZIP archive is incomplete.", error)
+            throw InvalidCollectionArchiveException("The collection file is incomplete.", error)
         }
 
         val manifestFile = File(directory, "manifest.json")
         if (!manifestFile.isFile) {
-            throw InvalidCollectionArchiveException("The archive has no manifest.json file.")
+            throw InvalidCollectionArchiveException("The collection file has no manifest.json file.")
         }
         val manifest =
             try {
@@ -124,12 +122,12 @@ internal object CollectionArchiveReader {
 
     private fun resolvePath(directory: File, path: String): File {
         if (path.isBlank() || File(path).isAbsolute) {
-            throw InvalidCollectionArchiveException("Invalid archive path: $path")
+            throw InvalidCollectionArchiveException("Invalid collection file path: $path")
         }
         val file = File(directory, path).canonicalFile
         val root = directory.canonicalPath + File.separator
         if (!file.path.startsWith(root)) {
-            throw InvalidCollectionArchiveException("Archive path escapes its directory: $path")
+            throw InvalidCollectionArchiveException("Collection file path escapes its directory: $path")
         }
         return file
     }
