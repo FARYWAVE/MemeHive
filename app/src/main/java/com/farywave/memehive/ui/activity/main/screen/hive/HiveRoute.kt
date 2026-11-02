@@ -20,6 +20,7 @@ import com.farywave.memehive.ui.component.LocalAppFeedback
 fun HiveRoute(
     onEnableNotification: (Boolean) -> Unit,
     onOpenMedia: (Long?) -> Unit,
+    onStartupReady: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val feedback = LocalAppFeedback.current
@@ -83,6 +84,7 @@ fun HiveRoute(
         }
 
     HiveScreen(
+        onStartupReady = onStartupReady,
         state =
             HiveUiState(
                 searchQuery = searchQuery,

@@ -224,7 +224,7 @@ class MediaSearchUseCaseTest {
     }
 
     @Test
-    fun `switching collection cancels a delayed read and clears stale results while loading`() =
+    fun `switching collection cancels a delayed read and retains previous results while loading`() =
         runTest {
             val dao =
                 FakeMediaItemDao().apply {
@@ -248,7 +248,7 @@ class MediaSearchUseCaseTest {
             collection.value = 7L
             runCurrent()
             assertTrue(states.last().isLoading)
-            assertTrue(states.last().items.isEmpty())
+            assertEquals(listOf(1L, 2L), states.last().items.map { it.id })
             collection.value = 8L
             runCurrent()
             val switchIndex = states.size - 1
@@ -259,6 +259,39 @@ class MediaSearchUseCaseTest {
             )
             assertEquals(setOf<Long?>(8L), dao.activeScopes)
         }
+
+    @Test
+    fun `query loading retains results and a completed empty result replaces them`() = runTest {
+        val dao = FakeMediaItemDao().apply {
+            items.value = listOf(item(1, caption = "cat"), item(2, caption = "dog"))
+        }
+        val query = MutableStateFlow("")
+        val states = mutableListOf<MediaSearchState>()
+        val useCase = MediaSearchUseCase(
+            MediaItemRepository(dao) { error("No images") },
+            StandardTestDispatcher(testScheduler),
+        )
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            useCase.observeState(MutableStateFlow(null), query, MutableStateFlow(0))
+                .collect { states += it }
+        }
+        runCurrent()
+        states.clear()
+        query.value = "cat"
+        runCurrent()
+        assertTrue(states.first().isLoading)
+        assertEquals(listOf(1L, 2L), states.first().items.map { it.id })
+        assertEquals(listOf(1L), states.last().items.map { it.id })
+        assertTrue(!states.last().isLoading)
+
+        states.clear()
+        query.value = "missing"
+        runCurrent()
+        assertTrue(states.first().isLoading)
+        assertEquals(listOf(1L), states.first().items.map { it.id })
+        assertEquals(MediaSearchState(), states.last())
+        assertEquals(1, dao.observationCount)
+    }
 
     @Test
     fun `ten thousand items support repeated queries without reloading the database`() = runTest {

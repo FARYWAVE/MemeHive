@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.view.ViewTreeObserver
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -35,8 +36,10 @@ import com.farywave.memehive.ui.theme.LocalAppColors
 import com.farywave.memehive.ui.theme.MemeHiveTheme
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : ComponentActivity() {
     private val feedback = AppFeedback()
@@ -59,6 +62,23 @@ class MainActivity : ComponentActivity() {
                     null
                 }
             else null
+
+        var startupReady = savedInstanceState != null || incomingUri != null
+        val content = findViewById<android.view.View>(android.R.id.content)
+        content.viewTreeObserver.addOnPreDrawListener(
+            object : ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    if (!startupReady) return false
+                    content.viewTreeObserver.removeOnPreDrawListener(this)
+                    return true
+                }
+            }
+        )
+        lifecycleScope.launch {
+            delay(3_000.milliseconds)
+            startupReady = true
+            content.invalidate()
+        }
         setContent {
             MemeHiveTheme {
                 FeedbackHost(feedback) {
@@ -69,6 +89,7 @@ class MainActivity : ComponentActivity() {
                     val defaultLabel = stringResource(R.string.label_media_item)
                     AppNavigation(
                         initialUri = incomingUri,
+                        onStartupReady = { startupReady = true },
                         onCopyImage = { image ->
                             copyToClipboard(defaultLabel, image.id)
                         },

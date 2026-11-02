@@ -22,7 +22,7 @@ val AppShapes =
 
 val EditingFieldVerticalPadding = 7.dp
 
-/** Matches the caption field's capsule radius, including font scaling and its padding. */
+
 @Composable
 fun editingFieldShape(): CornerBasedShape {
     val textHeight =

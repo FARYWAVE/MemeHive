@@ -46,6 +46,7 @@ fun SelectableMediaItemCard(
     isSelected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    onImageLoaded: () -> Unit = {},
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Column(
@@ -81,6 +82,7 @@ fun SelectableMediaItemCard(
                         .wrapContentSize(),
                 imageUri = mediaItem.image?.uri,
                 roundBottom = mediaItem.tags.isEmpty(),
+                onImageLoaded = onImageLoaded,
             )
 
             if (isSelected)
@@ -120,19 +122,36 @@ fun SelectableMediaItemCard(
 }
 
 @Composable
-private fun ImageWithPlaceholder(modifier: Modifier, imageUri: Uri?, roundBottom: Boolean) {
+private fun ImageWithPlaceholder(
+    modifier: Modifier,
+    imageUri: Uri?,
+    roundBottom: Boolean,
+    onImageLoaded: () -> Unit,
+) {
     val roundedTopShape =
         MaterialTheme.shapes.medium.copy(
             bottomStart = CornerSize(0.dp),
             bottomEnd = CornerSize(0.dp),
         )
     var loadFailed by remember(imageUri) { mutableStateOf(false) }
+    var loadFinished by remember(imageUri) { mutableStateOf(false) }
     if (imageUri != null && !loadFailed)
         AsyncImage(
             model = imageUri,
-            onError = { loadFailed = true },
+            onSuccess = {
+                loadFinished = true
+                onImageLoaded()
+            },
+            onError = {
+                loadFailed = true
+                onImageLoaded()
+            },
             contentDescription = null,
-            modifier = modifier.fillMaxWidth().clip(roundedTopShape),
+            modifier =
+                modifier.fillMaxWidth()
+                    // Reserve space until the drawable supplies its intrinsic height.
+                    .then(if (loadFinished) Modifier else Modifier.aspectRatio(1.5f))
+                    .clip(roundedTopShape),
             contentScale = ContentScale.FillWidth,
         )
     else

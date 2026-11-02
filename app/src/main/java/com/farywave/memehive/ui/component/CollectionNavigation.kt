@@ -86,15 +86,14 @@ fun CollectionNavigation(
                 }
             }
         } else {
-            val extraWidthPerChip = (constraints.maxWidth - naturalWidth).toFloat() / entries.size
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                entries.forEachIndexed { index, collection ->
+                entries.forEach { collection ->
                     key(collection?.id) {
                         CollectionNavigationItem(
-                            modifier = Modifier.weight(chipWidths[index] + extraWidthPerChip),
+                            modifier = Modifier.weight(1f),
                             collection = collection,
                             selectedCollectionId = selectedCollectionId,
                             onCollectionSelected = onCollectionSelected,

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -17,6 +18,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -44,7 +47,8 @@ fun PickerScreen(
 
     Scaffold(
         modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .background(LocalAppColors.current.backgroundPrimary)
                 .pointerInput(Unit) {
                     detectTapGestures(
@@ -57,7 +61,8 @@ fun PickerScreen(
         Box(Modifier.background(LocalAppColors.current.backgroundPrimary)) {
             ConstraintLayout(
                 modifier =
-                    Modifier.padding(contentPadding)
+                    Modifier
+                        .padding(contentPadding)
                         .padding(horizontal = 10.dp)
                         .padding(top = 7.dp)
                         .background(LocalAppColors.current.backgroundPrimary)
@@ -68,7 +73,8 @@ fun PickerScreen(
 
                 SearchAndCollectionBar(
                     modifier =
-                        Modifier.zIndex(1f)
+                        Modifier
+                            .zIndex(1f)
                             .constrainAs(topBars) {
                                 top.linkTo(parent.top)
                             }
@@ -85,14 +91,17 @@ fun PickerScreen(
                 )
 
                 val contentModifier =
-                    Modifier.constrainAs(content) {
-                        top.linkTo(parent.top)
-                        bottom.linkTo(parent.bottom)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        width = Dimension.fillToConstraints
-                        height = Dimension.fillToConstraints
-                    }
+                    Modifier
+                        .constrainAs(content) {
+                            top.linkTo(parent.top)
+                            bottom.linkTo(parent.bottom)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                            width = Dimension.fillToConstraints
+                            height = Dimension.fillToConstraints
+                        }
+                        .clip(MaterialTheme.shapes.medium)
+                        .alpha(if (state.isLoading) 0.7f else 1f)
 
                 if (state.mediaItems.isEmpty()) {
                     if (state.searchQuery.isNotBlank()) EmptySearchResultMessage(contentModifier)

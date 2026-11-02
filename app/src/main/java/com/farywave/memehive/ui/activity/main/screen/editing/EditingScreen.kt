@@ -6,15 +6,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -45,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
@@ -229,6 +234,8 @@ fun EditingScreen(
         Box(
             Modifier.fillMaxSize()
                 .padding(contentPadding)
+                .consumeWindowInsets(contentPadding)
+                .navigationBarsPadding()
                 .imePadding()
                 .background(LocalAppColors.current.backgroundPrimary)
         ) {
@@ -247,7 +254,11 @@ fun EditingScreen(
             val roundedShape = editingFieldShape()
 
             LazyColumn(
-                modifier = Modifier.padding(horizontal = 10.dp).fillMaxSize(),
+                modifier =
+                    Modifier.padding(horizontal = 10.dp)
+                        .fillMaxSize()
+                        .clip(MaterialTheme.shapes.medium),
+                contentPadding = PaddingValues(bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (state.hasCollectionsLoadError)
@@ -306,39 +317,40 @@ fun EditingScreen(
                     )
                 }
                 item {
-                    Text(
-                        modifier = Modifier.padding(bottom = 5.dp, start = 10.dp),
-                        text = stringResource(R.string.hint_media_tags),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = LocalAppColors.current.contentSecondary,
-                    )
-                    FlowRow(
-                        modifier =
-                            Modifier.fillMaxWidth().wrapContentHeight().padding(horizontal = 5.dp),
-                        horizontalArrangement = Arrangement.spacedBy(7.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        state.mediaItemDraft.tags.forEach { tag ->
-                            key(tag.key) {
-                                TagChip(
-                                    tag = tag.text,
-                                    enabled = !state.isSaving,
-                                    onFocusLost = { newText ->
-                                        if (newText.isEmpty()) onRemoveTag(tag.key)
-                                        else onUpdateTag(tag.key, newText)
-                                    },
-                                )
+                    Column {
+                        Text(
+                            modifier = Modifier.padding(bottom = 5.dp, start = 10.dp),
+                            text = stringResource(R.string.hint_media_tags),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = LocalAppColors.current.contentSecondary,
+                        )
+                        FlowRow(
+                            modifier =
+                                Modifier.fillMaxWidth().wrapContentHeight().padding(horizontal = 5.dp),
+                            horizontalArrangement = Arrangement.spacedBy(7.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            state.mediaItemDraft.tags.forEach { tag ->
+                                key(tag.key) {
+                                    TagChip(
+                                        tag = tag.text,
+                                        enabled = !state.isSaving,
+                                        onFocusLost = { newText ->
+                                            if (newText.isEmpty()) onRemoveTag(tag.key)
+                                            else onUpdateTag(tag.key, newText)
+                                        },
+                                    )
+                                }
                             }
-                        }
 
-                        NewTagChip(enabled = !state.isSaving) { newText ->
-                            if (newText.isNotEmpty()) {
-                                onAddTag(newText)
+                            NewTagChip(enabled = !state.isSaving) { newText ->
+                                if (newText.isNotEmpty()) {
+                                    onAddTag(newText)
+                                }
                             }
                         }
                     }
                 }
-                item { Spacer(modifier = Modifier.height(500.dp)) }
             }
             CollectionSelectorSheet(
                 show = collectionSheet == EditorCollectionSheet.MEMBERSHIP,

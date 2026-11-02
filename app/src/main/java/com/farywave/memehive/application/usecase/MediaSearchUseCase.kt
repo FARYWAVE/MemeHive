@@ -14,12 +14,15 @@ import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.flow.transformLatest
 
 data class MediaSearchState(
     val items: List<MediaItem> = emptyList(),
@@ -37,19 +40,35 @@ class MediaSearchUseCase(
         queries: Flow<String>,
         retries: Flow<Int>,
     ): Flow<MediaSearchState> =
-        collectionIds.distinctUntilChanged().flatMapLatest { id ->
-            retries.flatMapLatest {
-                invoke(flowOf(id), queries)
-                    .map { MediaSearchState(items = it) }
-                    .onStart { emit(MediaSearchState(isLoading = true)) }
-                    .catch {
-                        if (it is CancellationException) throw it
-                        emit(MediaSearchState(failure = it))
-                    }
+        collectionIds
+            .distinctUntilChanged()
+            .flatMapLatest { id ->
+                retries.flatMapLatest {
+                    searchStates(flowOf(id), queries)
+                        .onStart { emit(MediaSearchState(isLoading = true)) }
+                        .catch {
+                            if (it is CancellationException) throw it
+                            emit(MediaSearchState(failure = it))
+                        }
+                }
             }
-        }
+            // Keep the last completed result until its replacement is ready, including retries.
+            .scan(MediaSearchState(isLoading = true)) { previous, next ->
+                if (next.isLoading || next.failure != null) next.copy(items = previous.items)
+                else next
+            }
+            .distinctUntilChanged()
 
     operator fun invoke(collectionIds: Flow<Long?>, queries: Flow<String>): Flow<List<MediaItem>> =
+        searchStates(collectionIds, queries)
+            .filter { !it.isLoading }
+            .map { it.items }
+            .distinctUntilChanged()
+
+    private fun searchStates(
+        collectionIds: Flow<Long?>,
+        queries: Flow<String>,
+    ): Flow<MediaSearchState> =
         collectionIds
             .distinctUntilChanged()
             .flatMapLatest { collectionId ->
@@ -63,7 +82,10 @@ class MediaSearchUseCase(
                 combine(index, queries.map(::normalize).distinctUntilChanged()) { items, query ->
                         items to query
                     }
-                    .mapLatest { (items, query) -> search(items, query) }
+                    .transformLatest { (items, query) ->
+                        emit(MediaSearchState(isLoading = true))
+                        emit(MediaSearchState(items = search(items, query)))
+                    }
             }
             .distinctUntilChanged()
             .flowOn(dispatcher)

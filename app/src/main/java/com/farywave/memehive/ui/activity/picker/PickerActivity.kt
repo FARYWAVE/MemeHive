@@ -2,8 +2,10 @@ package com.farywave.memehive.ui.activity.picker
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -64,7 +66,12 @@ class PickerActivity : ComponentActivity() {
                     }
                 val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(clip)
-                feedback.show(R.string.success_image_copied, onDismiss = { finish() })
+                // Android 13+ provides its own clipboard confirmation.
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                    Toast.makeText(applicationContext, R.string.success_image_copied, Toast.LENGTH_SHORT)
+                        .show()
+                }
+                finish()
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {

@@ -16,6 +16,7 @@ fun AppNavigation(
     initialUri: Uri?,
     onEnableNotification: (Boolean) -> Unit,
     onCopyImage: (Image) -> Unit,
+    onStartupReady: () -> Unit = {},
 ) {
     val controller = rememberNavController()
     NavHost(
@@ -25,6 +26,7 @@ fun AppNavigation(
         composable<HiveDestination> { entry ->
             HiveRoute(
                 onEnableNotification = onEnableNotification,
+                onStartupReady = onStartupReady,
                 onOpenMedia = { id ->
                     if (
                         controller.currentBackStackEntry == entry &&
