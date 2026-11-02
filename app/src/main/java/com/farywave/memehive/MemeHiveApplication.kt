@@ -3,11 +3,22 @@ package com.farywave.memehive
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.decode.ImageDecoderDecoder
 
-class MemeHiveApplication : Application() {
+class MemeHiveApplication : Application(), ImageLoaderFactory {
     val container: AppContainer by lazy {
         AppContainer(this)
     }
+
+    override fun newImageLoader(): ImageLoader =
+        ImageLoader.Builder(this)
+            .components {
+                // All supported devices (API 29+) have the platform animated image decoder.
+                add(ImageDecoderDecoder.Factory())
+            }
+            .build()
 
     override fun onCreate() {
         super.onCreate()
