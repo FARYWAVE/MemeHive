@@ -5,20 +5,23 @@ import com.farywave.memehive.data.local.db.relation.CollectionDetails
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.Image
 
-fun Collection.toEntity() = CollectionEntity(
-    id = id,
-    name = name,
-    coverImageId = cover?.id
-)
+fun Collection.toEntity() =
+    CollectionEntity(
+        id = id,
+        name = name,
+        coverImageId = cover?.id,
+    )
 
-fun CollectionEntity.toModel(cover: Image?, mediaItemCount: Int) = Collection(
-    id = id,
-    name = name,
-    cover = cover,
-    mediaItemCount = mediaItemCount
-)
+fun CollectionEntity.toModel(cover: Image?, mediaItemCount: Int) =
+    Collection(
+        id = id,
+        name = name,
+        cover = cover,
+        mediaItemCount = mediaItemCount,
+    )
 
-fun CollectionDetails.toModel(cover: Image?) = collection.toModel(
-    cover = cover,
-    mediaItemCount = mediaItemCount
-)
+fun CollectionDetails.toModel(cover: Image?) =
+    collection.toModel(
+        cover = cover,
+        mediaItemCount = mediaItemCount,
+    )

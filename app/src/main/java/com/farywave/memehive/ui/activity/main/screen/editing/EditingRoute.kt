@@ -27,16 +27,9 @@ fun EditingRoute(
     val context = LocalContext.current
     val feedback = LocalAppFeedback.current
 
-    val viewModel: EditingViewModel =
-        (context.applicationContext as MemeHiveApplication).container.let {
-            viewModel(
-                factory = EditingViewModelFactory(
-                    mediaItemId,
-                    it.mediaItemUseCases,
-                    it.collectionUseCases
-                )
-            )
-        }
+    val container = (context.applicationContext as MemeHiveApplication).container
+    val factory = container.viewModelFactory(mediaItemId)
+    val viewModel: EditingViewModel = viewModel(factory = factory)
 
     val collections by viewModel.collections.collectAsStateWithLifecycle()
     val mediaItemDraft by viewModel.mediaItemDraft.collectAsStateWithLifecycle()
@@ -45,7 +38,7 @@ fun EditingRoute(
         initialUri?.let(viewModel::updateImage)
     }
 
-    val screenState by viewModel.screenState.collectAsStateWithLifecycle()
+    val contentState by viewModel.contentState.collectAsStateWithLifecycle()
 
     val error by viewModel.error.collectAsStateWithLifecycle()
 
@@ -55,35 +48,35 @@ fun EditingRoute(
         viewModel.clearError(currentError.id)
     }
 
-    val collectionEditor: CollectionEditorViewModel = viewModel(
-        factory = CollectionEditorViewModel.Factory(
-            (context.applicationContext as MemeHiveApplication).container.collectionUseCases
-        )
-    )
+    val collectionEditor: CollectionEditorViewModel = viewModel(factory = factory)
     val collectionEditorState by collectionEditor.state.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val loadError by viewModel.loadError.collectAsStateWithLifecycle()
-    val collectionsFailed by viewModel.collectionsFailed.collectAsStateWithLifecycle()
+    val hasCollectionsLoadError by viewModel.hasCollectionsLoadError.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(viewModel, lifecycle, onClose) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            combine(viewModel.isDeleted, viewModel.closeRequested) { deleted, saved -> deleted || saved }
-                .filter { it }.collect { onClose() }
+            combine(viewModel.isDeleted, viewModel.closeRequested) { deleted, saved ->
+                    deleted || saved
+                }
+                .filter { it }
+                .collect { onClose() }
         }
     }
 
     EditingScreen(
-        state = EditingUiState(
-            mediaItemDraft = mediaItemDraft,
-            collections = collections,
-            screenState = screenState,
-            collectionEditor = collectionEditorState,
-            isSaving = isSaving,
-            isLoading = isLoading,
-            loadError = loadError,
-            collectionsFailed = collectionsFailed,
-        ),
+        state =
+            EditingUiState(
+                mediaItemDraft = mediaItemDraft,
+                collections = collections,
+                contentState = contentState,
+                collectionEditor = collectionEditorState,
+                isSaving = isSaving,
+                isLoading = isLoading,
+                loadError = loadError,
+                hasCollectionsLoadError = hasCollectionsLoadError,
+            ),
         onBack = onClose,
         onSave = { viewModel.saveCurrentItem() },
         onSaveAndClose = { viewModel.saveCurrentItem(closeAfterSave = true) },
@@ -97,9 +90,9 @@ fun EditingRoute(
         onDismissCollection = collectionEditor::dismiss,
         onToggleCollection = viewModel::toggleCollection,
         onSetAsCover = viewModel::setCurrentItemAsCover,
-        onImageChanged = viewModel::updateImage,
-        onCaptionChanged = viewModel::updateName,
-        onDescriptionChanged = viewModel::updateDescription,
+        onImageChange = viewModel::updateImage,
+        onCaptionChange = viewModel::updateCaption,
+        onDescriptionChange = viewModel::updateDescription,
         onRemoveTag = viewModel::removeTag,
         onUpdateTag = viewModel::updateTag,
         onAddTag = viewModel::addTag,

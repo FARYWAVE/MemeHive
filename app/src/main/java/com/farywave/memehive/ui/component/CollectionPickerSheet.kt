@@ -31,36 +31,35 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.farywave.memehive.R
 import com.farywave.memehive.domain.model.Collection
-import com.farywave.memehive.ui.simple_component.SimpleBottomSheet
 import com.farywave.memehive.ui.theme.LocalAppColors
-
 
 @Composable
 fun CollectionPickerSheet(
     show: Boolean,
     collections: List<Collection>,
-    onDismiss: () -> Unit,
+    onDismissRequest: () -> Unit,
     onCollectionSelected: (Collection) -> Unit,
-    onNewCollectionClicked: () -> Unit
+    onCreateCollection: () -> Unit,
 ) {
     val searchQuery = remember { mutableStateOf("") }
-    val filteredCollections by remember(collections, searchQuery.value) {
-        derivedStateOf {
-            collections.filter {
-                it.name.contains(searchQuery.value, ignoreCase = true)
+    val filteredCollections by
+        remember(collections, searchQuery.value) {
+            derivedStateOf {
+                collections.filter {
+                    it.name.contains(searchQuery.value, ignoreCase = true)
+                }
             }
         }
-    }
 
-    SimpleBottomSheet(show, onDismiss) {
+    AppBottomSheet(show, onDismissRequest) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .padding(vertical = 10.dp, horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier =
+                Modifier.fillMaxWidth()
+                    .fillMaxHeight()
+                    .padding(vertical = 10.dp, horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { Heading { onNewCollectionClicked() } }
+            item { Heading { onCreateCollection() } }
 
             item {
                 SearchBar(hint = stringResource(R.string.hint_collection_search)) {
@@ -70,9 +69,7 @@ fun CollectionPickerSheet(
 
             items(filteredCollections) { collection ->
                 CollectionItem(collection) {
-                    onCollectionSelected(
-                        collection
-                    )
+                    onCollectionSelected(collection)
                 }
             }
         }
@@ -80,64 +77,71 @@ fun CollectionPickerSheet(
 }
 
 @Composable
-private fun Heading(onNewCollectionClicked: () -> Unit) {
+private fun Heading(onCreateCollection: () -> Unit) {
     Row(
-        Modifier
-            .fillMaxWidth()
-            .wrapContentHeight(), verticalAlignment = Alignment.Bottom
+        Modifier.fillMaxWidth().wrapContentHeight(),
+        verticalAlignment = Alignment.Bottom,
     ) {
         Text(
             text = stringResource(R.string.title_collections),
             style = MaterialTheme.typography.titleMedium,
-            color = LocalAppColors.current.contentPrimary
+            color = LocalAppColors.current.contentPrimary,
         )
         Spacer(modifier = Modifier.weight(1f))
         Text(
-            modifier = Modifier.clickable(
-                onClick = { onNewCollectionClicked() }
-            ),
+            modifier = Modifier.clickable(onClick = { onCreateCollection() }),
             text = stringResource(R.string.action_create_collection),
             style = MaterialTheme.typography.bodyMedium,
-            color = LocalAppColors.current.accentPrimary
+            color = LocalAppColors.current.accentPrimary,
         )
     }
 }
 
 @Composable
-private fun CollectionItem(collection: Collection, onClicked: () -> Unit) {
+private fun CollectionItem(collection: Collection, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .clickable(onClick = onClicked),
+        modifier = Modifier.fillMaxWidth().wrapContentHeight().clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         var loadFailed by remember(collection.cover?.uri) { mutableStateOf(false) }
-        if (collection.cover != null && !loadFailed) AsyncImage(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(MaterialTheme.shapes.small),
-            contentScale = ContentScale.Crop,
-            model = collection.cover.uri,
-            onError = { loadFailed = true },
-            contentDescription = null
-        ) else Icon(
-            modifier = Modifier.size(40.dp),
-            painter = painterResource(id = if (loadFailed) R.drawable.ic_error else R.drawable.ic_no_image),
-            contentDescription = stringResource(if (loadFailed) R.string.error_image_unavailable else R.string.label_no_image),
-            tint = LocalAppColors.current.contentSecondary
-        )
+        if (collection.cover != null && !loadFailed)
+            AsyncImage(
+                modifier = Modifier.size(40.dp).clip(MaterialTheme.shapes.small),
+                contentScale = ContentScale.Crop,
+                model = collection.cover.uri,
+                onError = { loadFailed = true },
+                contentDescription = null,
+            )
+        else
+            Icon(
+                modifier = Modifier.size(40.dp),
+                painter =
+                    painterResource(
+                        id = if (loadFailed) R.drawable.ic_error else R.drawable.ic_no_image
+                    ),
+                contentDescription =
+                    stringResource(
+                        if (loadFailed) R.string.error_image_unavailable
+                        else R.string.label_no_image
+                    ),
+                tint = LocalAppColors.current.contentSecondary,
+            )
         Text(
             text = collection.name,
             style = MaterialTheme.typography.bodyMedium,
-            color = LocalAppColors.current.contentPrimary
+            color = LocalAppColors.current.contentPrimary,
         )
         Spacer(modifier = Modifier.weight(1f))
         Text(
-            text = pluralStringResource(R.plurals.collection_item_count, collection.mediaItemCount, collection.mediaItemCount),
+            text =
+                pluralStringResource(
+                    R.plurals.collection_item_count,
+                    collection.mediaItemCount,
+                    collection.mediaItemCount,
+                ),
             style = MaterialTheme.typography.bodyMedium,
-            color = LocalAppColors.current.contentSecondary
+            color = LocalAppColors.current.contentSecondary,
         )
     }
 }

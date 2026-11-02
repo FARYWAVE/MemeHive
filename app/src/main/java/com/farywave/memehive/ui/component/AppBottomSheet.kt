@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.simple_component
+package com.farywave.memehive.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -18,27 +19,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.ui.theme.LocalAppColors
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SimpleBottomSheet(
+fun AppBottomSheet(
     show: Boolean,
-    onDismiss: () -> Unit,
-    content: @Composable () -> Unit
+    onDismissRequest: () -> Unit,
+    content: @Composable () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
-    )
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     if (show) {
         ModalBottomSheet(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding(),
+            modifier = Modifier.fillMaxWidth().statusBarsPadding(),
             containerColor = LocalAppColors.current.backgroundPrimary,
-            onDismissRequest = { onDismiss() },
+            onDismissRequest = { onDismissRequest() },
             sheetState = sheetState,
-            dragHandle = { DragHandle() }
+            shape =
+                MaterialTheme.shapes.extraLarge.copy(
+                    bottomStart = CornerSize(0.dp),
+                    bottomEnd = CornerSize(0.dp),
+                ),
+            dragHandle = { DragHandle() },
         ) {
             content()
         }
@@ -48,20 +49,19 @@ fun SimpleBottomSheet(
 @Composable
 private fun DragHandle() {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .background(LocalAppColors.current.backgroundPrimary)
-            .padding(vertical = 8.dp),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier.fillMaxWidth()
+                .wrapContentHeight()
+                .background(LocalAppColors.current.backgroundPrimary)
+                .padding(vertical = 8.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Box(
-            Modifier
-                .width(50.dp)
+            Modifier.width(50.dp)
                 .height(5.dp)
                 .background(
                     LocalAppColors.current.contentSecondary,
-                    MaterialTheme.shapes.large
+                    MaterialTheme.shapes.large,
                 )
         )
     }

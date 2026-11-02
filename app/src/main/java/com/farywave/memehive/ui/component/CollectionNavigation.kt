@@ -27,8 +27,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.R
 import com.farywave.memehive.domain.model.Collection
-import com.farywave.memehive.ui.activity.main.screen.hive.CollectionActions
-import com.farywave.memehive.ui.simple_component.SimpleActionMenu
+import com.farywave.memehive.ui.activity.main.screen.hive.CollectionAction
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
@@ -37,48 +36,52 @@ fun CollectionNavigation(
     collections: List<Collection>,
     selectedCollectionId: Long?,
     onCollectionSelected: (Long?) -> Unit,
-    onAction: ((collection: Collection, action: CollectionActions) -> Unit)? = null
+    onAction: ((collection: Collection, action: CollectionAction) -> Unit)? = null,
 ) {
     val entries = listOf<Collection?>(null) + collections
     val textMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current
-    val barModifier = modifier
-        .fillMaxWidth()
-        .wrapContentHeight()
-        .background(
-            LocalAppColors.current.backgroundSecondary,
-            shape = MaterialTheme.shapes.large
-        )
-        .border(
-            width = 4.dp,
-            color = LocalAppColors.current.backgroundSecondary,
-            shape = MaterialTheme.shapes.large
-        )
-        .clip(MaterialTheme.shapes.large)
-        .padding(horizontal = 5.dp, vertical = 4.dp)
+    val barModifier =
+        modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .background(
+                LocalAppColors.current.backgroundSecondary,
+                shape = MaterialTheme.shapes.large,
+            )
+            .border(
+                width = 4.dp,
+                color = LocalAppColors.current.backgroundSecondary,
+                shape = MaterialTheme.shapes.large,
+            )
+            .clip(MaterialTheme.shapes.large)
+            .padding(horizontal = 5.dp, vertical = 4.dp)
 
     BoxWithConstraints(modifier = barModifier) {
         val chipWidths = entries.map { collection ->
-            textMeasurer.measure(
-                text = collection?.name ?: stringResource(R.string.label_all_collections),
-                style = MaterialTheme.typography.bodyMedium,
-                softWrap = false,
-                maxLines = 1
-            ).size.width + with(density) { CollectionChipHorizontalPadding.roundToPx() * 2 }
+            textMeasurer
+                .measure(
+                    text = collection?.name ?: stringResource(R.string.label_all_collections),
+                    style = MaterialTheme.typography.bodyMedium,
+                    softWrap = false,
+                    maxLines = 1,
+                )
+                .size
+                .width + with(density) { CollectionChipHorizontalPadding.roundToPx() * 2 }
         }
         val naturalWidth = chipWidths.sum()
 
         if (naturalWidth > constraints.maxWidth) {
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 items(entries, key = { it?.id ?: "all" }) { collection ->
                     CollectionNavigationItem(
                         collection = collection,
                         selectedCollectionId = selectedCollectionId,
                         onCollectionSelected = onCollectionSelected,
-                        onAction = onAction
+                        onAction = onAction,
                     )
                 }
             }
@@ -86,7 +89,7 @@ fun CollectionNavigation(
             val extraWidthPerChip = (constraints.maxWidth - naturalWidth).toFloat() / entries.size
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 entries.forEachIndexed { index, collection ->
                     key(collection?.id) {
@@ -95,7 +98,7 @@ fun CollectionNavigation(
                             collection = collection,
                             selectedCollectionId = selectedCollectionId,
                             onCollectionSelected = onCollectionSelected,
-                            onAction = onAction
+                            onAction = onAction,
                         )
                     }
                 }
@@ -110,7 +113,7 @@ private fun CollectionNavigationItem(
     collection: Collection?,
     selectedCollectionId: Long?,
     onCollectionSelected: (Long?) -> Unit,
-    onAction: ((Collection, CollectionActions) -> Unit)?
+    onAction: ((Collection, CollectionAction) -> Unit)?,
 ) {
     val chip: @Composable (onLongClick: (() -> Unit)?) -> Unit = { onLongClick ->
         CollectionChip(
@@ -118,13 +121,13 @@ private fun CollectionNavigationItem(
             text = collection?.name ?: stringResource(R.string.label_all_collections),
             isSelected = collection?.id == selectedCollectionId,
             onClick = { onCollectionSelected(collection?.id) },
-            onLongClick = onLongClick
+            onLongClick = onLongClick,
         )
     }
 
     Box(modifier = modifier) {
         if (collection != null && onAction != null) {
-            SimpleActionMenu<CollectionActions>(
+            AppActionMenu<CollectionAction>(
                 onSelected = { action -> onAction(collection, action) }
             ) { onLongClick ->
                 chip(onLongClick)
@@ -143,27 +146,29 @@ private fun CollectionChip(
     text: String,
     isSelected: Boolean,
     onClick: () -> Unit,
-    onLongClick: (() -> Unit)?
+    onLongClick: (() -> Unit)?,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Box(
-        modifier = modifier
-            .clip(MaterialTheme.shapes.large)
-            .background(
-                if (isSelected) LocalAppColors.current.accentPrimary
-                else LocalAppColors.current.transparent,
-                shape = MaterialTheme.shapes.large
-            )
-            .combinedClickable(
-                interactionSource = interactionSource,
-                indication = ripple(
-                    bounded = true,
-                    color = LocalAppColors.current.accentPrimary
-                ),
-                onClick = onClick,
-                onLongClick = onLongClick,
-            )
-            .padding(horizontal = CollectionChipHorizontalPadding, vertical = 4.dp),
+        modifier =
+            modifier
+                .clip(MaterialTheme.shapes.large)
+                .background(
+                    if (isSelected) LocalAppColors.current.accentPrimary
+                    else LocalAppColors.current.transparent,
+                    shape = MaterialTheme.shapes.large,
+                )
+                .combinedClickable(
+                    interactionSource = interactionSource,
+                    indication =
+                        ripple(
+                            bounded = true,
+                            color = LocalAppColors.current.accentPrimary,
+                        ),
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                )
+                .padding(horizontal = CollectionChipHorizontalPadding, vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -171,7 +176,9 @@ private fun CollectionChip(
             maxLines = 1,
             softWrap = false,
             style = MaterialTheme.typography.bodyMedium,
-            color = if (isSelected) LocalAppColors.current.contentPrimary else LocalAppColors.current.contentSecondary,
+            color =
+                if (isSelected) LocalAppColors.current.contentPrimary
+                else LocalAppColors.current.contentSecondary,
         )
     }
 }

@@ -38,7 +38,7 @@ interface CollectionDao {
     ORDER BY c.id
     """
     )
-    fun getAll(): Flow<List<CollectionDetails>>
+    fun observeAll(): Flow<List<CollectionDetails>>
 
     @Query("SELECT cover_image_id FROM collections WHERE id = :collectionId")
     suspend fun getCoverId(collectionId: Long): Long?
@@ -46,8 +46,7 @@ interface CollectionDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(collection: CollectionEntity): Long
 
-    @Update
-    suspend fun update(collection: CollectionEntity): Int
+    @Update suspend fun update(collection: CollectionEntity): Int
 
     @Query("UPDATE collections SET cover_image_id = :imageId WHERE id = :collectionId")
     suspend fun setCover(collectionId: Long, imageId: Long): Int

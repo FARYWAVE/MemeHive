@@ -1,8 +1,8 @@
 package com.farywave.memehive.ui.activity.main.screen.editing
 
-enum class ScreenState {
+enum class EditorContentState {
     BLANK,
     CREATION,
     EDITING,
-    SAVED
+    SAVED,
 }

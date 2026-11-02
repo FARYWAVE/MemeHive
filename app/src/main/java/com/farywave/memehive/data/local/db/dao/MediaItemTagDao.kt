@@ -11,11 +11,11 @@ import kotlinx.coroutines.flow.Flow
 interface MediaItemTagDao {
     @Query(
         """
-        SELECT * FROM media_item_tags 
+        SELECT * FROM media_item_tags
         WHERE tag_id = :tagId
     """
     )
-    fun getByTag(tagId: Long): Flow<List<MediaItemTagEntity>>
+    fun observeByTag(tagId: Long): Flow<List<MediaItemTagEntity>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(mediaItemTagEntity: MediaItemTagEntity): Long

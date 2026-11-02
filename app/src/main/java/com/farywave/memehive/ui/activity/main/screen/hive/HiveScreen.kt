@@ -19,12 +19,12 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -45,22 +45,21 @@ import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.activity.main.dialog.AboutApp
-import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
-import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditor
 import com.farywave.memehive.domain.model.Collection
-import com.farywave.memehive.ui.activity.main.dialog.CollectionDeletionConfirmation
-import com.farywave.memehive.ui.activity.main.dialog.MassDeletionConfirmation
+import com.farywave.memehive.ui.activity.main.dialog.AboutAppDialog
+import com.farywave.memehive.ui.activity.main.dialog.DeleteCollectionDialog
+import com.farywave.memehive.ui.activity.main.dialog.DeleteSelectedMediaItemsDialog
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorDialog
+import com.farywave.memehive.ui.component.AppActionMenu
+import com.farywave.memehive.ui.component.AppIconButton
 import com.farywave.memehive.ui.component.CollectionPickerSheet
 import com.farywave.memehive.ui.component.EmptyHiveMessage
 import com.farywave.memehive.ui.component.EmptySearchResultMessage
-import com.farywave.memehive.ui.component.MediaItemCardFull
 import com.farywave.memehive.ui.component.SearchAndCollectionBar
-import com.farywave.memehive.ui.simple_component.SimpleActionMenu
-import com.farywave.memehive.ui.simple_component.SimpleIconButton
+import com.farywave.memehive.ui.component.SelectableMediaItemCard
+import com.farywave.memehive.ui.theme.AppTypography
 import com.farywave.memehive.ui.theme.LocalAppColors
-import com.farywave.memehive.ui.theme.Typography
-
 
 @Composable
 fun HiveScreen(
@@ -72,11 +71,11 @@ fun HiveScreen(
     onDismissCollection: () -> Unit,
     onEditCollection: (Collection) -> Unit,
     onEnableNotification: (Boolean) -> Unit,
-    onMassImport: () -> Unit,
+    importImages: () -> Unit,
     onCollectionImport: () -> Unit,
     onExportCollection: (Collection) -> Unit,
     onDeleteCollection: (collection: Collection, deleteContents: Boolean) -> Unit,
-    onSearchQueryChanged: (String) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
     onRetryLoading: () -> Unit = {},
     onCollectionSelected: (Long?) -> Unit,
     onToggleMediaSelection: (Long) -> Unit,
@@ -92,274 +91,280 @@ fun HiveScreen(
     val focusManager = LocalFocusManager.current
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(LocalAppColors.current.backgroundPrimary)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = {
-                        focusManager.clearFocus()
-                    }
-                )
-            },
+        modifier =
+            Modifier.fillMaxSize()
+                .background(LocalAppColors.current.backgroundPrimary)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = {
+                            focusManager.clearFocus()
+                        }
+                    )
+                },
         topBar = {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(LocalAppColors.current.backgroundPrimary)
-                    .padding(horizontal = 17.dp, vertical = 6.dp)
-                    .statusBarsPadding()
-                    .height(46.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .background(LocalAppColors.current.backgroundPrimary)
+                        .padding(horizontal = 17.dp, vertical = 6.dp)
+                        .statusBarsPadding()
+                        .height(46.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    Modifier
-                        .wrapContentHeight()
-                        .padding(start = 8.dp),
-                ) {
+                Row(Modifier.wrapContentHeight().padding(start = 8.dp)) {
                     Text(
                         text = stringResource(R.string.app_name_p1),
                         color = LocalAppColors.current.accentPrimary,
-                        style = Typography.headlineMedium
+                        style = AppTypography.headlineMedium,
                     )
                     Text(
                         text = stringResource(R.string.app_name_p2),
                         color = LocalAppColors.current.accentSecondary,
-                        style = Typography.headlineMedium
+                        style = AppTypography.headlineMedium,
                     )
                 }
 
                 Spacer(Modifier.weight(1f))
 
-                if (state.isMassEditingMode) {
+                if (state.isSelectionMode) {
                     Text(
                         modifier = Modifier.padding(end = 8.dp),
-                        text = pluralStringResource(
-                            R.plurals.label_selected,
-                            state.selectedMediaItemIds.size,
-                            state.selectedMediaItemIds.size
-                        ),
-                        style = Typography.bodyMedium,
-                        color = LocalAppColors.current.contentPrimary
+                        text =
+                            pluralStringResource(
+                                R.plurals.label_selected,
+                                state.selectedMediaItemIds.size,
+                                state.selectedMediaItemIds.size,
+                            ),
+                        style = AppTypography.bodyMedium,
+                        color = LocalAppColors.current.contentPrimary,
                     )
                 } else {
-                    SimpleActionMenu<CreateActions>(onSelected = { action ->
-                        when (action) {
-                            CreateActions.CREATE_MEDIA_ITEM -> onCreateMedia()
-                            CreateActions.CREATE_COLLECTION -> onCreateCollection()
+                    AppActionMenu<HiveCreateAction>(
+                        onSelected = { action ->
+                            when (action) {
+                                HiveCreateAction.CREATE_MEDIA_ITEM -> onCreateMedia()
+                                HiveCreateAction.CREATE_COLLECTION -> onCreateCollection()
+                            }
                         }
-                    }) { onClick ->
-                        SimpleIconButton(
-                            modifier = Modifier
-                                .padding(7.dp)
-                                .size(30.dp),
-                            icon = painterResource(R.drawable.ic_add)
+                    ) { onClick ->
+                        AppIconButton(
+                            modifier = Modifier.padding(7.dp).size(30.dp),
+                            icon = painterResource(R.drawable.ic_add),
                         ) {
                             onClick()
                         }
                     }
 
-                    SimpleActionMenu<MoreActions>(onSelected = { action ->
-                        when (action) {
-                            MoreActions.ENABLE_PICKER -> onEnableNotification(true)
+                    AppActionMenu<HiveMenuAction>(
+                        onSelected = { action ->
+                            when (action) {
+                                HiveMenuAction.ENABLE_PICKER -> onEnableNotification(true)
 
-                            MoreActions.VIEW_APP_INFO -> {
-                                showAbout = true
-                            }
+                                HiveMenuAction.VIEW_APP_INFO -> {
+                                    showAbout = true
+                                }
 
-                            MoreActions.IMPORT_COLLECTION -> {
-                                onCollectionImport()
-                            }
+                                HiveMenuAction.IMPORT_COLLECTION -> {
+                                    onCollectionImport()
+                                }
 
-                            MoreActions.MASS_IMPORT -> {
-                                onMassImport()
+                                HiveMenuAction.MASS_IMPORT -> {
+                                    importImages()
+                                }
                             }
                         }
-                    }) { onClick ->
-                        SimpleIconButton(
-                            modifier = Modifier
-                                .padding(7.dp)
-                                .size(30.dp),
-                            icon = painterResource(R.drawable.ic_more)
+                    ) { onClick ->
+                        AppIconButton(
+                            modifier = Modifier.padding(7.dp).size(30.dp),
+                            icon = painterResource(R.drawable.ic_more),
                         ) {
                             onClick()
                         }
                     }
                 }
             }
-        }
+        },
     ) { contentPadding ->
         var showSheet by rememberSaveable { mutableStateOf(false) }
 
         ConstraintLayout(
-            modifier = Modifier
-                .padding(contentPadding)
-                .consumeWindowInsets(contentPadding)
-                .imePadding()
-                .background(LocalAppColors.current.backgroundPrimary)
-                .padding(horizontal = 10.dp)
-                .fillMaxSize()
+            modifier =
+                Modifier.padding(contentPadding)
+                    .consumeWindowInsets(contentPadding)
+                    .imePadding()
+                    .background(LocalAppColors.current.backgroundPrimary)
+                    .padding(horizontal = 10.dp)
+                    .fillMaxSize()
         ) {
             val (content, actions, topBars) = createRefs()
-            var topBarHeight by remember { mutableStateOf(0) }
+            var topBarHeight by remember { mutableIntStateOf(0) }
 
             SearchAndCollectionBar(
-                modifier = Modifier
-                    .zIndex(1f)
-                    .constrainAs(topBars) {
-                        top.linkTo(parent.top)
-                    }
-                    .onSizeChanged {
-                        topBarHeight = it.height
-                    },
+                modifier =
+                    Modifier.zIndex(1f)
+                        .constrainAs(topBars) {
+                            top.linkTo(parent.top)
+                        }
+                        .onSizeChanged {
+                            topBarHeight = it.height
+                        },
                 initialQuery = state.searchQuery,
                 loadFailed = state.loadFailed,
                 onRetry = onRetryLoading,
-                onSearch = onSearchQueryChanged,
+                onSearch = onSearchQueryChange,
                 collections = state.collections,
                 selectedCollectionId = state.selectedCollectionId,
                 onCollectionSelected = onCollectionSelected,
                 onAction = { collection, action ->
                     when (action) {
-                        CollectionActions.EXPORT -> onExportCollection(collection)
-                        CollectionActions.EDIT -> onEditCollection(collection)
-                        CollectionActions.DELETE -> collectionPendingDeletion = collection
+                        CollectionAction.EXPORT -> onExportCollection(collection)
+                        CollectionAction.EDIT -> onEditCollection(collection)
+                        CollectionAction.DELETE -> collectionPendingDeletion = collection
                     }
-                }
+                },
             )
 
-            val contentModifier = Modifier.constrainAs(content) {
-                top.linkTo(parent.top)
-                bottom.linkTo(parent.bottom)
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-                width = Dimension.fillToConstraints
-                height = Dimension.fillToConstraints
-            }
+            val contentModifier =
+                Modifier.constrainAs(content) {
+                    top.linkTo(parent.top)
+                    bottom.linkTo(parent.bottom)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    width = Dimension.fillToConstraints
+                    height = Dimension.fillToConstraints
+                }
 
             if (state.mediaItems.isEmpty()) {
                 if (state.searchQuery.isNotBlank()) EmptySearchResultMessage(contentModifier)
                 else EmptyHiveMessage(contentModifier)
-
-            } else LazyVerticalStaggeredGrid(
-                modifier = contentModifier,
-                columns = StaggeredGridCells.Fixed(2),
-                verticalItemSpacing = 8.dp,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(
-                    top = with(LocalDensity.current) {
-                        topBarHeight.toDp() + 7.dp
-                    }
-                )
-            ) {
-                items(state.mediaItems, key = { it.id }) { mediaItem ->
-                    MediaItemCardFull(
-                        mediaItem = mediaItem,
-                        isSelected = mediaItem.id in state.selectedMediaItemIds,
-                        onClick = {
-                            if (state.isMassEditingMode) onToggleMediaSelection(mediaItem.id)
-                            else onOpenMedia(mediaItem.id)
-                        },
-                        onLongClick = {
-                            if (!state.isMassEditingMode) {
-                                onStartMediaSelection(mediaItem.id)
-                            }
-                        }
-                    )
-                }
-            }
-
-            if (state.isMassEditingMode) Column(
-                modifier = Modifier
-                    .constrainAs(actions) {
-                        bottom.linkTo(parent.bottom)
-                        end.linkTo(parent.end)
-                    }
-                    .padding(end = 20.dp, bottom = 40.dp),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-
-                SimpleIconButton(
-                    modifier = Modifier
-                        .size(30.dp)
-                        .shadow(7.dp, RoundedCornerShape(10.dp), clip = false)
-                        .background(
-                            LocalAppColors.current.warning,
-                            RoundedCornerShape(10.dp)
+            } else
+                LazyVerticalStaggeredGrid(
+                    modifier = contentModifier,
+                    columns = StaggeredGridCells.Fixed(2),
+                    verticalItemSpacing = 8.dp,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding =
+                        PaddingValues(
+                            top =
+                                with(LocalDensity.current) {
+                                    topBarHeight.toDp() + 7.dp
+                                }
                         ),
-                    icon = painterResource(R.drawable.ic_cancel_small),
-                    iconSize = 25.dp,
-                    tint = LocalAppColors.current.contentPrimary
-                ) { onCancelMediaSelection() }
-
-                SimpleActionMenu<MassEditActions>(
-                    properties = PopupProperties(focusable = false),
-                    onSelected = { action ->
-                        when (action) {
-                            MassEditActions.ADD_TO_COLLECTION -> showSheet = true
-                            MassEditActions.DELETE -> {
-                                showMassDeletionConfirmation = true
-                            }
-
-                            MassEditActions.DUPLICATE -> {
-                                onDuplicateSelectedMedia()
-                            }
-                        }
-
+                ) {
+                    items(state.mediaItems, key = { it.id }) { mediaItem ->
+                        SelectableMediaItemCard(
+                            mediaItem = mediaItem,
+                            isSelected = mediaItem.id in state.selectedMediaItemIds,
+                            onClick = {
+                                if (state.isSelectionMode) onToggleMediaSelection(mediaItem.id)
+                                else onOpenMedia(mediaItem.id)
+                            },
+                            onLongClick = {
+                                if (!state.isSelectionMode) {
+                                    onStartMediaSelection(mediaItem.id)
+                                }
+                            },
+                        )
                     }
-                ) { onClick ->
-                    SimpleIconButton(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .shadow(9.dp, MaterialTheme.shapes.small, clip = false)
-                            .background(
-                                LocalAppColors.current.accentSecondary,
-                                MaterialTheme.shapes.small
-                            ),
-                        icon = painterResource(R.drawable.ic_edit),
-                        iconSize = 28.dp,
-                        tint = LocalAppColors.current.contentPrimary
-                    ) { onClick() }
                 }
-            }
+
+            if (state.isSelectionMode)
+                Column(
+                    modifier =
+                        Modifier.constrainAs(actions) {
+                                bottom.linkTo(parent.bottom)
+                                end.linkTo(parent.end)
+                            }
+                            .padding(end = 20.dp, bottom = 40.dp),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    AppIconButton(
+                        modifier =
+                            Modifier.size(30.dp)
+                                .shadow(7.dp, MaterialTheme.shapes.small, clip = false)
+                                .background(
+                                    LocalAppColors.current.warning,
+                                    MaterialTheme.shapes.small,
+                                ),
+                        shape = MaterialTheme.shapes.small,
+                        icon = painterResource(R.drawable.ic_cancel_small),
+                        iconSize = 25.dp,
+                        tint = LocalAppColors.current.contentPrimary,
+                    ) {
+                        onCancelMediaSelection()
+                    }
+
+                    AppActionMenu<MediaSelectionAction>(
+                        properties = PopupProperties(focusable = false),
+                        onSelected = { action ->
+                            when (action) {
+                                MediaSelectionAction.ADD_TO_COLLECTION -> showSheet = true
+                                MediaSelectionAction.DELETE -> {
+                                    showMassDeletionConfirmation = true
+                                }
+
+                                MediaSelectionAction.DUPLICATE -> {
+                                    onDuplicateSelectedMedia()
+                                }
+                            }
+                        },
+                    ) { onClick ->
+                        AppIconButton(
+                            modifier =
+                                Modifier.size(50.dp)
+                                    .shadow(9.dp, MaterialTheme.shapes.small, clip = false)
+                                    .background(
+                                        LocalAppColors.current.accentSecondary,
+                                        MaterialTheme.shapes.small,
+                                    ),
+                            shape = MaterialTheme.shapes.small,
+                            icon = painterResource(R.drawable.ic_edit),
+                            iconSize = 28.dp,
+                            tint = LocalAppColors.current.contentPrimary,
+                        ) {
+                            onClick()
+                        }
+                    }
+                }
         }
         CollectionPickerSheet(
             show = showSheet,
             collections = state.collections,
-            onDismiss = {
+            onDismissRequest = {
                 showSheet = false
             },
             onCollectionSelected = { collection ->
                 onAddSelectedMediaToCollection(collection)
                 showSheet = false
             },
-            onNewCollectionClicked = { onCreateCollection() }
+            onCreateCollection = { onCreateCollection() },
         )
     }
-    if (showAbout) AboutApp(onDismissRequest = { showAbout = false })
-    CollectionEditor(
+    if (showAbout) AboutAppDialog(onDismissRequest = { showAbout = false })
+    CollectionEditorDialog(
         state = state.collectionEditor,
         onSubmit = onSubmitCollection,
-        onDismiss = onDismissCollection,
+        onDismissRequest = onDismissCollection,
     )
 
-    if (showMassDeletionConfirmation) MassDeletionConfirmation(
-        selectedCount = state.selectedMediaItemIds.size,
-        onDismissRequest = { showMassDeletionConfirmation = false },
-        onDelete = {
-            showMassDeletionConfirmation = false
-            onDeleteSelectedMedia()
-        },
-    )
+    if (showMassDeletionConfirmation)
+        DeleteSelectedMediaItemsDialog(
+            selectedCount = state.selectedMediaItemIds.size,
+            onDismissRequest = { showMassDeletionConfirmation = false },
+            onDelete = {
+                showMassDeletionConfirmation = false
+                onDeleteSelectedMedia()
+            },
+        )
 
-    if (collectionPendingDeletion != null) CollectionDeletionConfirmation(
-        collection = collectionPendingDeletion!!,
-        onDismissRequest = { collectionPendingDeletion = null },
-        onDelete = { deleteContents ->
-            onDeleteCollection(collectionPendingDeletion!!, deleteContents)
-            collectionPendingDeletion = null
-        }
-    )
-
+    if (collectionPendingDeletion != null)
+        DeleteCollectionDialog(
+            collection = collectionPendingDeletion!!,
+            onDismissRequest = { collectionPendingDeletion = null },
+            onDelete = { deleteContents ->
+                onDeleteCollection(collectionPendingDeletion!!, deleteContents)
+                collectionPendingDeletion = null
+            },
+        )
 }

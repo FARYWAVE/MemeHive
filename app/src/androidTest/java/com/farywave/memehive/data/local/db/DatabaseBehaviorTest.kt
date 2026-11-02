@@ -12,9 +12,9 @@ import com.farywave.memehive.data.local.db.entity.MediaItemEntity
 import com.farywave.memehive.data.local.db.entity.MediaItemTagEntity
 import com.farywave.memehive.data.local.db.entity.TagEntity
 import com.farywave.memehive.data.local.db.relation.CollectionDetails
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -29,7 +29,6 @@ import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.time.Duration.Companion.milliseconds
 
 @RunWith(AndroidJUnit4::class)
 class DatabaseBehaviorTest {
@@ -37,10 +36,12 @@ class DatabaseBehaviorTest {
 
     @Before
     fun createDatabase() {
-        db = Room.inMemoryDatabaseBuilder(
-            InstrumentationRegistry.getInstrumentation().targetContext,
-            MemeHiveDatabase::class.java,
-        ).build()
+        db =
+            Room.inMemoryDatabaseBuilder(
+                    InstrumentationRegistry.getInstrumentation().targetContext,
+                    MemeHiveDatabase::class.java,
+                )
+                .build()
     }
 
     @After
@@ -49,13 +50,28 @@ class DatabaseBehaviorTest {
     }
 
     @Test
+    fun imageCleanupIdsExcludeItemsWithoutImages(): Unit = runBlocking {
+        val image = db.imageDao().insert(ImageEntity(name = "cleanup.png", sha256 = "cleanup"))
+        val withImage = insertItem(image)
+        val withoutImage = insertItem()
+        assertEquals(listOf(image), db.mediaItemDao().getImageIds(setOf(withImage, withoutImage)))
+        assertTrue(db.mediaItemDao().getImageIds(setOf(withoutImage)).isEmpty())
+        assertTrue(db.mediaItemDao().getImageIds(emptySet()).isEmpty())
+    }
+
+    @Test
     fun freshVersion4RejectsMissingParents(): Unit = runBlocking {
         assertEquals(4, db.openHelper.writableDatabase.version)
         val item = insertItem()
         val collection = insertCollection()
         val tag = db.tagDao().insert(TagEntity(name = "tag"))
-        assertConstraint { db.mediaItemDao().insert(MediaItemEntity(imageId = 999, caption = "bad", description = "")) }
-        assertConstraint { db.collectionDao().insert(CollectionEntity(name = "bad", coverImageId = 999)) }
+        assertConstraint {
+            db.mediaItemDao()
+                .insert(MediaItemEntity(imageId = 999, caption = "bad", description = ""))
+        }
+        assertConstraint {
+            db.collectionDao().insert(CollectionEntity(name = "bad", coverImageId = 999))
+        }
         assertConstraint { db.collectionDao().setCover(collection, 999) }
         assertConstraint { db.collectionEntryDao().insert(CollectionEntryEntity(collection, 999)) }
         assertConstraint { db.collectionEntryDao().insert(CollectionEntryEntity(999, item)) }
@@ -75,7 +91,7 @@ class DatabaseBehaviorTest {
         val details = db.mediaItemDao().get(item)!!
         assertNull(details.mediaItem.imageId)
         assertNull(details.image)
-        val summary = db.collectionDao().getAll().first().single()
+        val summary = db.collectionDao().observeAll().first().single()
         assertEquals(collection, summary.collection.id)
         assertNull(summary.collection.coverImageId)
         assertNull(summary.coverImage)
@@ -95,9 +111,12 @@ class DatabaseBehaviorTest {
         }
         db.mediaItemDao().delete(item)
         assertEquals(listOf(otherItem), db.collectionEntryDao().getIdsByCollection(collection))
-        assertEquals(listOf(otherItem), db.mediaItemTagDao().getByTag(tag).first().map { it.mediaItemId })
+        assertEquals(
+            listOf(otherItem),
+            db.mediaItemTagDao().observeByTag(tag).first().map { it.mediaItemId },
+        )
         assertNotNull(db.tagDao().getByName("shared"))
-        assertEquals(collection, db.collectionDao().getAll().first().single().collection.id)
+        assertEquals(collection, db.collectionDao().observeAll().first().single().collection.id)
         db.openHelper.writableDatabase.assertForeignKeysValid()
     }
 
@@ -112,7 +131,7 @@ class DatabaseBehaviorTest {
         db.collectionDao().delete(collection)
         db.tagDao().delete(tag)
         assertTrue(db.collectionEntryDao().getByMediaItem(item).isEmpty())
-        assertTrue(db.mediaItemTagDao().getByTag(tag).first().isEmpty())
+        assertTrue(db.mediaItemTagDao().observeByTag(tag).first().isEmpty())
         assertNotNull(db.mediaItemDao().get(item))
         db.openHelper.writableDatabase.assertForeignKeysValid()
     }
@@ -120,16 +139,23 @@ class DatabaseBehaviorTest {
     @Test
     fun existingSummarySubscriptionTracksMembershipsAndCovers(): Unit = runBlocking {
         val updates = Channel<List<CollectionDetails>>(Channel.UNLIMITED)
-        val collector = launch(start = CoroutineStart.UNDISPATCHED) {
-            db.collectionDao().getAll().collect { updates.send(it) }
-        }
+        val collector =
+            launch(start = CoroutineStart.UNDISPATCHED) {
+                db.collectionDao().observeAll().collect { updates.send(it) }
+            }
         try {
             updates.await { it.isEmpty() }
             val collection = insertCollection()
             updates.await { it.size == 1 && it.single().mediaItemCount == 0 }
             val first = insertItem()
             val second = insertItem()
-            db.collectionEntryDao().insert(listOf(CollectionEntryEntity(collection, first), CollectionEntryEntity(collection, second)))
+            db.collectionEntryDao()
+                .insert(
+                    listOf(
+                        CollectionEntryEntity(collection, first),
+                        CollectionEntryEntity(collection, second),
+                    )
+                )
             updates.await { it.single().mediaItemCount == 2 }
             db.collectionEntryDao().delete(collection, first)
             updates.await { it.single().mediaItemCount == 1 }
@@ -138,8 +164,10 @@ class DatabaseBehaviorTest {
             updates.await { it.single().coverImage?.id == image }
             val emptyCollection = insertCollection(image)
             updates.await { rows ->
-                rows.size == 2 && rows.all { it.coverImage?.id == image } &&
-                    rows.associate { it.collection.id to it.mediaItemCount } == mapOf(collection to 1, emptyCollection to 0)
+                rows.size == 2 &&
+                    rows.all { it.coverImage?.id == image } &&
+                    rows.associate { it.collection.id to it.mediaItemCount } ==
+                        mapOf(collection to 1, emptyCollection to 0)
             }
             db.imageDao().delete(image)
             updates.await { rows -> rows.size == 2 && rows.all { it.coverImage == null } }
@@ -161,12 +189,13 @@ class DatabaseBehaviorTest {
         val second = insertCollection()
         db.collectionEntryDao().insert(CollectionEntryEntity(first, item))
         val updates = Channel<List<CollectionDetails>>(Channel.UNLIMITED)
-        val collector = launch(start = CoroutineStart.UNDISPATCHED) {
-            db.collectionDao().getAll().collect { rows ->
-                assertEquals(1, rows.sumOf { it.mediaItemCount })
-                updates.send(rows)
+        val collector =
+            launch(start = CoroutineStart.UNDISPATCHED) {
+                db.collectionDao().observeAll().collect { rows ->
+                    assertEquals(1, rows.sumOf { it.mediaItemCount })
+                    updates.send(rows)
+                }
             }
-        }
         try {
             updates.await { it.first().mediaItemCount == 1 }
             db.withTransaction {
@@ -184,20 +213,32 @@ class DatabaseBehaviorTest {
 
     @Test
     fun representativeLookupsUseTheNewIndexes() {
-        val queries = mapOf(
-            "SELECT id FROM media_items WHERE image_id = 1" to "index_media_items_image_id",
-            "SELECT id FROM collections WHERE cover_image_id = 1" to "index_collections_cover_image_id",
-            "SELECT collection_id FROM collection_entries WHERE media_item_id = 1" to "index_collection_entries_media_item_id",
-            "SELECT media_item_id FROM media_item_tags WHERE tag_id = 1" to "index_media_item_tags_tag_id",
-        )
+        val queries =
+            mapOf(
+                "SELECT id FROM media_items WHERE image_id = 1" to "index_media_items_image_id",
+                "SELECT id FROM collections WHERE cover_image_id = 1" to
+                    "index_collections_cover_image_id",
+                "SELECT collection_id FROM collection_entries WHERE media_item_id = 1" to
+                    "index_collection_entries_media_item_id",
+                "SELECT media_item_id FROM media_item_tags WHERE tag_id = 1" to
+                    "index_media_item_tags_tag_id",
+            )
         for ((query, index) in queries) {
-            val plan = db.openHelper.writableDatabase.rows("EXPLAIN QUERY PLAN $query").flatten().joinToString(" ")
-            assertTrue("Expected lookup through $index, got $plan", plan.contains(index) && plan.contains("SEARCH"))
+            val plan =
+                db.openHelper.writableDatabase
+                    .rows("EXPLAIN QUERY PLAN $query")
+                    .flatten()
+                    .joinToString(" ")
+            assertTrue(
+                "Expected lookup through $index, got $plan",
+                plan.contains(index) && plan.contains("SEARCH"),
+            )
         }
     }
 
     private suspend fun insertItem(image: Long? = null): Long =
-        db.mediaItemDao().insert(MediaItemEntity(imageId = image, caption = "item", description = ""))
+        db.mediaItemDao()
+            .insert(MediaItemEntity(imageId = image, caption = "item", description = ""))
 
     private suspend fun insertCollection(image: Long? = null): Long =
         db.collectionDao().insert(CollectionEntity(name = "collection", coverImageId = image))
@@ -212,10 +253,11 @@ class DatabaseBehaviorTest {
     }
 
     private suspend fun Channel<List<CollectionDetails>>.await(
-        predicate: (List<CollectionDetails>) -> Boolean,
-    ): List<CollectionDetails> = withTimeout(10_000.milliseconds) {
-        var rows = receive()
-        while (!predicate(rows)) rows = receive()
-        rows
-    }
+        predicate: (List<CollectionDetails>) -> Boolean
+    ): List<CollectionDetails> =
+        withTimeout(10_000.milliseconds) {
+            var rows = receive()
+            while (!predicate(rows)) rows = receive()
+            rows
+        }
 }

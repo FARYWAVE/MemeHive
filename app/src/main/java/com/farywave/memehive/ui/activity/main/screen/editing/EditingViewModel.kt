@@ -1,20 +1,21 @@
 package com.farywave.memehive.ui.activity.main.screen.editing
 
 import android.net.Uri
+import androidx.core.net.toUri
 import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.farywave.memehive.R
+import com.farywave.memehive.application.usecase.CollectionUseCases
+import com.farywave.memehive.application.usecase.MediaItemUseCases
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.ui.mapper.toDraft
 import com.farywave.memehive.ui.mapper.toMediaItem
 import com.farywave.memehive.ui.model.MediaItemDraft
 import com.farywave.memehive.ui.model.UiMessageQueue
-import com.farywave.memehive.ui.use_case.CollectionUseCases
-import com.farywave.memehive.ui.use_case.MediaItemUseCases
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,41 +31,47 @@ class EditingViewModel(
     private val mediaItemId: Long,
     private val mediaItemUseCases: MediaItemUseCases,
     private val collectionUseCases: CollectionUseCases,
-    savedStateHandle: SavedStateHandle
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     private val restoredDraft = savedStateHandle.get<Bundle>(DRAFT_KEY)?.toDraft()
 
-    private val _mediaItemDraft = MutableStateFlow(restoredDraft ?: MediaItemDraft(id = mediaItemId))
+    private val _mediaItemDraft =
+        MutableStateFlow(restoredDraft ?: MediaItemDraft(id = mediaItemId))
     val mediaItemDraft = _mediaItemDraft.asStateFlow()
 
-    private var originalMediaItem: MediaItemDraft? = null
+    private var savedDraft: MediaItemDraft? = null
 
     private val _refresh = MutableStateFlow(0)
 
-    private val isEdited = combine(mediaItemDraft, _refresh) { draft, _ ->
-        !draft.hasSameContentAs(originalMediaItem)
-    }.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(5000),
-        false
-    )
+    private val hasUnsavedChanges =
+        combine(mediaItemDraft, _refresh) { draft, _ ->
+                !draft.hasSameContentAs(savedDraft)
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                false,
+            )
 
-    val screenState = combine(mediaItemDraft, isEdited) { draft, edited ->
-        when {
-            (draft.id == 0L) && !edited -> ScreenState.BLANK
-            draft.id == 0L -> ScreenState.CREATION
-            edited -> ScreenState.EDITING
-            else -> ScreenState.SAVED
-        }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = if (mediaItemId == 0L) {
-            ScreenState.CREATION
-        } else {
-            ScreenState.SAVED
-        }
-    )
+    val contentState =
+        combine(mediaItemDraft, hasUnsavedChanges) { draft, edited ->
+                when {
+                    (draft.id == 0L) && !edited -> EditorContentState.BLANK
+                    draft.id == 0L -> EditorContentState.CREATION
+                    edited -> EditorContentState.EDITING
+                    else -> EditorContentState.SAVED
+                }
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue =
+                    if (mediaItemId == 0L) {
+                        EditorContentState.CREATION
+                    } else {
+                        EditorContentState.SAVED
+                    },
+            )
 
     private val _isDeleted = MutableStateFlow(false)
     val isDeleted = _isDeleted.asStateFlow()
@@ -82,14 +89,14 @@ class EditingViewModel(
     val isLoading = _isLoading.asStateFlow()
     private val _loadError = MutableStateFlow<Int?>(null)
     val loadError = _loadError.asStateFlow()
-    private val _collectionsFailed = MutableStateFlow(false)
-    val collectionsFailed = _collectionsFailed.asStateFlow()
+    private val _hasCollectionsLoadError = MutableStateFlow(false)
+    val hasCollectionsLoadError = _hasCollectionsLoadError.asStateFlow()
     private val _closeRequested = MutableStateFlow(false)
     val closeRequested = _closeRequested.asStateFlow()
     private var collectionsJob: Job? = null
     private var loadJob: Job? = null
 
-    private var nextTagId = restoredDraft?.tags?.size ?: 0
+    private var nextTagKey = restoredDraft?.tags?.size ?: 0
 
     init {
         savedStateHandle.setSavedStateProvider(DRAFT_KEY) { _mediaItemDraft.value.toSavedBundle() }
@@ -105,18 +112,20 @@ class EditingViewModel(
         loadJob = viewModelScope.launch {
             try {
                 val id = restoredDraft?.id ?: mediaItemId
-                val original = if (id == 0L) MediaItemDraft() else {
-                    val item = mediaItemUseCases.getMediaItemById(id)
-                    if (item == null) {
-                        _loadError.value = R.string.error_media_missing
-                        return@launch
+                val original =
+                    if (id == 0L) MediaItemDraft()
+                    else {
+                        val item = mediaItemUseCases.getMediaItemById(id)
+                        if (item == null) {
+                            _loadError.value = R.string.error_media_missing
+                            return@launch
+                        }
+                        item.toDraft(collectionUseCases.getCollectionIdsByMediaItem(item.id))
                     }
-                    item.toDraft(collectionUseCases.getCollectionIdsByMediaItem(item.id))
-                }
-                saveOriginalValue(original)
+                updateSavedDraft(original)
                 if (restoredDraft == null && _mediaItemDraft.value == initialDraft) {
                     _mediaItemDraft.value = original
-                    nextTagId = original.tags.size
+                    nextTagKey = original.tags.size
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -131,25 +140,26 @@ class EditingViewModel(
 
     fun loadCollections() {
         collectionsJob?.cancel()
-        _collectionsFailed.value = false
+        _hasCollectionsLoadError.value = false
         collectionsJob = viewModelScope.launch {
-            collectionUseCases.getAllCollections()
+            collectionUseCases
+                .observeCollections()
                 .catch { failure ->
                     if (failure is CancellationException) throw failure
                     Log.w("EditingViewModel", "Could not load collections", failure)
-                    _collectionsFailed.value = true
+                    _hasCollectionsLoadError.value = true
                 }
                 .collect { list ->
-                    _collectionsFailed.value = false
+                    _hasCollectionsLoadError.value = false
                     _collections.value = list
                 }
         }
     }
 
-    fun updateName(name: String) {
+    fun updateCaption(caption: String) {
         if (_isSaving.value) return
         _mediaItemDraft.update { current ->
-            current.copy(caption = name)
+            current.copy(caption = caption)
         }
     }
 
@@ -171,7 +181,7 @@ class EditingViewModel(
         if (_isSaving.value) return
         if (_mediaItemDraft.value.tags.any { it.text == text }) return
         _mediaItemDraft.update { current ->
-            current.copy(tags = current.tags + MediaItemDraft.EditableTag(generateTagId(), text))
+            current.copy(tags = current.tags + MediaItemDraft.EditableTag(generateTagKey(), text))
         }
     }
 
@@ -179,9 +189,12 @@ class EditingViewModel(
         if (_isSaving.value) return
         if (_mediaItemDraft.value.tags.any { it.text == newText && it.key != key }) removeTag(key)
         _mediaItemDraft.update { current ->
-            current.copy(tags = current.tags.map {
-                if (it.key == key) it.copy(text = newText) else it
-            })
+            current.copy(
+                tags =
+                    current.tags.map {
+                        if (it.key == key) it.copy(text = newText) else it
+                    }
+            )
         }
     }
 
@@ -195,12 +208,17 @@ class EditingViewModel(
     fun toggleCollection(collection: Collection) {
         if (_isSaving.value) return
         if (_mediaItemDraft.value.collectionIds.contains(collection.id))
-            _mediaItemDraft.update { it.copy(collectionIds = _mediaItemDraft.value.collectionIds - collection.id) }
-        else _mediaItemDraft.update { it.copy(collectionIds = _mediaItemDraft.value.collectionIds + collection.id) }
+            _mediaItemDraft.update {
+                it.copy(collectionIds = _mediaItemDraft.value.collectionIds - collection.id)
+            }
+        else
+            _mediaItemDraft.update {
+                it.copy(collectionIds = _mediaItemDraft.value.collectionIds + collection.id)
+            }
     }
 
     fun setCurrentItemAsCover(collection: Collection) {
-        val image = originalMediaItem?.image
+        val image = savedDraft?.image
         if (image == null) {
             messages.show(R.string.error_image_required)
             return
@@ -210,8 +228,8 @@ class EditingViewModel(
         }
     }
 
-    fun saveOriginalValue(newValue: MediaItemDraft? = null) {
-        originalMediaItem = newValue ?: _mediaItemDraft.value
+    fun updateSavedDraft(draft: MediaItemDraft? = null) {
+        savedDraft = draft ?: _mediaItemDraft.value
 
         _refresh.update { it + 1 }
     }
@@ -224,22 +242,27 @@ class EditingViewModel(
 
         viewModelScope.launch {
             try {
-                val saved = if (draft.id == 0L) {
-                    mediaItemUseCases.createMediaItem(
-                        draft.toMediaItem(),
-                        draft.collectionIds
-                    ).toDraft(draft.collectionIds)
-                } else {
-                    mediaItemUseCases.updateMediaItem(
-                        draft.toMediaItem(),
-                        draft.collectionIds
-                    ).toDraft(draft.collectionIds)
-                }
-                saveOriginalValue(saved)
+                val saved =
+                    if (draft.id == 0L) {
+                        mediaItemUseCases
+                            .createMediaItem(
+                                draft.toMediaItem(),
+                                draft.collectionIds,
+                            )
+                            .toDraft(draft.collectionIds)
+                    } else {
+                        mediaItemUseCases
+                            .updateMediaItem(
+                                draft.toMediaItem(),
+                                draft.collectionIds,
+                            )
+                            .toDraft(draft.collectionIds)
+                    }
+                updateSavedDraft(saved)
                 _mediaItemDraft.update { current ->
                     current.copy(
                         id = saved.id,
-                        image = if (current.image == draft.image) saved.image else current.image
+                        image = if (current.image == draft.image) saved.image else current.image,
                     )
                 }
                 if (closeAfterSave) _closeRequested.value = true
@@ -256,13 +279,13 @@ class EditingViewModel(
 
     fun discardChanges() {
         if (_isSaving.value) return
-        originalMediaItem?.let { _mediaItemDraft.value = it }
+        savedDraft?.let { _mediaItemDraft.value = it }
 
         _refresh.update { it + 1 }
     }
 
     fun duplicateCurrentItem() {
-        val item = originalMediaItem ?: return
+        val item = savedDraft ?: return
         launchMutation(R.string.error_media_duplicate, R.string.success_media_duplicated) {
             mediaItemUseCases.createMediaItem(item.toMediaItem().copy(id = 0L))
         }
@@ -288,7 +311,7 @@ class EditingViewModel(
 
     fun deleteCurrentItem() {
         if (_isSaving.value || _isDeleted.value) return
-        val item = originalMediaItem ?: return
+        val item = savedDraft ?: return
         if (item.id == 0L) return
         _isSaving.value = true
         viewModelScope.launch {
@@ -310,30 +333,33 @@ class EditingViewModel(
         messages.dismiss(id)
     }
 
-    private fun generateTagId() = nextTagId++
+    private fun generateTagKey() = nextTagKey++
 
     private companion object {
         const val DRAFT_KEY = "editorDraft"
     }
 }
 
-internal fun MediaItemDraft.toSavedBundle() = Bundle().apply {
-    putLong("id", id)
-    putString("caption", caption)
-    putString("description", description)
-    putStringArrayList("tags", ArrayList(tags.map { it.text }))
-    putLongArray("collectionIds", collectionIds.toLongArray())
-    putString("imageUri", image?.uri?.toString())
-    putLong("imageId", image?.id ?: 0L)
-}
+internal fun MediaItemDraft.toSavedBundle() =
+    Bundle().apply {
+        putLong("id", id)
+        putString("caption", caption)
+        putString("description", description)
+        putStringArrayList("tags", ArrayList(tags.map { it.text }))
+        putLongArray("collectionIds", collectionIds.toLongArray())
+        putString("imageUri", image?.uri?.toString())
+        putLong("imageId", image?.id ?: 0L)
+    }
 
-internal fun Bundle.toDraft() = MediaItemDraft(
-    id = getLong("id"),
-    caption = getString("caption").orEmpty(),
-    description = getString("description").orEmpty(),
-    tags = getStringArrayList("tags").orEmpty().mapIndexed { index, text ->
-        MediaItemDraft.EditableTag(index, text)
-    },
-    collectionIds = getLongArray("collectionIds")?.toSet().orEmpty(),
-    image = getString("imageUri")?.let { Image(id = getLong("imageId"), uri = Uri.parse(it)) },
-)
+internal fun Bundle.toDraft() =
+    MediaItemDraft(
+        id = getLong("id"),
+        caption = getString("caption").orEmpty(),
+        description = getString("description").orEmpty(),
+        tags =
+            getStringArrayList("tags").orEmpty().mapIndexed { index, text ->
+                MediaItemDraft.EditableTag(index, text)
+            },
+        collectionIds = getLongArray("collectionIds")?.toSet().orEmpty(),
+        image = getString("imageUri")?.let { Image(id = getLong("imageId"), uri = it.toUri()) },
+    )

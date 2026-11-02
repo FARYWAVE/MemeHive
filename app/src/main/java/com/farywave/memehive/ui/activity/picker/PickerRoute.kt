@@ -11,16 +11,13 @@ import com.farywave.memehive.domain.model.MediaItem
 import com.farywave.memehive.ui.component.LocalAppFeedback
 
 @Composable
-fun PickerRoute(onItemClicked: (MediaItem) -> Unit) {
+fun PickerRoute(onItemClick: (MediaItem) -> Unit) {
     val context = LocalContext.current
     val feedback = LocalAppFeedback.current
 
-    val viewModel: PickerViewModel =
-        (context.applicationContext as MemeHiveApplication).container.let {
-            viewModel(
-                factory = PickerViewModelFactory(it.collectionUseCases, it.mediaSearchUseCase)
-            )
-        }
+    val container = (context.applicationContext as MemeHiveApplication).container
+    val factory = container.viewModelFactory()
+    val viewModel: PickerViewModel = viewModel(factory = factory)
 
     val error by viewModel.error.collectAsStateWithLifecycle()
 
@@ -32,25 +29,26 @@ fun PickerRoute(onItemClicked: (MediaItem) -> Unit) {
 
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val mediaState by viewModel.mediaState.collectAsStateWithLifecycle()
-    val collectionsLoading by viewModel.collectionsLoading.collectAsStateWithLifecycle()
-    val collectionsFailed by viewModel.collectionsFailed.collectAsStateWithLifecycle()
+    val isLoadingCollections by viewModel.isLoadingCollections.collectAsStateWithLifecycle()
+    val hasCollectionsLoadError by viewModel.hasCollectionsLoadError.collectAsStateWithLifecycle()
     val collections by viewModel.collections.collectAsStateWithLifecycle()
     val selectedCollectionId by viewModel.selectedCollectionId.collectAsStateWithLifecycle()
 
     PickerScreen(
-        state = PickerUiState(
-            searchQuery = searchQuery,
-            mediaItems = mediaState.items,
-            isLoading = mediaState.isLoading || collectionsLoading,
-            loadFailed = mediaState.failure != null || collectionsFailed,
-            collections = collections,
-            selectedCollectionId = selectedCollectionId,
-        ),
+        state =
+            PickerUiState(
+                searchQuery = searchQuery,
+                mediaItems = mediaState.items,
+                isLoading = mediaState.isLoading || isLoadingCollections,
+                loadFailed = mediaState.failure != null || hasCollectionsLoadError,
+                collections = collections,
+                selectedCollectionId = selectedCollectionId,
+            ),
         onRetryLoading = viewModel::retryLoading,
-        onSearchQueryChanged = viewModel::onSearchQueryChanged,
+        onSearchQueryChange = viewModel::onSearchQueryChange,
         onCollectionSelected = viewModel::onCollectionSelected,
-        onItemClicked = { item ->
-            onItemClicked(item)
+        onItemClick = { item ->
+            onItemClick(item)
         },
     )
 }

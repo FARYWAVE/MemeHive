@@ -13,10 +13,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.farywave.memehive.MemeHiveApplication
 import com.farywave.memehive.R
-import com.farywave.memehive.core.DeviceTools
 import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorViewModel
 import com.farywave.memehive.ui.component.LocalAppFeedback
-
 
 @Composable
 fun HiveRoute(
@@ -26,30 +24,22 @@ fun HiveRoute(
     val context = LocalContext.current
     val feedback = LocalAppFeedback.current
 
-    val viewModel: HiveViewModel =
-        (context.applicationContext as MemeHiveApplication).container.let {
-            viewModel(
-                factory = HiveViewModelFactory(
-                    it.mediaItemUseCases,
-                    it.collectionUseCases,
-                    it.mediaSearchUseCase,
-                    it.collectionTransferUseCases
-                )
-            )
-        }
+    val container = (context.applicationContext as MemeHiveApplication).container
+    val factory = container.viewModelFactory()
+    val viewModel: HiveViewModel = viewModel(factory = factory)
 
     val error by viewModel.error.collectAsStateWithLifecycle()
     val transferMessages by viewModel.transferMessages.collectAsStateWithLifecycle()
 
     val transferMessage = transferMessages.firstOrNull()
 
-    val importLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri != null) {
-            viewModel.importCollection(uri)
+    val importLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) { uri
+            ->
+            if (uri != null) {
+                viewModel.importCollection(uri)
+            }
         }
-    }
 
     LaunchedEffect(error?.id) {
         val currentError = error ?: return@LaunchedEffect
@@ -66,43 +56,45 @@ fun HiveRoute(
 
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val mediaState by viewModel.mediaState.collectAsStateWithLifecycle()
-    val collectionsLoading by viewModel.collectionsLoading.collectAsStateWithLifecycle()
-    val collectionsFailed by viewModel.collectionsFailed.collectAsStateWithLifecycle()
+    val isLoadingCollections by viewModel.isLoadingCollections.collectAsStateWithLifecycle()
+    val hasCollectionsLoadError by viewModel.hasCollectionsLoadError.collectAsStateWithLifecycle()
     val selectedMediaItemIds by viewModel.selectedMediaItemIds.collectAsStateWithLifecycle()
     val collections by viewModel.collections.collectAsStateWithLifecycle()
     val selectedCollectionId by viewModel.selectedCollectionId.collectAsStateWithLifecycle()
-    val isMassEditingMode by viewModel.isMassEditingMode.collectAsStateWithLifecycle()
-    val collectionEditor: CollectionEditorViewModel = viewModel(
-        factory = CollectionEditorViewModel.Factory(
-            (context.applicationContext as MemeHiveApplication).container.collectionUseCases
-        )
-    )
+    val isSelectionMode by viewModel.isSelectionMode.collectAsStateWithLifecycle()
+    val collectionEditor: CollectionEditorViewModel = viewModel(factory = factory)
     val collectionEditorState by collectionEditor.state.collectAsStateWithLifecycle()
 
-    val massImportLauncher = DeviceTools.requestMultipleMedia(viewModel::onMassImport)
+    val imageImportLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetMultipleContents(),
+            onResult = viewModel::importImages,
+        )
     var collectionToExportId by rememberSaveable { mutableStateOf<Long?>(null) }
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/zip")
-    ) { uri ->
-        val collectionId = collectionToExportId
-        collectionToExportId = null
-        if (uri != null && collectionId != null) {
-            viewModel.exportCollection(collectionId, uri)
+    val exportLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/zip")
+        ) { uri ->
+            val collectionId = collectionToExportId
+            collectionToExportId = null
+            if (uri != null && collectionId != null) {
+                viewModel.exportCollection(collectionId, uri)
+            }
         }
-    }
 
     HiveScreen(
-        state = HiveUiState(
-            searchQuery = searchQuery,
-            mediaItems = mediaState.items,
-            isLoading = mediaState.isLoading || collectionsLoading,
-            loadFailed = mediaState.failure != null || collectionsFailed,
-            selectedMediaItemIds = selectedMediaItemIds,
-            collections = collections,
-            selectedCollectionId = selectedCollectionId,
-            isMassEditingMode = isMassEditingMode,
-            collectionEditor = collectionEditorState
-        ),
+        state =
+            HiveUiState(
+                searchQuery = searchQuery,
+                mediaItems = mediaState.items,
+                isLoading = mediaState.isLoading || isLoadingCollections,
+                loadFailed = mediaState.failure != null || hasCollectionsLoadError,
+                selectedMediaItemIds = selectedMediaItemIds,
+                collections = collections,
+                selectedCollectionId = selectedCollectionId,
+                isSelectionMode = isSelectionMode,
+                collectionEditor = collectionEditorState,
+            ),
         onCreateMedia = { onOpenMedia(null) },
         onOpenMedia = { id -> onOpenMedia(id) },
         onCreateCollection = { collectionEditor.open() },
@@ -110,22 +102,30 @@ fun HiveRoute(
         onSubmitCollection = collectionEditor::submit,
         onDismissCollection = collectionEditor::dismiss,
         onEnableNotification = onEnableNotification,
-        onMassImport = { feedback.attempt(R.string.error_picker_open) { massImportLauncher.launch("image/*") } },
-        onCollectionImport = { feedback.attempt(R.string.error_picker_open) { importLauncher.launch(arrayOf("application/zip")) } },
+        importImages = {
+            feedback.attempt(R.string.error_picker_open) { imageImportLauncher.launch("image/*") }
+        },
+        onCollectionImport = {
+            feedback.attempt(R.string.error_picker_open) {
+                importLauncher.launch(arrayOf("application/zip"))
+            }
+        },
         onExportCollection = { collection ->
             collectionToExportId = collection.id
-            feedback.attempt(R.string.error_picker_open) { exportLauncher.launch("${collection.name}.zip") }
+            feedback.attempt(R.string.error_picker_open) {
+                exportLauncher.launch("${collection.name}.zip")
+            }
         },
         onDeleteCollection = viewModel::deleteCollection,
         onRetryLoading = viewModel::retryLoading,
-        onSearchQueryChanged = viewModel::onSearchQueryChanged,
+        onSearchQueryChange = viewModel::onSearchQueryChange,
         onCollectionSelected = viewModel::onCollectionSelected,
         onToggleMediaSelection = viewModel::toggleItemSelection,
         onStartMediaSelection = { id ->
-            viewModel.enableMassEditingMode()
+            viewModel.enterSelectionMode()
             viewModel.selectItem(id)
         },
-        onCancelMediaSelection = viewModel::disableMassEditingMode,
+        onCancelMediaSelection = viewModel::exitSelectionMode,
         onDeleteSelectedMedia = {
             viewModel.deleteSelectedMediaItems()
         },

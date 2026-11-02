@@ -1,6 +1,8 @@
-package com.farywave.memehive.core
+package com.farywave.memehive.data.local.storage
 
-import com.farywave.memehive.data.local.storage.ImageStorage
+import java.io.File
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -11,18 +13,16 @@ import org.junit.Assert.assertSame
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicReference
 
-class DeviceToolsTest {
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+class FileOperationsTest {
+    @get:Rule val temporaryFolder = TemporaryFolder()
 
     private val ioThread = AtomicReference<Thread>()
-    private val ioDispatcher = Executors.newSingleThreadExecutor { task ->
-        Thread(task, "storage-test-io").also { ioThread.set(it) }
-    }.asCoroutineDispatcher()
+    private val ioDispatcher =
+        Executors.newSingleThreadExecutor { task ->
+                Thread(task, "storage-test-io").also { ioThread.set(it) }
+            }
+            .asCoroutineDispatcher()
 
     @After
     fun closeDispatcher() {
@@ -37,14 +37,15 @@ class DeviceToolsTest {
         File(nested, "second.bin").writeBytes(ByteArray(7))
         val callerThread = Thread.currentThread()
         var scanThread: Thread? = null
-        val observedDirectory = object : File(directory.path) {
-            override fun listFiles(): Array<File>? {
-                scanThread = Thread.currentThread()
-                return super.listFiles()
+        val observedDirectory =
+            object : File(directory.path) {
+                override fun listFiles(): Array<File>? {
+                    scanThread = Thread.currentThread()
+                    return super.listFiles()
+                }
             }
-        }
 
-        val size = DeviceTools.dirSize(observedDirectory, ioDispatcher)
+        val size = getDirectorySizeBytes(observedDirectory, ioDispatcher)
 
         assertEquals(directory.length() + nested.length() + 12L, size)
         assertSame(ioThread.get(), scanThread)
@@ -57,12 +58,13 @@ class DeviceToolsTest {
         val file = temporaryFolder.newFile("unused-image")
         val callerThread = Thread.currentThread()
         var deletionThread: Thread? = null
-        val observedFile = object : File(file.path) {
-            override fun delete(): Boolean {
-                deletionThread = Thread.currentThread()
-                return super.delete()
+        val observedFile =
+            object : File(file.path) {
+                override fun delete(): Boolean {
+                    deletionThread = Thread.currentThread()
+                    return super.delete()
+                }
             }
-        }
 
         ImageStorage.deleteFile(observedFile, ioDispatcher)
 

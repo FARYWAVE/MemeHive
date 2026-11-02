@@ -1,10 +1,10 @@
 package com.farywave.memehive.data.local.storage
 
+import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.IOException
 
 class ImageChanges private constructor() {
     private val createdFiles = mutableSetOf<File>()
@@ -14,8 +14,7 @@ class ImageChanges private constructor() {
         createdFiles.add(file)
     }
 
-    @Synchronized
-    private fun filesForCleanup(): List<File> = createdFiles.toList()
+    @Synchronized private fun filesForCleanup(): List<File> = createdFiles.toList()
 
     internal companion object {
         suspend fun <T> track(

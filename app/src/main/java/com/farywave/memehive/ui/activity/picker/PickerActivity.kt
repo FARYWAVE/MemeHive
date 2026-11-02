@@ -33,8 +33,10 @@ class PickerActivity : ComponentActivity() {
             MemeHiveTheme {
                 FeedbackHost(feedback) {
                     enableEdgeToEdge(
-                        statusBarStyle = SystemBarStyle.dark(LocalAppColors.current.backgroundPrimary.toArgb()),
-                        navigationBarStyle = SystemBarStyle.dark(LocalAppColors.current.backgroundPrimary.toArgb())
+                        statusBarStyle =
+                            SystemBarStyle.dark(LocalAppColors.current.backgroundPrimary.toArgb()),
+                        navigationBarStyle =
+                            SystemBarStyle.dark(LocalAppColors.current.backgroundPrimary.toArgb()),
                     )
 
                     val defaultLabel = stringResource(R.string.label_media_item)
@@ -53,15 +55,16 @@ class PickerActivity : ComponentActivity() {
         copying = true
         lifecycleScope.launch {
             try {
-                val useCases = (applicationContext as MemeHiveApplication).container.mediaItemUseCases
+                val useCases =
+                    (applicationContext as MemeHiveApplication).container.mediaItemUseCases
                 val uri = useCases.getImageSharingUri(imageId)
-                val clip = withContext(Dispatchers.IO) {
-                    ClipData.newUri(contentResolver, label, uri)
-                }
+                val clip =
+                    withContext(Dispatchers.IO) {
+                        ClipData.newUri(contentResolver, label, uri)
+                    }
                 val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(clip)
                 feedback.show(R.string.success_image_copied, onDismiss = { finish() })
-
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {

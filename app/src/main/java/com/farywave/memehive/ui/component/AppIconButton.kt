@@ -1,11 +1,11 @@
-package com.farywave.memehive.ui.simple_component
+package com.farywave.memehive.ui.component
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -13,41 +13,45 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
-fun SimpleIconButton(
+fun AppIconButton(
     modifier: Modifier = Modifier,
     icon: Painter,
     iconSize: Dp = 24.dp,
     tint: Color = LocalAppColors.current.contentPrimary,
-    onClick: () -> Unit
+    shape: Shape = MaterialTheme.shapes.large,
+    onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
     Box(
-        modifier = modifier
-            .clip(CircleShape)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = ripple(
-                    bounded = true,
-                    color = tint
+        modifier =
+            modifier
+                .clip(shape)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication =
+                        ripple(
+                            bounded = true,
+                            color = tint,
+                        ),
+                    onClick = {
+                        onClick()
+                    },
                 ),
-                onClick = {
-                    onClick()
-                }
-            ),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Icon(
             modifier = Modifier.size(iconSize),
             painter = icon,
             contentDescription = null,
-            tint = tint
+            tint = tint,
         )
     }
 }

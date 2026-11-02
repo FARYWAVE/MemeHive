@@ -21,6 +21,6 @@ data class MediaItemDraft(
 
     data class EditableTag(
         val key: Int,
-        val text: String
+        val text: String,
     )
 }

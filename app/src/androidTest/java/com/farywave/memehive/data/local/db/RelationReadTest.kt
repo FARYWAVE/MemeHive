@@ -11,6 +11,9 @@ import com.farywave.memehive.data.local.db.entity.MediaItemEntity
 import com.farywave.memehive.data.local.db.entity.MediaItemTagEntity
 import com.farywave.memehive.data.local.db.entity.TagEntity
 import com.farywave.memehive.data.local.db.relation.MediaItemDetails
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -25,9 +28,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.time.Duration.Companion.milliseconds
 
 @RunWith(AndroidJUnit4::class)
 class RelationReadTest {
@@ -37,18 +37,24 @@ class RelationReadTest {
 
     @Before
     fun createDatabase() {
-        db = Room.inMemoryDatabaseBuilder(
-            InstrumentationRegistry.getInstrumentation().targetContext,
-            MemeHiveDatabase::class.java,
-        ).setQueryCallback(
-            { sqlQuery, _ ->
-                if (recordReads.get() && sqlQuery.trimStart().startsWith("SELECT", ignoreCase = true)) {
-                    readTransactions.add(sqlQuery to db.inTransaction())
-                }
-            },
-            // Inspect the transaction on the query's own thread, before it executes.
-            { it.run() },
-        ).build()
+        db =
+            Room.inMemoryDatabaseBuilder(
+                    InstrumentationRegistry.getInstrumentation().targetContext,
+                    MemeHiveDatabase::class.java,
+                )
+                .setQueryCallback(
+                    { sqlQuery, _ ->
+                        if (
+                            recordReads.get() &&
+                                sqlQuery.trimStart().startsWith("SELECT", ignoreCase = true)
+                        ) {
+                            readTransactions.add(sqlQuery to db.inTransaction())
+                        }
+                    },
+                    // Inspect the transaction on the query's own thread, before it executes.
+                    { it.run() },
+                )
+                .build()
     }
 
     @After
@@ -59,52 +65,83 @@ class RelationReadTest {
     @Test
     fun everyRelationReaderRunsParentAndChildQueriesInATransaction(): Unit = runBlocking {
         val image = db.imageDao().insert(ImageEntity(name = "A", sha256 = "A"))
-        val item = db.mediaItemDao().insert(MediaItemEntity(imageId = image, caption = "A", description = ""))
+        val item =
+            db.mediaItemDao()
+                .insert(MediaItemEntity(imageId = image, caption = "A", description = ""))
         val tag = db.tagDao().insert(TagEntity(name = "A"))
         db.mediaItemTagDao().insert(MediaItemTagEntity(item, tag))
-        val collection = db.collectionDao().insert(CollectionEntity(name = "collection", coverImageId = image))
+        val collection =
+            db.collectionDao().insert(CollectionEntity(name = "collection", coverImageId = image))
         db.collectionEntryDao().insert(CollectionEntryEntity(collection, item))
 
         assertTransactionalRead { assertConsistent(db.mediaItemDao().get(item)!!) }
-        assertTransactionalRead { assertConsistent(db.mediaItemDao().getByIds(listOf(item)).single()) }
-        assertTransactionalRead { assertConsistent(db.mediaItemDao().getByCollection(collection).single()) }
-        assertTransactionalRead { assertConsistent(db.mediaItemDao().getAll().first().single()) }
-        assertTransactionalRead { assertConsistent(db.mediaItemDao().observeByCollection(collection).first().single()) }
-        assertTransactionalRead { assertConsistent(db.mediaItemDao().observeByCollection(null).first().single()) }
+        assertTransactionalRead {
+            assertConsistent(db.mediaItemDao().getByIds(listOf(item)).single())
+        }
+        assertTransactionalRead {
+            assertConsistent(db.mediaItemDao().getByCollection(collection).single())
+        }
+        assertTransactionalRead {
+            assertConsistent(db.mediaItemDao().observeAll().first().single())
+        }
+        assertTransactionalRead {
+            assertConsistent(db.mediaItemDao().observeByCollection(collection).first().single())
+        }
+        assertTransactionalRead {
+            assertConsistent(db.mediaItemDao().observeByCollection(null).first().single())
+        }
     }
 
     @Test
     fun concurrentWritesNeverMixParentAndRelatedStates(): Unit = runBlocking {
-        val images = listOf("A", "B").associateWith { state ->
-            db.imageDao().insert(ImageEntity(name = state, sha256 = state))
-        }
+        val images =
+            listOf("A", "B").associateWith { state ->
+                db.imageDao().insert(ImageEntity(name = state, sha256 = state))
+            }
         val tags = listOf("A", "B").associateWith { db.tagDao().insert(TagEntity(name = it)) }
-        val item = db.mediaItemDao().insert(MediaItemEntity(imageId = images.getValue("A"), caption = "A", description = ""))
+        val item =
+            db.mediaItemDao()
+                .insert(
+                    MediaItemEntity(imageId = images.getValue("A"), caption = "A", description = "")
+                )
         db.mediaItemTagDao().insert(MediaItemTagEntity(item, tags.getValue("A")))
         val updates = Channel<MediaItemDetails>(Channel.UNLIMITED)
-        val observer = launch(start = CoroutineStart.UNDISPATCHED) {
-            db.mediaItemDao().getAll().collect { rows ->
-                val details = rows.single()
-                assertConsistent(details)
-                updates.send(details)
-            }
-        }
-        try {
-            withTimeout(10_000.milliseconds) { assertEquals("A", updates.receive().mediaItem.caption) }
-            withTimeout(20_000.milliseconds) {
-                val writer = launch(Dispatchers.IO) {
-                    repeat(40) { iteration ->
-                        val state = if (iteration % 2 == 0) "A" else "B"
-                        db.withTransaction {
-                            db.mediaItemDao().update(MediaItemEntity(item, images.getValue(state), state, iteration.toString()))
-                            yield()
-                            db.mediaItemTagDao().deleteByMediaItemId(item)
-                            yield()
-                            db.mediaItemTagDao().insert(MediaItemTagEntity(item, tags.getValue(state)))
-                        }
-                        yield()
-                    }
+        val observer =
+            launch(start = CoroutineStart.UNDISPATCHED) {
+                db.mediaItemDao().observeAll().collect { rows ->
+                    val details = rows.single()
+                    assertConsistent(details)
+                    updates.send(details)
                 }
+            }
+        try {
+            withTimeout(10_000.milliseconds) {
+                assertEquals("A", updates.receive().mediaItem.caption)
+            }
+            withTimeout(20_000.milliseconds) {
+                val writer =
+                    launch(Dispatchers.IO) {
+                        repeat(40) { iteration ->
+                            val state = if (iteration % 2 == 0) "A" else "B"
+                            db.withTransaction {
+                                db.mediaItemDao()
+                                    .update(
+                                        MediaItemEntity(
+                                            item,
+                                            images.getValue(state),
+                                            state,
+                                            iteration.toString(),
+                                        )
+                                    )
+                                yield()
+                                db.mediaItemTagDao().deleteByMediaItemId(item)
+                                yield()
+                                db.mediaItemTagDao()
+                                    .insert(MediaItemTagEntity(item, tags.getValue(state)))
+                            }
+                            yield()
+                        }
+                    }
                 repeat(40) {
                     assertConsistent(db.mediaItemDao().get(item)!!)
                     assertConsistent(db.mediaItemDao().getByIds(listOf(item)).single())
@@ -131,8 +168,14 @@ class RelationReadTest {
         } finally {
             recordReads.set(false)
         }
-        assertTrue("Expected parent, tag and image queries: $readTransactions", readTransactions.size >= 3)
-        assertTrue("A relation query escaped its transaction: $readTransactions", readTransactions.all { it.second })
+        assertTrue(
+            "Expected parent, tag and image queries: $readTransactions",
+            readTransactions.size >= 3,
+        )
+        assertTrue(
+            "A relation query escaped its transaction: $readTransactions",
+            readTransactions.all { it.second },
+        )
     }
 
     private fun assertConsistent(details: MediaItemDetails) {

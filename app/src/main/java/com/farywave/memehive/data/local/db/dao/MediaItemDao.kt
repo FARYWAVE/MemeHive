@@ -12,9 +12,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MediaItemDao {
-    @Query("SELECT * FROM media_items")
-    @Transaction
-    fun getAll(): Flow<List<MediaItemDetails>>
+    @Query("SELECT * FROM media_items") @Transaction fun observeAll(): Flow<List<MediaItemDetails>>
 
     @Query(
         """
@@ -41,19 +39,16 @@ interface MediaItemDao {
         """
     SELECT * FROM media_items
     WHERE (:collectionId IS NULL OR id IN (
-        SELECT media_item_id 
-        FROM collection_entries 
+        SELECT media_item_id
+        FROM collection_entries
         WHERE collection_id = :collectionId
     ))
 """
     )
     @Transaction
-    suspend fun getByCollection(
-        collectionId: Long
-    ): List<MediaItemDetails>
+    suspend fun getByCollection(collectionId: Long): List<MediaItemDetails>
 
-    @Query("SELECT id FROM media_items")
-    suspend fun getAllIds(): List<Long>
+    @Query("SELECT id FROM media_items") suspend fun getAllIds(): List<Long>
 
     @Query(
         """
@@ -68,17 +63,15 @@ interface MediaItemDao {
     @Query("SELECT image_id FROM media_items WHERE id = :mediaItemId")
     suspend fun getImageId(mediaItemId: Long): Long?
 
-    @Query("SELECT image_id FROM media_items WHERE id IN (:mediaItemIds)")
-    suspend fun getImageIds(mediaItemIds: Set<Long>): List<Long?>
+    @Query("SELECT image_id FROM media_items WHERE id IN (:mediaItemIds) AND image_id IS NOT NULL")
+    suspend fun getImageIds(mediaItemIds: Set<Long>): List<Long>
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(mediaItem: MediaItemEntity): Long
 
-    @Update
-    suspend fun update(mediaItem: MediaItemEntity): Int
+    @Update suspend fun update(mediaItem: MediaItemEntity): Int
 
-    @Query("DELETE FROM media_items WHERE id = :mediaItemId")
-    suspend fun delete(mediaItemId: Long)
+    @Query("DELETE FROM media_items WHERE id = :mediaItemId") suspend fun delete(mediaItemId: Long)
 
     @Query("DELETE FROM media_items WHERE id IN (:mediaItemIds)")
     suspend fun deleteByIds(mediaItemIds: Set<Long>)

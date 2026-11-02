@@ -17,8 +17,9 @@ class CollectionRepository(
     private val resolveImage: (ImageEntity) -> Image,
     private val collectionEntryDao: CollectionEntryDao,
 ) {
-    fun getAllCollections(): Flow<List<Collection>> {
-        return collectionDao.getAll()
+    fun observeCollections(): Flow<List<Collection>> {
+        return collectionDao
+            .observeAll()
             .map { collections ->
                 collections.map { it.toModel(it.coverImage?.let(resolveImage)) }
             }
@@ -38,9 +39,7 @@ class CollectionRepository(
     }
 
     suspend fun insertCollection(collection: Collection): Long {
-        return collectionDao.insert(
-            collection.toEntity()
-        )
+        return collectionDao.insert(collection.toEntity())
     }
 
     suspend fun insertCollectionEntries(mediaItemIds: Set<Long>, collectionId: Long): List<Long> {
@@ -56,15 +55,15 @@ class CollectionRepository(
     }
 
     suspend fun updateCollection(collection: Collection) {
-        val affectedCount = collectionDao.update(
-            collection.toEntity()
-        )
-        if (affectedCount == 0) throw IllegalStateException("Failed to update collection: ${collection.id}")
+        val affectedCount = collectionDao.update(collection.toEntity())
+        if (affectedCount == 0)
+            throw IllegalStateException("Failed to update collection: ${collection.id}")
     }
 
     suspend fun setCollectionCover(collectionId: Long, imageId: Long) {
         val affectedCount = collectionDao.setCover(collectionId, imageId)
-        if (affectedCount == 0) throw IllegalStateException("Failed to set collection cover: $collectionId")
+        if (affectedCount == 0)
+            throw IllegalStateException("Failed to set collection cover: $collectionId")
     }
 
     suspend fun deleteCollection(collection: Collection) {

@@ -4,7 +4,6 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -17,52 +16,63 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.farywave.memehive.R
+import com.farywave.memehive.ui.component.AppDialog
+import com.farywave.memehive.ui.component.AppTextField
+import com.farywave.memehive.ui.component.DialogAction
+import com.farywave.memehive.ui.component.DialogActionType
 import com.farywave.memehive.ui.component.ErrorNotice
 import com.farywave.memehive.ui.component.ImagePicker
-import com.farywave.memehive.ui.simple_component.ActionType
-import com.farywave.memehive.ui.simple_component.SimpleDialog
-import com.farywave.memehive.ui.simple_component.SimpleDialogAction
-import com.farywave.memehive.ui.simple_component.SimpleTextField
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
-fun CollectionEditor(
+fun CollectionEditorDialog(
     state: CollectionEditorState?,
     onSubmit: (CollectionDraft) -> Unit,
-    onDismiss: () -> Unit,
+    onDismissRequest: () -> Unit,
 ) {
     if (state == null) return
     key(state.sessionId) {
         var name by rememberSaveable { mutableStateOf(state.initialDraft.name) }
         var coverUri by rememberSaveable { mutableStateOf(state.initialDraft.coverUri) }
         val isNew = state.collectionId == null
-        SimpleDialog(
-            title = stringResource(if (isNew) R.string.action_create_collection else R.string.action_edit_collection),
-            actions = arrayOf(if (isNew) CollectionAction.CREATE else CollectionAction.SAVE, CollectionAction.CANCEL),
+        AppDialog(
+            title =
+                stringResource(
+                    if (isNew) R.string.action_create_collection
+                    else R.string.action_edit_collection
+                ),
+            actions =
+                arrayOf(
+                    if (isNew) CollectionEditorAction.CREATE else CollectionEditorAction.SAVE,
+                    CollectionEditorAction.CANCEL,
+                ),
             actionsEnabled = !state.isSaving,
-            onDismissRequest = onDismiss,
+            onDismissRequest = onDismissRequest,
             onAction = { action ->
-                if (action == CollectionAction.CANCEL) onDismiss()
+                if (action == CollectionEditorAction.CANCEL) onDismissRequest()
                 else onSubmit(CollectionDraft(name, coverUri))
             },
         ) {
             ImagePicker(
                 modifier = Modifier.fillMaxWidth(0.7f),
-                shape = MaterialTheme.shapes.medium as RoundedCornerShape,
-                initialSrc = coverUri?.toUri(),
+                shape = MaterialTheme.shapes.medium,
+                imageUri = coverUri?.toUri(),
                 enabled = !state.isSaving,
                 onImageSelected = { uri -> coverUri = uri?.toString() },
             )
-            SimpleTextField(
+            AppTextField(
                 initialValue = name,
                 onValueChange = { name = it },
-                callbackDelay = 0L,
+                debounceMillis = 0L,
                 enabled = !state.isSaving,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(LocalAppColors.current.backgroundSecondary, MaterialTheme.shapes.large)
-                    .padding(horizontal = 10.dp, vertical = 7.dp),
-                hint = stringResource(R.string.hint_collection_name)
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .background(
+                            LocalAppColors.current.backgroundSecondary,
+                            MaterialTheme.shapes.large,
+                        )
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                hint = stringResource(R.string.hint_collection_name),
             )
 
             state.errorResId?.let { ErrorNotice(it) }
@@ -70,11 +80,11 @@ fun CollectionEditor(
     }
 }
 
-private enum class CollectionAction(
-    @param:StringRes override val text: Int,
-    override val type: ActionType = ActionType.NORMAL,
-) : SimpleDialogAction {
+private enum class CollectionEditorAction(
+    @param:StringRes override val labelResId: Int,
+    override val type: DialogActionType = DialogActionType.NORMAL,
+) : DialogAction {
     CREATE(R.string.action_create),
     SAVE(R.string.action_save),
-    CANCEL(R.string.action_cancel, ActionType.DISMISS),
+    CANCEL(R.string.action_cancel, DialogActionType.DISMISS),
 }

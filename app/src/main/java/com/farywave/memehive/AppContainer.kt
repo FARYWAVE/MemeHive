@@ -1,19 +1,33 @@
 package com.farywave.memehive
 
 import android.content.Context
+import android.util.Log
+import androidx.core.net.toUri
+import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory as buildViewModelFactory
+import com.farywave.memehive.application.usecase.CollectionTransferUseCases
+import com.farywave.memehive.application.usecase.CollectionUseCases
+import com.farywave.memehive.application.usecase.DeleteMediaItemsUseCase
+import com.farywave.memehive.application.usecase.MediaItemUseCases
+import com.farywave.memehive.application.usecase.MediaSearchUseCase
 import com.farywave.memehive.data.local.db.MemeHiveDatabase
 import com.farywave.memehive.data.local.db.repository.CollectionRepository
 import com.farywave.memehive.data.local.db.repository.ImageRepository
 import com.farywave.memehive.data.local.db.repository.MediaItemRepository
 import com.farywave.memehive.data.local.db.repository.TagRepository
 import com.farywave.memehive.data.local.storage.ImageStorage
-import com.farywave.memehive.ui.use_case.CollectionTransferUseCases
-import com.farywave.memehive.ui.use_case.CollectionUseCases
-import com.farywave.memehive.ui.use_case.DeleteMediaItemsUseCase
-import com.farywave.memehive.ui.use_case.MediaItemUseCases
-import com.farywave.memehive.ui.use_case.MediaSearchUseCase
+import com.farywave.memehive.domain.model.Collection
+import com.farywave.memehive.domain.model.Image
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionDraft
+import com.farywave.memehive.ui.activity.main.dialog.collection_editor.CollectionEditorViewModel
+import com.farywave.memehive.ui.activity.main.screen.editing.EditingViewModel
+import com.farywave.memehive.ui.activity.main.screen.hive.HiveViewModel
+import com.farywave.memehive.ui.activity.picker.PickerViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 
 class AppContainer(
     context: Context,
@@ -31,27 +45,30 @@ class AppContainer(
     private val mediaItemTagDao = database.mediaItemTagDao()
 
     private val imageStorage = ImageStorage(appContext, ioDispatcher)
-    private val imageRepo = ImageRepository(appContext, imageDao, ioDispatcher, imageStorage)
-    private val mediaItemRepo = MediaItemRepository(mediaItemDao, imageRepo::toModel)
-    private val collectionRepo = CollectionRepository(
-        collectionDao,
-        imageRepo::toModel,
-        collectionEntryDao
-    )
-    private val tagRepo = TagRepository(tagDao, mediaItemTagDao)
+    private val imageRepository = ImageRepository(appContext, imageDao, ioDispatcher, imageStorage)
+    private val mediaItemRepository = MediaItemRepository(mediaItemDao, imageRepository::toModel)
+    private val collectionRepository =
+        CollectionRepository(
+            collectionDao,
+            imageRepository::toModel,
+            collectionEntryDao,
+        )
+    private val tagRepository = TagRepository(tagDao, mediaItemTagDao)
 
     private val deleteMediaItemsUseCase =
-        DeleteMediaItemsUseCase(database, mediaItemRepo, tagRepo, imageRepo)
+        DeleteMediaItemsUseCase(database, mediaItemRepository, tagRepository, imageRepository)
 
-    val mediaItemUseCases = MediaItemUseCases(
-        database,
-        mediaItemRepo,
-        tagRepo,
-        collectionRepo,
-        imageRepo,
-        deleteMediaItemsUseCase
-    )
-    val collectionUseCases = CollectionUseCases(database, collectionRepo, imageRepo, deleteMediaItemsUseCase)
+    val mediaItemUseCases =
+        MediaItemUseCases(
+            database,
+            mediaItemRepository,
+            tagRepository,
+            collectionRepository,
+            imageRepository,
+            deleteMediaItemsUseCase,
+        )
+    val collectionUseCases =
+        CollectionUseCases(database, collectionRepository, imageRepository, deleteMediaItemsUseCase)
     val collectionTransferUseCases =
         CollectionTransferUseCases(
             database,
@@ -59,8 +76,49 @@ class AppContainer(
             ioDispatcher,
             collectionUseCases,
             mediaItemUseCases,
-            imageRepo
+            imageRepository,
         )
-    val mediaSearchUseCase =
-        MediaSearchUseCase(mediaItemRepo, computationDispatcher)
+    val mediaSearchUseCase = MediaSearchUseCase(mediaItemRepository, computationDispatcher)
+
+    fun viewModelFactory(mediaItemId: Long = 0L) = buildViewModelFactory {
+        initializer {
+            HiveViewModel(
+                mediaItemUseCases,
+                collectionUseCases,
+                collectionTransferUseCases,
+                mediaSearchUseCase,
+            )
+        }
+        initializer { PickerViewModel(collectionUseCases, mediaSearchUseCase) }
+        initializer {
+            EditingViewModel(
+                mediaItemId,
+                mediaItemUseCases,
+                collectionUseCases,
+                createSavedStateHandle(),
+            )
+        }
+        initializer {
+            CollectionEditorViewModel(createSavedStateHandle(), ::saveCollectionDraft)
+        }
+    }
+
+    private suspend fun saveCollectionDraft(id: Long?, draft: CollectionDraft) {
+        try {
+            val cover = draft.coverUri?.let { Image(uri = it.toUri()) }
+            if (id == null) {
+                collectionUseCases.createCollection(Collection(name = draft.name, cover = cover))
+            } else {
+                val original =
+                    collectionUseCases.observeCollections().first().firstOrNull { it.id == id }
+                        ?: error("Collection $id no longer exists")
+                collectionUseCases.updateCollection(original.copy(name = draft.name, cover = cover))
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            Log.w("CollectionEditorDialog", "Could not save collection", failure)
+            throw failure
+        }
+    }
 }

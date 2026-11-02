@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.farywave.memehive.R
-import com.farywave.memehive.ui.simple_component.SimpleTextField
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @Composable
@@ -25,28 +24,29 @@ fun SearchBar(
     onQueryChange: (query: String) -> Unit,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .background(
-                LocalAppColors.current.backgroundSecondary,
-                shape = MaterialTheme.shapes.large
-            )
-            .padding(horizontal = 8.dp, vertical = 7.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .background(
+                    LocalAppColors.current.backgroundSecondary,
+                    shape = MaterialTheme.shapes.large,
+                )
+                .padding(horizontal = 8.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(3.dp)
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_search),
             contentDescription = null,
-            tint = LocalAppColors.current.contentSecondary
+            tint = LocalAppColors.current.contentSecondary,
         )
-        SimpleTextField(
+        AppTextField(
             modifier = Modifier.weight(1f),
             hint = hint,
             initialValue = initialQuery,
-            callbackDelay = 0L,
-            onValueChange = onQueryChange
+            debounceMillis = 0L,
+            onValueChange = onQueryChange,
         )
     }
 }

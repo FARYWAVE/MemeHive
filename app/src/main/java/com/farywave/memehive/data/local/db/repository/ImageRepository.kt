@@ -11,16 +11,16 @@ import com.farywave.memehive.data.local.db.mapper.toModel
 import com.farywave.memehive.data.local.storage.ImageChanges
 import com.farywave.memehive.data.local.storage.ImageStorage
 import com.farywave.memehive.domain.model.Image
+import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
-import java.io.IOException
 
 class ImageRepository(
     private val context: Context,
     private val imageDao: ImageDao,
     private val ioDispatcher: CoroutineDispatcher,
-    private val storage: ImageStorage
+    private val storage: ImageStorage,
 ) {
     fun toModel(image: ImageEntity): Image {
         return image.toModel(storage.resolve(image.name).toUri())
@@ -32,14 +32,15 @@ class ImageRepository(
     }
 
     suspend fun insertOrGet(uri: Uri, changes: ImageChanges): Image {
-        val file = storage.copy(
-            uri = uri,
-            onFileCreated = changes::recordCreated,
-        )
+        val file =
+            storage.copy(
+                uri = uri,
+                onFileCreated = changes::recordCreated,
+            )
 
         val sha256 = file.toUri().sha256(context, ioDispatcher)
 
-        val imageEntity = imageDao.getBySHA256(sha256)
+        val imageEntity = imageDao.getBySha256(sha256)
         if (imageEntity != null) return toModel(imageEntity)
 
         val id = imageDao.insert(ImageEntity(0, file.name, sha256))
@@ -59,7 +60,7 @@ class ImageRepository(
     }
 
     suspend fun <T> withImageCleanup(
-        block: suspend (cleanup: suspend (Set<Long?>) -> Unit) -> T,
+        block: suspend (cleanup: suspend (Set<Long?>) -> Unit) -> T
     ): T {
         val imagesToDelete = mutableSetOf<String>()
 

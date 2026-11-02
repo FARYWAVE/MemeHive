@@ -18,40 +18,52 @@ import com.farywave.memehive.data.local.db.entity.MediaItemTagEntity
 import com.farywave.memehive.data.local.db.entity.TagEntity
 
 @Database(
-    entities = [
-        MediaItemEntity::class,
-        ImageEntity::class,
-        TagEntity::class,
-        MediaItemTagEntity::class,
-        CollectionEntity::class,
-        CollectionEntryEntity::class
-    ],
+    entities =
+        [
+            MediaItemEntity::class,
+            ImageEntity::class,
+            TagEntity::class,
+            MediaItemTagEntity::class,
+            CollectionEntity::class,
+            CollectionEntryEntity::class,
+        ],
     version = 4,
-    exportSchema = true
+    exportSchema = true,
 )
 abstract class MemeHiveDatabase : RoomDatabase() {
 
     abstract fun mediaItemDao(): MediaItemDao
+
     abstract fun tagDao(): TagDao
+
     abstract fun mediaItemTagDao(): MediaItemTagDao
 
     abstract fun collectionDao(): CollectionDao
+
     abstract fun collectionEntryDao(): CollectionEntryDao
 
     abstract fun imageDao(): ImageDao
 
     companion object {
-        @Volatile
-        private var INSTANCE: MemeHiveDatabase? = null
+        @Volatile private var INSTANCE: MemeHiveDatabase? = null
 
         fun getInstance(context: Context): MemeHiveDatabase {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Room.databaseBuilder(
-                    context.applicationContext,
-                    MemeHiveDatabase::class.java,
-                    "memehive_db"
-                ).addMigrations(MIGRATION_1_2, ImageFilenameMigration(context.applicationContext.filesDir), MIGRATION_3_4).build().also { INSTANCE = it }
-            }
+            return INSTANCE
+                ?: synchronized(this) {
+                    INSTANCE
+                        ?: Room.databaseBuilder(
+                                context.applicationContext,
+                                MemeHiveDatabase::class.java,
+                                "memehive_db",
+                            )
+                            .addMigrations(
+                                MIGRATION_1_2,
+                                ImageFilenameMigration(context.applicationContext.filesDir),
+                                MIGRATION_3_4,
+                            )
+                            .build()
+                            .also { INSTANCE = it }
+                }
         }
     }
 }

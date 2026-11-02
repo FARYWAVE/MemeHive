@@ -8,18 +8,16 @@ import androidx.compose.ui.graphics.Color
 data class AppColors(
     val accentPrimary: Color,
     val accentSecondary: Color,
-
     val contentPrimary: Color,
     val contentSecondary: Color,
-
     val backgroundPrimary: Color,
     val backgroundSecondary: Color,
-
     val warning: Color,
     val tint: Color,
-    val transparent: Color
+    val transparent: Color,
 )
 
-val LocalAppColors = staticCompositionLocalOf<AppColors> {
-    error("No AppColors provided")
-}
+val LocalAppColors =
+    staticCompositionLocalOf<AppColors> {
+        error("No AppColors provided")
+    }

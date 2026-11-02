@@ -1,5 +1,8 @@
 package com.farywave.memehive.data.local.storage
 
+import java.io.File
+import java.io.IOException
+import java.io.InputStream
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
@@ -19,23 +22,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.io.IOException
-import java.io.InputStream
 
 class ImageChangesTest {
-    @get:Rule
-    val directory = TemporaryFolder()
+    @get:Rule val directory = TemporaryFolder()
 
     @Test
     fun `successful operation preserves saved images and uses unique file names`() = runTest {
         val storedNames = mutableSetOf<String>()
-        val files = withChanges(storedNames) { changes ->
-            val first = copy(changes, "first".byteInputStream())
-            val second = copy(changes, "second".byteInputStream())
-            storedNames.addAll(listOf(first.name, second.name))
-            first to second
-        }
+        val files =
+            withChanges(storedNames) { changes ->
+                val first = copy(changes, "first".byteInputStream())
+                val second = copy(changes, "second".byteInputStream())
+                storedNames.addAll(listOf(first.name, second.name))
+                first to second
+            }
 
         assertNotEquals(files.first.path, files.second.path)
         assertEquals("first", files.first.readText())
@@ -49,14 +49,15 @@ class ImageChangesTest {
         val newFiles = mutableListOf<File>()
         val originalFailure = IOException("Failed to save tags")
 
-        val failure = expectFailure<IOException> {
-            withChanges(storedNames) { changes ->
-                newFiles += copy(changes, "cover".byteInputStream())
-                newFiles += copy(changes, "media item".byteInputStream())
-                // A rolled-back transaction leaves no database rows for either new file.
-                throw originalFailure
+        val failure =
+            expectFailure<IOException> {
+                withChanges(storedNames) { changes ->
+                    newFiles += copy(changes, "cover".byteInputStream())
+                    newFiles += copy(changes, "media item".byteInputStream())
+                    // A rolled-back transaction leaves no database rows for either new file.
+                    throw originalFailure
+                }
             }
-        }
 
         assertSame(originalFailure, failure)
         assertTrue(newFiles.none { it.exists() })
@@ -99,30 +100,39 @@ class ImageChangesTest {
         val originalFailure = IOException("Image provider disconnected")
         lateinit var partialFile: File
         var closed = false
-        val input = object : InputStream() {
-            var hasRead = false
-            override fun read(): Int = error("Bulk reads expected")
-            override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
-                if (hasRead) throw originalFailure
-                hasRead = true
-                buffer[offset] = 1
-                return 1
-            }
-            override fun close() { closed = true }
-        }
+        val input =
+            object : InputStream() {
+                var hasRead = false
 
-        val failure = expectFailure<IOException> {
-            withChanges { changes ->
-                ImageStorage.copyImageToDirectory(
-                    directory.root, "jpg", StandardTestDispatcher(testScheduler),
-                    onFileCreated = {
-                        partialFile = it
-                        changes.recordCreated(it)
-                    },
-                    openInput = { input },
-                )
+                override fun read(): Int = error("Bulk reads expected")
+
+                override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+                    if (hasRead) throw originalFailure
+                    hasRead = true
+                    buffer[offset] = 1
+                    return 1
+                }
+
+                override fun close() {
+                    closed = true
+                }
             }
-        }
+
+        val failure =
+            expectFailure<IOException> {
+                withChanges { changes ->
+                    ImageStorage.copyImageToDirectory(
+                        directory.root,
+                        "jpg",
+                        StandardTestDispatcher(testScheduler),
+                        onFileCreated = {
+                            partialFile = it
+                            changes.recordCreated(it)
+                        },
+                        openInput = { input },
+                    )
+                }
+            }
 
         // Coroutine stack-trace recovery may copy the exception, retaining it as the cause.
         assertEquals(originalFailure.message, failure.message)
@@ -132,38 +142,43 @@ class ImageChangesTest {
     }
 
     @Test
-    fun `cancellation before the copy result is delivered still cleans the recorded file`() = runTest {
-        lateinit var copiedFile: File
-        var returnedFromCopy = false
-        val operation = launch {
-            val operationJob = currentCoroutineContext().job
-            val bytes = "image".byteInputStream()
-            val input = object : InputStream() {
-                override fun read(): Int = error("Bulk reads expected")
-                override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
-                    val count = bytes.read(buffer, offset, length)
-                    if (count == -1) operationJob.cancel()
-                    return count
+    fun `cancellation before the copy result is delivered still cleans the recorded file`() =
+        runTest {
+            lateinit var copiedFile: File
+            var returnedFromCopy = false
+            val operation = launch {
+                val operationJob = currentCoroutineContext().job
+                val bytes = "image".byteInputStream()
+                val input =
+                    object : InputStream() {
+                        override fun read(): Int = error("Bulk reads expected")
+
+                        override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+                            val count = bytes.read(buffer, offset, length)
+                            if (count == -1) operationJob.cancel()
+                            return count
+                        }
+                    }
+                withChanges { changes ->
+                    ImageStorage.copyImageToDirectory(
+                        directory.root,
+                        "jpg",
+                        StandardTestDispatcher(testScheduler),
+                        onFileCreated = {
+                            copiedFile = it
+                            changes.recordCreated(it)
+                        },
+                        openInput = { input },
+                    )
+                    returnedFromCopy = true
                 }
             }
-            withChanges { changes ->
-                ImageStorage.copyImageToDirectory(
-                    directory.root, "jpg", StandardTestDispatcher(testScheduler),
-                    onFileCreated = {
-                        copiedFile = it
-                        changes.recordCreated(it)
-                    },
-                    openInput = { input },
-                )
-                returnedFromCopy = true
-            }
-        }
-        operation.join()
+            operation.join()
 
-        assertTrue(operation.isCancelled)
-        assertFalse(returnedFromCopy)
-        assertFalse(copiedFile.exists())
-    }
+            assertTrue(operation.isCancelled)
+            assertFalse(returnedFromCopy)
+            assertFalse(copiedFile.exists())
+        }
 
     @Test
     fun `cancellation after the database commit preserves the saved file`() = runTest {
@@ -191,16 +206,17 @@ class ImageChangesTest {
         val databaseFailure = IOException("Cannot check the database")
         val cleanupFailures = mutableListOf<Exception>()
 
-        val failure = expectFailure<IOException> {
-            ImageChanges.track(
-                ioDispatcher = StandardTestDispatcher(testScheduler),
-                isStored = { throw databaseFailure },
-                onCleanupFailure = { _, error -> cleanupFailures += error },
-            ) { changes ->
-                changes.recordCreated(file)
-                throw originalFailure
+        val failure =
+            expectFailure<IOException> {
+                ImageChanges.track(
+                    ioDispatcher = StandardTestDispatcher(testScheduler),
+                    isStored = { throw databaseFailure },
+                    onCleanupFailure = { _, error -> cleanupFailures += error },
+                ) { changes ->
+                    changes.recordCreated(file)
+                    throw originalFailure
+                }
             }
-        }
 
         assertSame(originalFailure, failure)
         assertEquals(listOf(databaseFailure), cleanupFailures)
@@ -210,17 +226,19 @@ class ImageChangesTest {
     @Test
     fun `failed deletion is reported and remaining files are still cleaned`() = runTest {
         val realFile = directory.newFile("undeletable.jpg")
-        val undeletable = object : File(realFile.path) {
-            override fun delete(): Boolean = false
-        }
+        val undeletable =
+            object : File(realFile.path) {
+                override fun delete(): Boolean = false
+            }
         val abandoned = directory.newFile("abandoned.jpg")
         val cleanupFailures = mutableListOf<Exception>()
 
-        val result = withChanges(cleanupFailures = cleanupFailures) { changes ->
-            changes.recordCreated(undeletable)
-            changes.recordCreated(abandoned)
-            "result"
-        }
+        val result =
+            withChanges(cleanupFailures = cleanupFailures) { changes ->
+                changes.recordCreated(undeletable)
+                changes.recordCreated(abandoned)
+                "result"
+            }
 
         assertEquals("result", result)
         assertEquals(1, cleanupFailures.size)
@@ -232,19 +250,22 @@ class ImageChangesTest {
         storedNames: Set<String> = emptySet(),
         cleanupFailures: MutableList<Exception> = mutableListOf(),
         block: suspend (ImageChanges) -> T,
-    ): T = ImageChanges.track(
-        ioDispatcher = StandardTestDispatcher(testScheduler),
-        isStored = { path ->
-            yield() // The real DAO lookup suspends, including during cancellation cleanup.
-            path in storedNames
-        },
-        onCleanupFailure = { _, error -> cleanupFailures += error },
-        block = block,
-    )
+    ): T =
+        ImageChanges.track(
+            ioDispatcher = StandardTestDispatcher(testScheduler),
+            isStored = { path ->
+                yield() // The real DAO lookup suspends, including during cancellation cleanup.
+                path in storedNames
+            },
+            onCleanupFailure = { _, error -> cleanupFailures += error },
+            block = block,
+        )
 
     private suspend fun TestScope.copy(changes: ImageChanges, input: InputStream): File =
         ImageStorage.copyImageToDirectory(
-            directory.root, "jpg", StandardTestDispatcher(testScheduler),
+            directory.root,
+            "jpg",
+            StandardTestDispatcher(testScheduler),
             onFileCreated = changes::recordCreated,
             openInput = { input },
         )

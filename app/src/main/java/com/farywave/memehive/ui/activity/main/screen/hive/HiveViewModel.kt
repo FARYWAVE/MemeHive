@@ -7,16 +7,18 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.farywave.memehive.R
+import com.farywave.memehive.application.usecase.CollectionTransferUseCases
+import com.farywave.memehive.application.usecase.CollectionUseCases
+import com.farywave.memehive.application.usecase.MediaItemUseCases
+import com.farywave.memehive.application.usecase.MediaSearchState
+import com.farywave.memehive.application.usecase.MediaSearchUseCase
 import com.farywave.memehive.core.collection_transfer.InvalidCollectionArchiveException
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.domain.model.MediaItem
 import com.farywave.memehive.ui.model.UiMessageQueue
-import com.farywave.memehive.ui.use_case.CollectionTransferUseCases
-import com.farywave.memehive.ui.use_case.CollectionUseCases
-import com.farywave.memehive.ui.use_case.MediaItemUseCases
-import com.farywave.memehive.ui.use_case.MediaSearchState
-import com.farywave.memehive.ui.use_case.MediaSearchUseCase
+import java.io.IOException
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -30,8 +32,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.IOException
-import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class HiveViewModel(
@@ -57,30 +57,35 @@ class HiveViewModel(
     private val _selectedMediaItemIds = MutableStateFlow<Set<Long>>(emptySet())
     val selectedMediaItemIds = _selectedMediaItemIds.asStateFlow()
 
-    private val _isMassEditingMode = MutableStateFlow(false)
-    val isMassEditingMode = _isMassEditingMode.asStateFlow()
+    private val _isSelectionMode = MutableStateFlow(false)
+    val isSelectionMode = _isSelectionMode.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
-    private val _collectionsLoading = MutableStateFlow(true)
-    val collectionsLoading = _collectionsLoading.asStateFlow()
+    private val _isLoadingCollections = MutableStateFlow(true)
+    val isLoadingCollections = _isLoadingCollections.asStateFlow()
 
-    private val _collectionsFailed = MutableStateFlow(false)
-    val collectionsFailed = _collectionsFailed.asStateFlow()
+    private val _hasCollectionsLoadError = MutableStateFlow(false)
+    val hasCollectionsLoadError = _hasCollectionsLoadError.asStateFlow()
 
     private val retries = MutableStateFlow(0)
-    val mediaState = mediaSearchUseCase.observeState(
-        selectedCollectionId, searchQuery.debounce(200.milliseconds), retries,
-    ).stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(5_000),
-        MediaSearchState(isLoading = true)
-    )
+    val mediaState =
+        mediaSearchUseCase
+            .observeState(
+                selectedCollectionId,
+                searchQuery.debounce(200.milliseconds),
+                retries,
+            )
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                MediaSearchState(isLoading = true),
+            )
 
     fun retryLoading() {
-        _collectionsLoading.value = true
-        _collectionsFailed.value = false
+        _isLoadingCollections.value = true
+        _hasCollectionsLoadError.value = false
         retries.update { it + 1 }
     }
 
@@ -88,7 +93,7 @@ class HiveViewModel(
         loadCollections()
     }
 
-    fun onSearchQueryChanged(query: String) {
+    fun onSearchQueryChange(query: String) {
         if (_searchQuery.value == query) return
         _searchQuery.value = query
     }
@@ -98,12 +103,12 @@ class HiveViewModel(
         _selectedCollectionId.value = collectionId
     }
 
-    fun enableMassEditingMode() {
-        _isMassEditingMode.value = true
+    fun enterSelectionMode() {
+        _isSelectionMode.value = true
     }
 
-    fun disableMassEditingMode() {
-        _isMassEditingMode.value = false
+    fun exitSelectionMode() {
+        _isSelectionMode.value = false
         _selectedMediaItemIds.value = emptySet()
     }
 
@@ -114,20 +119,18 @@ class HiveViewModel(
     fun toggleItemSelection(itemId: Long) {
         if (itemId in _selectedMediaItemIds.value) _selectedMediaItemIds.value -= itemId
         else _selectedMediaItemIds.value += itemId
-        if (_selectedMediaItemIds.value.isEmpty()) disableMassEditingMode()
+        if (_selectedMediaItemIds.value.isEmpty()) exitSelectionMode()
     }
 
-    fun onMassImport(uris: List<Uri>) {
+    fun importImages(uris: List<Uri>) {
         if (uris.isEmpty()) return
         val collectionId = _selectedCollectionId.value
         val collectionSet = collectionId?.let { setOf(it) } ?: emptySet()
         launchWithError(R.string.error_media_import_partial) {
             uris.forEach {
                 mediaItemUseCases.createMediaItem(
-                    MediaItem(
-                        image = Image(uri = it),
-                    ),
-                    collectionSet
+                    MediaItem(image = Image(uri = it)),
+                    collectionSet,
                 )
             }
 
@@ -140,7 +143,7 @@ class HiveViewModel(
 
         launchWithError(
             R.string.error_media_duplicate_partial,
-            onSuccess = ::disableMassEditingMode
+            onSuccess = ::exitSelectionMode,
         ) {
             selected.forEach {
                 mediaItemUseCases.createMediaItem(it.copy(id = 0))
@@ -151,7 +154,7 @@ class HiveViewModel(
 
     fun addSelectedMediaItemsToCollection(collection: Collection) {
         val selectedIds = _selectedMediaItemIds.value
-        launchWithError(R.string.error_collection_add_items, onSuccess = ::disableMassEditingMode) {
+        launchWithError(R.string.error_collection_add_items, onSuccess = ::exitSelectionMode) {
             collectionUseCases.addItemsToCollection(selectedIds, collection.id)
             addTransferMessage(R.string.success_collection_items_added)
         }
@@ -159,7 +162,7 @@ class HiveViewModel(
 
     fun deleteSelectedMediaItems() {
         val selectedIds = _selectedMediaItemIds.value
-        launchWithError(R.string.error_media_delete, onSuccess = ::disableMassEditingMode) {
+        launchWithError(R.string.error_media_delete, onSuccess = ::exitSelectionMode) {
             mediaItemUseCases.deleteMediaItemsByIds(selectedIds)
         }
     }
@@ -178,9 +181,10 @@ class HiveViewModel(
 
     fun exportCollection(collectionId: Long, uri: Uri) {
         launchCollectionTransfer(R.string.success_collection_exported) {
-            val collection = collectionUseCases.getAllCollections().first()
-                .firstOrNull { it.id == collectionId }
-                ?: throw IOException("The collection no longer exists.")
+            val collection =
+                collectionUseCases.observeCollections().first().firstOrNull {
+                    it.id == collectionId
+                } ?: throw IOException("The collection no longer exists.")
             collectionTransferUseCases.exportCollection(collection, uri)
         }
     }
@@ -195,17 +199,17 @@ class HiveViewModel(
 
     private fun loadCollections() {
         viewModelScope.launch {
-            retries.flatMapLatest {
-                collectionUseCases.getAllCollections()
-                    .catch {
-                        _collectionsLoading.value = false
-                        _collectionsFailed.value = true
+            retries
+                .flatMapLatest {
+                    collectionUseCases.observeCollections().catch {
+                        _isLoadingCollections.value = false
+                        _hasCollectionsLoadError.value = true
                         reportError(R.string.error_collections_load, it)
                     }
-            }
+                }
                 .collect { collections ->
-                    _collectionsLoading.value = false
-                    _collectionsFailed.value = false
+                    _isLoadingCollections.value = false
+                    _hasCollectionsLoadError.value = false
                     _collections.value = collections
                     val selectedId = _selectedCollectionId.value
                     if (selectedId != null && collections.none { it.id == selectedId }) {
@@ -251,7 +255,7 @@ class HiveViewModel(
     private fun launchWithError(
         @StringRes message: Int,
         onSuccess: () -> Unit = {},
-        operation: suspend () -> Unit
+        operation: suspend () -> Unit,
     ) {
         viewModelScope.launch {
             try {
@@ -270,8 +274,6 @@ class HiveViewModel(
         Log.w("HiveViewModel", "Screen operation failed", failure)
         messages.show(message)
     }
-
-
 }
 
 data class CollectionTransferMessage(val id: Long, @param:StringRes val textRes: Int)

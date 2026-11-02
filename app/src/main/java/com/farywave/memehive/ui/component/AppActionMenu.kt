@@ -1,4 +1,4 @@
-package com.farywave.memehive.ui.simple_component
+package com.farywave.memehive.ui.component
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.DropdownMenu
@@ -16,15 +16,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import com.farywave.memehive.ui.theme.LocalAppColors
 
-
 @Composable
-inline fun <reified T> SimpleActionMenu(
+inline fun <reified T> AppActionMenu(
     modifier: Modifier = Modifier,
     options: List<T> = enumValues<T>().toList(),
     properties: PopupProperties = PopupProperties(focusable = true),
     crossinline onSelected: (T) -> Unit,
-    trigger: @Composable (onClick: () -> Unit) -> Unit
-) where T: Enum<T>, T: ActionMenuOptions {
+    trigger: @Composable (onClick: () -> Unit) -> Unit,
+) where T : Enum<T>, T : ActionMenuOption {
     var expanded by remember { mutableStateOf(false) }
 
     Box {
@@ -38,28 +37,30 @@ inline fun <reified T> SimpleActionMenu(
             shadowElevation = 9.dp,
             expanded = expanded,
             properties = properties,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(
-                            text = stringResource(option.labelId),
-                            color = if (option.highlighted)
-                                LocalAppColors.current.warning
-                            else LocalAppColors.current.contentPrimary,
+                    text = {
+                        Text(
+                            text = stringResource(option.labelResId),
+                            color =
+                                if (option.isDestructive) LocalAppColors.current.warning
+                                else LocalAppColors.current.contentPrimary,
                             style = MaterialTheme.typography.bodyMedium,
-                        ) },
+                        )
+                    },
                     onClick = {
                         expanded = false
                         onSelected(option)
-                    }
+                    },
                 )
             }
         }
     }
 }
 
-interface ActionMenuOptions {
-    val labelId: Int
-    val highlighted: Boolean
+interface ActionMenuOption {
+    val labelResId: Int
+    val isDestructive: Boolean
 }

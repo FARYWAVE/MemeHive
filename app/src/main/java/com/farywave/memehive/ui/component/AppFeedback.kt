@@ -44,7 +44,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.update
 
-
 class AppFeedback {
     private val queue = MutableStateFlow<List<Message>>(emptyList())
     internal val messages = queue.mapNotNull { it.firstOrNull() }.distinctUntilChanged()
@@ -53,8 +52,12 @@ class AppFeedback {
         queue.update { it.filterNot { queued -> queued === message } }
     }
 
-    fun show(@StringRes text: Int, @StringRes action: Int? = null, onAction: (() -> Unit)? = null,
-             onDismiss: (() -> Unit)? = null) {
+    fun show(
+        @StringRes text: Int,
+        @StringRes action: Int? = null,
+        onAction: (() -> Unit)? = null,
+        onDismiss: (() -> Unit)? = null,
+    ) {
         val message = Message(text, action, onAction, onDismiss)
         queue.update { it + message }
     }
@@ -70,8 +73,12 @@ class AppFeedback {
         }
     }
 
-    internal class Message(@param:StringRes val text: Int, @param:StringRes val action: Int?,
-                               val onAction: (() -> Unit)?, val onDismiss: (() -> Unit)?)
+    internal class Message(
+        @param:StringRes val text: Int,
+        @param:StringRes val action: Int?,
+        val onAction: (() -> Unit)?,
+        val onDismiss: (() -> Unit)?,
+    )
 }
 
 val LocalAppFeedback = staticCompositionLocalOf { AppFeedback() }
@@ -89,12 +96,15 @@ fun FeedbackHost(
     LaunchedEffect(feedback, lifecycle, configuration) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             feedback.messages.collect { message ->
-                val result = host.showSnackbar(
-                    message = resources.getString(message.text),
-                    actionLabel = message.action?.let(resources::getString),
-                    withDismissAction = true,
-                    duration = if (message.action != null) SnackbarDuration.Long else SnackbarDuration.Short,
-                )
+                val result =
+                    host.showSnackbar(
+                        message = resources.getString(message.text),
+                        actionLabel = message.action?.let(resources::getString),
+                        withDismissAction = true,
+                        duration =
+                            if (message.action != null) SnackbarDuration.Long
+                            else SnackbarDuration.Short,
+                    )
                 feedback.dismiss(message)
                 if (result == SnackbarResult.ActionPerformed) message.onAction?.invoke()
                 message.onDismiss?.invoke()
@@ -131,16 +141,33 @@ private fun FeedbackSnackbar(host: SnackbarHostState, modifier: Modifier = Modif
     }
 }
 
-
 @Composable
-fun ErrorNotice(@StringRes message: Int, onRetry: (() -> Unit)? = null, @StringRes actionLabel: Int = R.string.action_retry) {
-    Surface(color = LocalAppColors.current.warning.copy(alpha = 0.12f), shape = MaterialTheme.shapes.medium) {
-        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(painterResource(R.drawable.ic_error), contentDescription = null,
-                tint = LocalAppColors.current.warning, modifier = Modifier.size(24.dp))
-            Text(stringResource(message), modifier = Modifier.weight(1f),
-                color = LocalAppColors.current.contentPrimary, style = MaterialTheme.typography.bodyMedium)
+fun ErrorNotice(
+    @StringRes message: Int,
+    onRetry: (() -> Unit)? = null,
+    @StringRes actionLabel: Int = R.string.action_retry,
+) {
+    Surface(
+        color = LocalAppColors.current.warning.copy(alpha = 0.12f),
+        shape = MaterialTheme.shapes.medium,
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                painterResource(R.drawable.ic_error),
+                contentDescription = null,
+                tint = LocalAppColors.current.warning,
+                modifier = Modifier.size(24.dp),
+            )
+            Text(
+                stringResource(message),
+                modifier = Modifier.weight(1f),
+                color = LocalAppColors.current.contentPrimary,
+                style = MaterialTheme.typography.bodyMedium,
+            )
             if (onRetry != null) TextButton(onClick = onRetry) { Text(stringResource(actionLabel)) }
         }
     }
