@@ -17,6 +17,14 @@ class CollectionRepository(
     private val resolveImage: (ImageEntity) -> Image,
     private val collectionEntryDao: CollectionEntryDao,
 ) {
+    fun observeMemberships(): Flow<Map<Long, Set<Long>>> =
+        collectionEntryDao.observeAll()
+            .map { entries ->
+                entries.groupBy { it.collectionId }
+                    .mapValues { (_, entries) -> entries.map { it.mediaItemId }.toSet() }
+            }
+            .distinctUntilChanged()
+
     fun observeCollections(): Flow<List<Collection>> {
         return collectionDao
             .observeAll()

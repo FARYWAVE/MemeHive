@@ -16,6 +16,8 @@ import com.farywave.memehive.core.collection_transfer.InvalidCollectionArchiveEx
 import com.farywave.memehive.domain.model.Collection
 import com.farywave.memehive.domain.model.Image
 import com.farywave.memehive.domain.model.MediaItem
+import com.farywave.memehive.ui.model.asMembershipState
+import com.farywave.memehive.ui.model.filterByCollection
 import com.farywave.memehive.ui.model.UiMessageQueue
 import java.io.IOException
 import kotlin.time.Duration.Companion.milliseconds
@@ -73,9 +75,12 @@ class HiveViewModel(
     val mediaState =
         mediaSearchUseCase
             .observeState(
-                selectedCollectionId,
                 searchQuery.debounce(200.milliseconds),
                 retries,
+            )
+            .filterByCollection(
+                selectedCollectionId,
+                retries.flatMapLatest { collectionUseCases.observeMemberships().asMembershipState() },
             )
             .stateIn(
                 viewModelScope,

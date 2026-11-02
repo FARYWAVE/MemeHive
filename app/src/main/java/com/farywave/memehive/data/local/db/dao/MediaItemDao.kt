@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MediaItemDao {
-    @Query("SELECT * FROM media_items") @Transaction fun observeAll(): Flow<List<MediaItemDetails>>
+    @Query("SELECT * FROM media_items ORDER BY id") @Transaction fun observeAll(): Flow<List<MediaItemDetails>>
 
     @Query(
         """

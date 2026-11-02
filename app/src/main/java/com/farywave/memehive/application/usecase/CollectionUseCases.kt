@@ -14,6 +14,9 @@ class CollectionUseCases(
     private val imageRepository: ImageRepository,
     private val deleteMediaItemsUseCase: DeleteMediaItemsUseCase,
 ) {
+    fun observeMemberships(): Flow<Map<Long, Set<Long>>> =
+        collectionRepository.observeMemberships()
+
     fun observeCollections(): Flow<List<Collection>> {
         return collectionRepository.observeCollections()
     }

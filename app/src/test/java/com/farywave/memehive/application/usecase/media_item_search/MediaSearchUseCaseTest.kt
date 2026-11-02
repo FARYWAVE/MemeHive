@@ -19,7 +19,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -61,36 +60,14 @@ class MediaSearchUseCaseTest {
     }
 
     @Test
-    fun `null observes all and collection membership changes update the scope`() = runTest {
+    fun `membership changes leave global search results and observation unchanged`() = runTest {
         val search = observeSearch()
         search.dao.items.value = listOf(item(1), item(2))
-        search.dao.memberships.value = mapOf(7L to setOf(1L), 8L to setOf(2L))
+        runCurrent()
+        search.dao.memberships.value = mapOf(7L to setOf(1L))
         runCurrent()
         assertEquals(listOf(1L, 2L), search.ids)
-
-        search.collectionId.value = 7L
-        runCurrent()
-        assertEquals(listOf(1L), search.ids)
-        assertEquals(setOf(7L), search.dao.activeScopes)
-
-        search.dao.memberships.value = mapOf(7L to setOf(2L), 8L to setOf(1L))
-        runCurrent()
-        assertEquals(listOf(2L), search.ids)
-
-        search.collectionId.value = 8L
-        runCurrent()
-        assertEquals(listOf(1L), search.ids)
-        assertEquals(setOf(8L), search.dao.activeScopes)
-
-        // Updating the old scope must not replace the current collection's results.
-        search.dao.memberships.value = mapOf(7L to emptySet(), 8L to setOf(1L))
-        runCurrent()
-        assertEquals(listOf(1L), search.ids)
-
-        search.collectionId.value = null
-        runCurrent()
-        assertEquals(listOf(1L, 2L), search.ids)
-        assertEquals(setOf<Long?>(null), search.dao.activeScopes)
+        assertEquals(1, search.dao.observationCount)
     }
 
     @Test
@@ -207,7 +184,7 @@ class MediaSearchUseCaseTest {
                 StandardTestDispatcher(testScheduler),
             )
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            useCase.observeState(MutableStateFlow(null), MutableStateFlow(""), retries).collect {
+            useCase.observeState(MutableStateFlow(""), retries).collect {
                 states += it
             }
         }
@@ -224,43 +201,6 @@ class MediaSearchUseCaseTest {
     }
 
     @Test
-    fun `switching collection cancels a delayed read and retains previous results while loading`() =
-        runTest {
-            val dao =
-                FakeMediaItemDao().apply {
-                    items.value = listOf(item(1), item(2))
-                    memberships.value = mapOf(7L to setOf(1L), 8L to setOf(2L))
-                    delays = mapOf(7L to 1000L)
-                }
-            val collection = MutableStateFlow<Long?>(null)
-            val states = mutableListOf<MediaSearchState>()
-            val useCase =
-                MediaSearchUseCase(
-                    MediaItemRepository(dao) { error("No images") },
-                    StandardTestDispatcher(testScheduler),
-                )
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                useCase
-                    .observeState(collection, MutableStateFlow(""), MutableStateFlow(0))
-                    .collect { states += it }
-            }
-            runCurrent()
-            collection.value = 7L
-            runCurrent()
-            assertTrue(states.last().isLoading)
-            assertEquals(listOf(1L, 2L), states.last().items.map { it.id })
-            collection.value = 8L
-            runCurrent()
-            val switchIndex = states.size - 1
-            advanceTimeBy(2000)
-            runCurrent()
-            assertTrue(
-                states.drop(switchIndex).all { it.items.map { item -> item.id } == listOf(2L) }
-            )
-            assertEquals(setOf<Long?>(8L), dao.activeScopes)
-        }
-
-    @Test
     fun `query loading retains results and a completed empty result replaces them`() = runTest {
         val dao = FakeMediaItemDao().apply {
             items.value = listOf(item(1, caption = "cat"), item(2, caption = "dog"))
@@ -272,7 +212,7 @@ class MediaSearchUseCaseTest {
             StandardTestDispatcher(testScheduler),
         )
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            useCase.observeState(MutableStateFlow(null), query, MutableStateFlow(0))
+            useCase.observeState(query, MutableStateFlow(0))
                 .collect { states += it }
         }
         runCurrent()
@@ -350,14 +290,13 @@ class MediaSearchUseCaseTest {
                 StandardTestDispatcher(testScheduler),
             )
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            search(fixture.collectionId, fixture.query).collect { fixture.latest = it }
+            search(fixture.query).collect { fixture.latest = it }
         }
         return fixture
     }
 
     private class SearchFixture {
         val dao = FakeMediaItemDao()
-        val collectionId = MutableStateFlow<Long?>(null)
         val query = MutableStateFlow("")
         var latest: List<MediaItem> = emptyList()
         val ids
@@ -413,7 +352,7 @@ class MediaSearchUseCaseTest {
 
         override suspend fun deleteByIds(mediaItemIds: Set<Long>): Unit = error("Unused")
 
-        override fun observeAll(): Flow<List<MediaItemDetails>> = error("Unused")
+        override fun observeAll(): Flow<List<MediaItemDetails>> = observeByCollection(null)
 
         override suspend fun get(mediaItemId: Long): MediaItemDetails? = error("Unused")
 

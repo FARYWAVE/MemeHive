@@ -9,6 +9,8 @@ import com.farywave.memehive.application.usecase.CollectionUseCases
 import com.farywave.memehive.application.usecase.MediaSearchState
 import com.farywave.memehive.application.usecase.MediaSearchUseCase
 import com.farywave.memehive.domain.model.Collection
+import com.farywave.memehive.ui.model.asMembershipState
+import com.farywave.memehive.ui.model.filterByCollection
 import com.farywave.memehive.ui.model.UiMessageQueue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
@@ -52,9 +54,12 @@ class PickerViewModel(
     val mediaState =
         mediaSearchUseCase
             .observeState(
-                selectedCollectionId,
                 searchQuery.debounce(200.milliseconds),
                 retries,
+            )
+            .filterByCollection(
+                selectedCollectionId,
+                retries.flatMapLatest { collectionUseCases.observeMemberships().asMembershipState() },
             )
             .map { it.copy(items = it.items.filter { item -> item.image != null }) }
             .stateIn(

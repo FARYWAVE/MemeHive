@@ -11,6 +11,8 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -32,7 +34,12 @@ class ReactiveSearchTest {
                 Dispatchers.Default,
             )
         val job = launch {
-            search(MutableStateFlow<Long?>(collectionId), MutableStateFlow("cat")).collect {
+            combine(
+                search(MutableStateFlow("cat")),
+                db.collectionEntryDao().observeAll().map { entries ->
+                    entries.filter { it.collectionId == collectionId }.map { it.mediaItemId }.toSet()
+                },
+            ) { items, ids -> items.filter { it.id in ids } }.collect {
                 updates.send(it)
             }
         }

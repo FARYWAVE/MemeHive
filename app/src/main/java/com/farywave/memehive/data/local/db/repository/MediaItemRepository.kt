@@ -15,8 +15,10 @@ class MediaItemRepository(
     private val resolveImage: (ImageEntity) -> Image,
 ) {
     fun observeMediaItems(collectionId: Long?): Flow<List<MediaItem>> {
-        return mediaItemDao
-            .observeByCollection(collectionId)
+        val items =
+            if (collectionId == null) mediaItemDao.observeAll()
+            else mediaItemDao.observeByCollection(collectionId)
+        return items
             .map { items -> items.map { it.toMediaItem(it.image?.let(resolveImage)) } }
             .distinctUntilChanged()
     }
