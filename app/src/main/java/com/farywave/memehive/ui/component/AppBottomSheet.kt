@@ -14,9 +14,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogWindowProvider
 import com.farywave.memehive.ui.theme.LocalAppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,6 +35,7 @@ fun AppBottomSheet(
         ModalBottomSheet(
             modifier = Modifier.fillMaxWidth().statusBarsPadding(),
             containerColor = LocalAppColors.current.backgroundPrimary,
+            contentColor = LocalAppColors.current.contentPrimary,
             onDismissRequest = { onDismissRequest() },
             sheetState = sheetState,
             shape =
@@ -41,6 +45,10 @@ fun AppBottomSheet(
                 ),
             dragHandle = { DragHandle() },
         ) {
+            val sheetWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
+            SideEffect {
+                sheetWindow?.isNavigationBarContrastEnforced = false
+            }
             content()
         }
     }

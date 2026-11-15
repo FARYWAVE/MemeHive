@@ -24,6 +24,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MediaSearchUseCaseTest {
@@ -276,7 +277,6 @@ class MediaSearchUseCaseTest {
             runCurrent()
             assertEquals(setOf(1L, 2L, 3L), search.ids.toSet())
         }
-        // A four-character query may now match a one-edit typo.
         search.query.value = "funz"
         runCurrent()
         assertEquals(listOf(3L, 2L), search.ids)
@@ -330,7 +330,7 @@ class MediaSearchUseCaseTest {
             }
             activeScopes += collectionId
             try {
-                delay(delays[collectionId] ?: 0L)
+                delay((delays[collectionId] ?: 0L).milliseconds)
                 emitAll(
                     combine(items, memberships) { items, memberships ->
                         items.filter {
@@ -354,7 +354,7 @@ class MediaSearchUseCaseTest {
 
         override fun observeAll(): Flow<List<MediaItemDetails>> = observeByCollection(null)
 
-        override suspend fun get(mediaItemId: Long): MediaItemDetails? = error("Unused")
+        override suspend fun get(mediaItemId: Long): MediaItemDetails = error("Unused")
 
         override suspend fun getIdsByTags(tagIds: List<Long>, tagCount: Int): List<Long> =
             error("Unused")
@@ -367,7 +367,7 @@ class MediaSearchUseCaseTest {
 
         override suspend fun getAllIds(): List<Long> = error("Unused")
 
-        override suspend fun getImageId(mediaItemId: Long): Long? = error("Unused")
+        override suspend fun getImageId(mediaItemId: Long): Long = error("Unused")
 
         override suspend fun getImageIds(mediaItemIds: Set<Long>): List<Long> = error("Unused")
     }

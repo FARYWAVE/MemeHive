@@ -9,7 +9,6 @@ data class Image(
     val height: Int? = null,
 )
 
-/** Stable display ratio, including for images imported before dimensions were stored. */
 val Image?.aspectRatio: Float
     get() {
         val width = this?.width ?: return 1.5f

@@ -60,8 +60,6 @@ fun AppTextField(
     var isFocused by remember { mutableStateOf(false) }
 
     LaunchedEffect(initialValue) {
-        // Screen state can echo an older keystroke while the user is still typing.
-        // Keep the local editing buffer authoritative for the focused session.
         if (!isFocused && value.text.toString() != initialValue.orEmpty()) {
             value.setTextAndPlaceCursorAtEnd(initialValue.orEmpty())
         }
@@ -88,8 +86,6 @@ fun AppTextField(
                 Modifier.fillMaxWidth()
                     .then(
                         if (minLines == 1) {
-                            // Override Material's minimum height with our existing measured text
-                            // height.
                             Modifier.height(singleLineHeight)
                         } else {
                             Modifier.heightIn(min = 1.dp)
@@ -105,8 +101,6 @@ fun AppTextField(
             lineLimits =
                 if (minLines == 1) TextFieldLineLimits.SingleLine
                 else TextFieldLineLimits.MultiLine(minHeightInLines = minLines),
-            // Hide the IME composition underline only in the rendered text. Do not
-            // clear composition: keyboards need it to replace the word being typed.
             outputTransformation = {
                 if (length > 0) {
                     addStyle(SpanStyle(textDecoration = TextDecoration.None), 0, length)

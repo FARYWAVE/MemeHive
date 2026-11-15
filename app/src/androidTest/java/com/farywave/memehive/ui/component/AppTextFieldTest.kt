@@ -106,7 +106,6 @@ class AppTextFieldTest {
         val layouts = mutableListOf<TextLayoutResult>()
         field.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
         val spans = layouts.single().layoutInput.text.spanStyles
-        // Inspect the final style used to render the composing word.
         val renderedStyle =
             spans
                 .filter { it.start <= 0 && it.end >= 3 }

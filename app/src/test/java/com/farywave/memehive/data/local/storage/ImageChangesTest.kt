@@ -54,7 +54,6 @@ class ImageChangesTest {
                 withChanges(storedNames) { changes ->
                     newFiles += copy(changes, "cover".byteInputStream())
                     newFiles += copy(changes, "media item".byteInputStream())
-                    // A rolled-back transaction leaves no database rows for either new file.
                     throw originalFailure
                 }
             }
@@ -134,7 +133,6 @@ class ImageChangesTest {
                 }
             }
 
-        // Coroutine stack-trace recovery may copy the exception, retaining it as the cause.
         assertEquals(originalFailure.message, failure.message)
         assertTrue(generateSequence<Throwable>(failure) { it.cause }.any { it === originalFailure })
         assertFalse(partialFile.exists())
@@ -254,7 +252,7 @@ class ImageChangesTest {
         ImageChanges.track(
             ioDispatcher = StandardTestDispatcher(testScheduler),
             isStored = { path ->
-                yield() // The real DAO lookup suspends, including during cancellation cleanup.
+                yield()
                 path in storedNames
             },
             onCleanupFailure = { _, error -> cleanupFailures += error },

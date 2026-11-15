@@ -206,7 +206,6 @@ class CollectionTransferUseCasesTest {
 
     @Test
     fun pngAndWebpCoversRoundTripWithMatchingManifestAndUnchangedBytes(): Unit = runBlocking {
-        // A fixture exercises WebP on API 29 too, without the deprecated encoder.
         val webp =
             InstrumentationRegistry.getInstrumentation().context.assets.open("blue.webp").use {
                 it.readBytes()
@@ -294,7 +293,6 @@ class CollectionTransferUseCasesTest {
 
     @Test
     fun transactionFailureRemovesCopiedImagesAndAllImportedRecords(): Unit = runBlocking {
-        // Fail after the cover, item, image, tags and search entries have been inserted.
         db.openHelper.writableDatabase.execSQL(
             """
             CREATE TRIGGER fail_membership BEFORE INSERT ON collection_entries

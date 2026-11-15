@@ -15,7 +15,6 @@ class MemeHiveApplication : Application(), ImageLoaderFactory {
     override fun newImageLoader(): ImageLoader =
         ImageLoader.Builder(this)
             .components {
-                // All supported devices (API 29+) have the platform animated image decoder.
                 add(ImageDecoderDecoder.Factory())
             }
             .build()

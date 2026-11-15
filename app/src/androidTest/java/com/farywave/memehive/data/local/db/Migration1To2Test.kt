@@ -53,7 +53,6 @@ class Migration1To2Test {
         val before =
             helper.createDatabase(databaseName, 1).use { db ->
                 seedValidData(db)
-                // A deleted high ID must remain reserved after the table rebuild.
                 db.execSQL("INSERT INTO media_items VALUES (500, NULL, 'deleted', '')")
                 db.execSQL("DELETE FROM media_items WHERE id = 500")
                 db.execSQL("INSERT INTO collections VALUES (600, 'deleted', NULL)")
@@ -92,8 +91,6 @@ class Migration1To2Test {
     fun inconsistentDataIsRepairedWithoutLosingValidRelationships() {
         helper.createDatabase(databaseName, 1).use { db ->
             seedValidData(db)
-            // Simulate a legacy database written with FK enforcement disabled. Re-enable it
-            // BEFORE upgrading: the migration itself must work with enforcement enabled.
             db.setForeignKeyConstraintsEnabled(false)
             db.execSQL(
                 "INSERT INTO media_items VALUES (12, 999, 'keep broken-image item', 'keep description')"
@@ -209,7 +206,6 @@ class Migration1To2Test {
                     assertEquals("Simulated failure after restoring data", failure.message)
                 }
             } finally {
-                // No setTransactionSuccessful(): mirrors Room rolling back a failed upgrade.
                 db.endTransaction()
             }
             assertEquals(1, db.version)
@@ -220,7 +216,6 @@ class Migration1To2Test {
                     .isEmpty()
             )
         }
-        // Retrying the real upgrade after rollback must still succeed.
         migrate().use(::assertMigrationFinished)
         assertReopens()
     }

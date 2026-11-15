@@ -52,7 +52,6 @@ class ReactiveSearchTest {
             }
         try {
             awaitIds()
-            // A transactional import becomes visible through the existing subscription.
             val id = db.withTransaction {
                 val id =
                     db.mediaItemDao()

@@ -65,7 +65,6 @@ class ImageSharingTest {
             storage.sharingUri(file.name)
             fail("Expected missing image failure")
         } catch (_: IOException) {
-            // The picker can show the failure without replacing the clipboard.
         }
     }
 }

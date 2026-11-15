@@ -145,7 +145,6 @@ class AtomicPersistenceTest {
                 setOf(first.id),
             )
         val filesBefore = savedFiles()
-        // Membership insertion follows the item and tag replacements.
         failOn("INSERT", "collection_entries")
         expectFailure<SQLiteException> {
             media.updateMediaItem(
@@ -264,7 +263,7 @@ class AtomicPersistenceTest {
         assertEquals(1, count("images"))
         assertEquals(1, savedFiles().size)
         assertNotNull(db.imageDao().getById(collection.cover.id))
-        media.deleteMediaItemsByIds(ids) // Repeated deletion and empty selection are harmless.
+        media.deleteMediaItemsByIds(ids)
         media.deleteMediaItemsByIds(emptySet())
         assertEquals(listOf(outside.id), db.mediaItemDao().getAllIds())
     }
@@ -277,7 +276,6 @@ class AtomicPersistenceTest {
             )
         val ids = linkedSetOf(item.id).apply { addAll(bulkItems(null)) }
         val filesBefore = savedFiles()
-        // Linked insertion order places this ID after the first full deletion batch.
         db.openHelper.writableDatabase.execSQL(
             """
             CREATE TRIGGER fail_late_delete BEFORE DELETE ON media_items
@@ -378,8 +376,6 @@ class AtomicPersistenceTest {
         val dao =
             object : ImageDao by db.imageDao() {
                 override suspend fun getBySha256(sha256: String): ImageEntity? {
-                    // Deterministic mutation at dedup lookup: the old hash-then-copy implementation
-                    // would now copy different bytes under the hash of the original source.
                     sourceFile.writeText("changed bytes")
                     return db.imageDao().getBySha256(sha256)
                 }
@@ -424,8 +420,6 @@ class AtomicPersistenceTest {
     }
 
     private suspend fun bulkItems(sharedImageId: Long?): MutableSet<Long> = db.withTransaction {
-        // 3,001 rows force several repository chunks; alternating null images exercise nullable
-        // reads.
         (0..3000).mapTo(linkedSetOf()) { index ->
             db.mediaItemDao()
                 .insert(

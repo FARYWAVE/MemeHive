@@ -5,7 +5,6 @@ import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** Every occurrence has an identity, including repeated messages with the same text. */
 data class UiMessage(
     @param:StringRes val messageResId: Int,
     val id: String = UUID.randomUUID().toString(),

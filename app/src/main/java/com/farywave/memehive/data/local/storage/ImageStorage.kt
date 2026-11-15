@@ -2,7 +2,7 @@ package com.farywave.memehive.data.local.storage
 
 import android.content.Context
 import android.graphics.BitmapFactory
-import android.media.ExifInterface
+import androidx.exifinterface.media.ExifInterface
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
@@ -67,7 +67,6 @@ class ImageStorage(
         }
     }
 
-    /** Reads metadata only, without allocating an image bitmap. */
     suspend fun readDimensions(file: File): Pair<Int, Int>? = withContext(ioDispatcher) {
         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.absolutePath, options)
@@ -128,7 +127,6 @@ class ImageStorage(
                     openInput().use { input ->
                         val file = File.createTempFile("image_", ".$extension", directory)
                         created = file
-                        // Register before returning: cancellation can discard a withContext result.
                         onFileCreated(file)
                         file.outputStream().use { output ->
                             val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
