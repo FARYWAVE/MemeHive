@@ -3,13 +3,6 @@ package com.farywave.memehive.data.local.db
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-/**
- * Adds relationship constraints and lookup indexes without discarding valid v1 data.
- *
- * Room runs this inside its upgrade transaction. Keep foreign keys enabled: snapshot and drop the
- * junctions before rebuilding their parents so cascades cannot erase memberships. Names and SQL
- * here intentionally describe these historical versions, not current entities.
- */
 val MIGRATION_1_2: Migration =
     object : Migration(1, 2) {
         override fun migrate(db: SupportSQLiteDatabase) {
@@ -202,7 +195,6 @@ val MIGRATION_1_2: Migration =
         }
     }
 
-/** Search now uses an in-memory index; discard only the obsolete derived data. */
 val MIGRATION_3_4: Migration =
     object : Migration(3, 4) {
         override fun migrate(db: SupportSQLiteDatabase) {
@@ -210,7 +202,6 @@ val MIGRATION_3_4: Migration =
         }
     }
 
-// Existing images deliberately keep unknown dimensions; no files are inspected here.
 val MIGRATION_4_5: Migration =
     object : Migration(4, 5) {
         override fun migrate(db: SupportSQLiteDatabase) {

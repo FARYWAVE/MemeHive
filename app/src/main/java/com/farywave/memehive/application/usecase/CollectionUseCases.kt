@@ -78,7 +78,6 @@ class CollectionUseCases(
         }
     }
 
-    /** [deleteContents] deletes only items that belong to no other collection. */
     suspend fun deleteCollection(collection: Collection, deleteContents: Boolean = false) {
         imageRepository.withImageCleanup { cleanup ->
             db.withTransaction {

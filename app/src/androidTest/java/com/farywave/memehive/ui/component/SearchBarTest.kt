@@ -29,8 +29,6 @@ class SearchBarTest {
         field.assertTextEquals("initial")
         field.performTextReplacement("funny")
         compose.waitUntil(5_000) { query.value == "funny" }
-        // Focused fields intentionally protect active input from stale screen updates.
-        // External values are applied once the user has left the field.
         compose.runOnIdle {
             focusManager.clearFocus()
             query.value = "cats"

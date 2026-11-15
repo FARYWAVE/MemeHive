@@ -103,7 +103,7 @@ class ImageFilenameMigrationTest {
                 ImageFilenameMigration(directory).migrate(db)
                 assertTrue(File(directory, "images/legacy_1.png").exists())
             } finally {
-                db.endTransaction() // Simulate failure after file copy, before database commit.
+                db.endTransaction()
             }
             assertEquals(listOf(listOf(source.path)), db.rows("SELECT path FROM images"))
         }

@@ -127,7 +127,6 @@ class DatabaseBehaviorTest {
         val tag = db.tagDao().insert(TagEntity(name = "tag"))
         db.collectionEntryDao().insert(CollectionEntryEntity(collection, item))
         db.mediaItemTagDao().insert(MediaItemTagEntity(item, tag))
-        // Use DAOs directly: repository cleanup must not mask missing cascades.
         db.collectionDao().delete(collection)
         db.tagDao().delete(tag)
         assertTrue(db.collectionEntryDao().getByMediaItem(item).isEmpty())
@@ -248,7 +247,6 @@ class DatabaseBehaviorTest {
             block()
             fail("Expected SQLite to reject an invalid relationship or duplicate")
         } catch (_: SQLiteConstraintException) {
-            // Expected: SQLite, rather than repository validation, enforces the rule.
         }
     }
 

@@ -49,7 +49,6 @@ class CollectionEditorDialogTest {
         }
         compose.onNode(hasSetTextAction()).performTextReplacement("Cats / dogs ? #")
         Espresso.closeSoftKeyboard()
-        // Test the submitted snapshot independently of the device keyboard's window animation.
         compose.onNodeWithText(text(R.string.action_create)).performSemanticsAction(
             SemanticsActions.OnClick
         ) {

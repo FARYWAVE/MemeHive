@@ -51,7 +51,6 @@ class RelationReadTest {
                             readTransactions.add(sqlQuery to db.inTransaction())
                         }
                     },
-                    // Inspect the transaction on the query's own thread, before it executes.
                     { it.run() },
                 )
                 .build()

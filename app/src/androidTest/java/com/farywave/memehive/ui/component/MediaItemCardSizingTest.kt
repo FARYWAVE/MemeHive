@@ -55,7 +55,6 @@ class MediaItemCardSizingTest {
             compose.onNodeWithTag("card").assertHeightIsEqualTo(240.dp)
             compose.waitUntil(5_000) { loaded.get() > 1 }
             compose.onNodeWithTag("card").assertHeightIsEqualTo(240.dp)
-            // A loaded legacy image must also retain the fallback, regardless of intrinsic size.
             compose.runOnIdle { image.value = image.value.copy(width = null, height = null) }
             compose.onNodeWithTag("card").assertHeightIsEqualTo(80.dp)
         } finally {

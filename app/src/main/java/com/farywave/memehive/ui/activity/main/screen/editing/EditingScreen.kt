@@ -500,7 +500,6 @@ private enum class EditorCollectionSheet(val savedValue: String) {
     COVER("cover"),
 }
 
-// Retain the existing saved values across the move from strings to an enum.
 private val EditorCollectionSheetSaver =
     Saver<EditorCollectionSheet, String>(
         save = { it.savedValue },

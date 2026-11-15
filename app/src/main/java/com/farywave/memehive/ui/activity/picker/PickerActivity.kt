@@ -66,7 +66,6 @@ class PickerActivity : ComponentActivity() {
                     }
                 val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(clip)
-                // Android 13+ provides its own clipboard confirmation.
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                     Toast.makeText(applicationContext, R.string.success_image_copied, Toast.LENGTH_SHORT)
                         .show()

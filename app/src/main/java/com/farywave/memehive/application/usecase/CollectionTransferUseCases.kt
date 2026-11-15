@@ -29,7 +29,6 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class CollectionTransferUseCases(
@@ -128,8 +127,6 @@ class CollectionTransferUseCases(
             createDirectory(collectionDir)
             createDirectory(mediaDir)
 
-            // Collection Preparation
-
             collection.cover?.let { cover ->
                 val coverUri = cover.uri
 
@@ -142,7 +139,6 @@ class CollectionTransferUseCases(
                 )
             }
 
-            // Media Preparation
             val transferMediaItems = mediaItems.mapIndexed { index, item ->
                 val relativePath =
                     item.image?.let { mediaImage ->
@@ -168,7 +164,6 @@ class CollectionTransferUseCases(
                 )
             }
 
-            // Manifest Preparation
             val manifest =
                 TransferManifest(
                     appVersion =
@@ -190,12 +185,10 @@ class CollectionTransferUseCases(
                     mediaItems = transferMediaItems,
                 )
 
-            // Manifest Serialization
             val manifestFile = File(dir, "manifest.json")
 
             manifestFile.writeText(json.encodeToString(manifest))
 
-            // Zip the directory
             val output =
                 context.contentResolver.openOutputStream(outputUri)
                     ?: throw IOException("Could not open the export destination.")
