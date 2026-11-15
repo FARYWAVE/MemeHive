@@ -16,7 +16,11 @@ MemeHive — Android-приложение, которое помогает хр�
 
 Библиотека хранится на устройстве. В приложении нет учётных записей и встроенной облачной синхронизации. Системное резервное копирование Android включено; о его отличиях от экспорта коллекций читайте в [руководстве пользователя](docs/user-guide.ru.md#хранение-и-резервные-копии).
 
-<a href="docs/images/library.jpg"><img src="docs/images/library.jpg" alt="Библиотека MemeHive: сетка мемов, теги и фильтры коллекций" width="320"></a>
+<p>
+  <a href="docs/images/library.jpg"><img src="docs/images/library.jpg" alt="Библиотека MemeHive: сетка мемов, теги и фильтры коллекций" width="320"></a>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="docs/images/editor.jpg"><img src="docs/images/editor.jpg" alt="Редактор медиа: изображение, поле подписи, описание и редактируемые теги" width="320"></a>
+</p>
 
 ## Установка и начало работы
 

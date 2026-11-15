@@ -16,7 +16,11 @@ MemeHive is an Android app for keeping your memes organized and finding the righ
 
 MemeHive stores its library on the device. It has no account system or built-in cloud synchronization. Android system backup is enabled; see the [user guide](docs/user-guide.md#storage-and-backups) for the distinction between backup and collection export.
 
-<a href="docs/images/library.jpg"><img src="docs/images/library.jpg" alt="MemeHive library with a two-column meme grid, tags, and collection filters" width="320"></a>
+<p>
+  <a href="docs/images/library.jpg"><img src="docs/images/library.jpg" alt="MemeHive library with a two-column meme grid, tags, and collection filters" width="320"></a>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="docs/images/editor.jpg"><img src="docs/images/editor.jpg" alt="Media editor with an image, caption field, description, and editable tags" width="320"></a>
+</p>
 
 ## Get started
 
